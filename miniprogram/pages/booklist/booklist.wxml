@@ -1,0 +1,54 @@
+<!-- pages/booklist/booklist.wxml -->
+<view class="container">
+  <view class="page-header">
+    <view class="page-title">{{isFirstTime ? '👋 欢迎使用' : '选择词书'}}</view>
+    <view class="page-sub">{{isFirstTime ? '请选择适合你的词书，开始背单词' : '选择适合你的词书，开始背单词'}}</view>
+  </view>
+
+  <view class="book-list">
+    <block wx:for="{{books}}" wx:key="id" wx:for-item="book">
+      <view
+        class="book-card {{book.isCurrent ? 'current' : ''}}"
+        data-id="{{book.id}}"
+        bindtap="selectBook"
+      >
+        <!-- 难度色条 -->
+        <view class="book-bar" style="background: {{book.themeColor}};"></view>
+
+        <view class="book-top">
+          <view class="book-name">{{book.name}}</view>
+          <view class="book-level-tag" style="color: {{book.themeColor}}; background: {{book.themeBg}};">{{book.tag}}</view>
+        </view>
+        <view class="book-desc">{{book.desc}}</view>
+
+        <!-- 进度条 -->
+        <view class="progress-section">
+          <view class="progress-bar-bg">
+            <view class="progress-bar-fill" style="width: {{book.progress}}%; background: {{book.themeColor}};"></view>
+          </view>
+          <view class="progress-text">{{book.learned}} / {{book.totalWords}} · {{book.progress}}%</view>
+        </view>
+
+        <view class="book-stats">
+          <view class="stat">
+            <text class="stat-val">{{book.totalWords}}</text>
+            <text class="stat-lbl">总词数</text>
+          </view>
+          <view class="stat">
+            <text class="stat-val">{{book.learned}}</text>
+            <text class="stat-lbl">已掌握</text>
+          </view>
+          <view class="stat">
+            <text class="stat-val">{{book.learning}}</text>
+            <text class="stat-lbl">学习中</text>
+          </view>
+          <view class="stat" wx:if="{{book.due > 0}}">
+            <text class="stat-val due">{{book.due}}</text>
+            <text class="stat-lbl">待复习</text>
+          </view>
+        </view>
+        <view class="book-badge" wx:if="{{book.isCurrent}}">当前使用</view>
+      </view>
+    </block>
+  </view>
+</view>

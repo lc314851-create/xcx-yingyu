@@ -1,0 +1,58 @@
+[
+  {
+    "id": "junior",
+    "name": "初中词汇",
+    "tag": "zk",
+    "wordCount": 1602,
+    "highFreqCount": 1488
+  },
+  {
+    "id": "senior",
+    "name": "高中词汇",
+    "tag": "gk",
+    "wordCount": 3677,
+    "highFreqCount": 2932
+  },
+  {
+    "id": "cet4",
+    "name": "四级词汇",
+    "tag": "cet4",
+    "wordCount": 3849,
+    "highFreqCount": 2913
+  },
+  {
+    "id": "cet6",
+    "name": "六级词汇",
+    "tag": "cet6",
+    "wordCount": 5407,
+    "highFreqCount": 3166
+  },
+  {
+    "id": "postgrad",
+    "name": "考研词汇",
+    "tag": "ky",
+    "wordCount": 4801,
+    "highFreqCount": 3201
+  },
+  {
+    "id": "ielts",
+    "name": "雅思词汇",
+    "tag": "ielts",
+    "wordCount": 5038,
+    "highFreqCount": 2638
+  },
+  {
+    "id": "toefl",
+    "name": "托福词汇",
+    "tag": "toefl",
+    "wordCount": 6970,
+    "highFreqCount": 2448
+  },
+  {
+    "id": "gre",
+    "name": "GRE词汇",
+    "tag": "gre",
+    "wordCount": 7504,
+    "highFreqCount": 1140
+  }
+]

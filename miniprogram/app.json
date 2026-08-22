@@ -1,0 +1,42 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/words/words",
+    "pages/mine/mine",
+    "pages/booklist/booklist",
+    "pages/privacy/privacy",
+    "pages/wrongbook/wrongbook",
+    "pages/poster/poster",
+    "pages/search/search"
+  ],
+  "window": {
+    "backgroundColor": "#F6F8FC",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#4A90D9",
+    "navigationBarTitleText": "英语补词达人",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#8A8F99",
+    "selectedColor": "#4A90D9",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/words/words",
+        "text": "背单词"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

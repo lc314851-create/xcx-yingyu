@@ -1,0 +1,187 @@
+/* pages/search/search.wxss */
+.container {
+  padding: 20rpx 24rpx 60rpx;
+}
+
+/* 搜索框 */
+.search-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.search-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 40rpx;
+  padding: 0 24rpx;
+  height: 80rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.search-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 30rpx;
+  color: #1F2430;
+  height: 80rpx;
+}
+
+.search-clear {
+  font-size: 28rpx;
+  color: #B0B6C0;
+  padding: 8rpx;
+}
+
+.search-btn {
+  background: #4A90D9;
+  color: #FFFFFF;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  padding: 0 32rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4rpx 12rpx rgba(74, 144, 217, 0.3);
+}
+
+.search-btn:active {
+  opacity: 0.85;
+}
+
+/* 搜索中 */
+.searching {
+  text-align: center;
+  padding: 80rpx 0;
+  font-size: 28rpx;
+  color: #8A8F99;
+}
+
+/* 无结果 */
+.no-result {
+  text-align: center;
+  padding: 100rpx 0;
+}
+
+.no-result-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.no-result-text {
+  font-size: 30rpx;
+  color: #8A8F99;
+}
+
+/* 结果列表 */
+.result-count {
+  font-size: 24rpx;
+  color: #8A8F99;
+  margin-bottom: 16rpx;
+  padding-left: 8rpx;
+}
+
+.result-item {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 28rpx 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.result-word {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.result-phonetic {
+  font-size: 26rpx;
+  color: #8A8F99;
+}
+
+.result-play {
+  font-size: 32rpx;
+  margin-left: auto;
+  padding: 8rpx;
+}
+
+.result-meaning {
+  font-size: 28rpx;
+  color: #5A6072;
+  margin-top: 12rpx;
+  line-height: 1.5;
+}
+
+.result-example {
+  font-size: 24rpx;
+  color: #8A8F99;
+  margin-top: 8rpx;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.result-tags {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  flex-wrap: wrap;
+}
+
+.result-tag {
+  font-size: 22rpx;
+  border-radius: 8rpx;
+  padding: 4rpx 16rpx;
+}
+
+.result-tag.learned-true {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.result-tag.learned-false {
+  background: #EEF1F6;
+  color: #8A8F99;
+}
+
+.result-book {
+  font-size: 22rpx;
+  background: #EAF2FC;
+  color: #4A90D9;
+  border-radius: 8rpx;
+  padding: 4rpx 16rpx;
+}
+
+/* 初始提示 */
+.hint {
+  text-align: center;
+  padding-top: 160rpx;
+}
+
+.hint-icon {
+  font-size: 100rpx;
+  margin-bottom: 30rpx;
+}
+
+.hint-text {
+  font-size: 30rpx;
+  color: #5A6072;
+}
+
+.hint-sub {
+  font-size: 26rpx;
+  color: #B0B6C0;
+  margin-top: 12rpx;
+}

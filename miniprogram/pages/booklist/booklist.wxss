@@ -1,0 +1,140 @@
+/* pages/booklist/booklist.wxss */
+.container {
+  padding: 20rpx 24rpx 60rpx;
+}
+
+.page-header {
+  padding: 20rpx 10rpx 30rpx;
+}
+
+.page-title {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.page-sub {
+  font-size: 26rpx;
+  color: #8A8F99;
+  margin-top: 8rpx;
+}
+
+.book-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.book-card {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx 36rpx 36rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  border: 2rpx solid transparent;
+  overflow: hidden;
+}
+
+.book-card.current {
+  border-color: #4A90D9;
+  background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%);
+}
+
+/* 难度色条（左侧竖条） */
+.book-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8rpx;
+}
+
+.book-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.book-name {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.book-level-tag {
+  font-size: 24rpx;
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx;
+  font-weight: 600;
+}
+
+.book-desc {
+  font-size: 26rpx;
+  color: #5A6072;
+  margin-top: 12rpx;
+  line-height: 1.5;
+}
+
+/* 进度条 */
+.progress-section {
+  margin-top: 24rpx;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 12rpx;
+  background: #EEF1F6;
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 24rpx;
+  color: #8A8F99;
+  margin-top: 10rpx;
+}
+
+.book-stats {
+  display: flex;
+  gap: 40rpx;
+  margin-top: 24rpx;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-val {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #4A90D9;
+}
+
+.stat-val.due {
+  color: #F5A623;
+}
+
+.stat-lbl {
+  font-size: 22rpx;
+  color: #8A8F99;
+  margin-top: 4rpx;
+}
+
+.book-badge {
+  position: absolute;
+  top: 24rpx;
+  right: 32rpx;
+  background: #4A90D9;
+  color: #FFFFFF;
+  font-size: 22rpx;
+  border-radius: 12rpx;
+  padding: 4rpx 16rpx;
+}

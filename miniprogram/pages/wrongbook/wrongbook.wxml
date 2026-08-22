@@ -1,0 +1,38 @@
+<!-- pages/wrongbook/wrongbook.wxml -->
+<view class="container">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="header-info">
+      <view class="header-title">生词本</view>
+      <view class="header-count" wx:if="{{!isEmpty}}">共 {{words.length}} 个生词</view>
+    </view>
+    <view class="clear-btn" wx:if="{{!isEmpty}}" bindtap="onClearAll">清空</view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty" wx:if="{{isEmpty}}">
+    <view class="empty-icon">📚</view>
+    <view class="empty-text">生词本还是空的</view>
+    <view class="empty-sub">学习时答错的单词会自动收集到这里</view>
+    <view class="empty-btn" bindtap="onBack">去学习</view>
+  </view>
+
+  <!-- 生词列表 -->
+  <view class="word-list" wx:if="{{!isEmpty}}">
+    <view class="word-item" wx:for="{{words}}" wx:key="word">
+      <view class="word-main" bindtap="onPlayAudio" data-word="{{item.word}}">
+        <view class="word-text">{{item.word}}</view>
+        <view class="word-meaning">{{item.meaning}}</view>
+      </view>
+      <view class="word-actions">
+        <view class="word-play" bindtap="onPlayAudio" data-word="{{item.word}}">🔊</view>
+        <view class="word-remove" bindtap="onRemove" data-word="{{item.word}}">✕</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部 -->
+  <view class="footer" wx:if="{{!isEmpty}}">
+    <view class="footer-text">点击单词可播放发音</view>
+  </view>
+</view>

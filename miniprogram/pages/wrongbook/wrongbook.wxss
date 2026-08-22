@@ -1,0 +1,129 @@
+/* pages/wrongbook/wrongbook.wxss */
+.container {
+  padding: 0 24rpx 60rpx;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 0;
+}
+
+.header-title {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.header-count {
+  font-size: 26rpx;
+  color: #8A8F99;
+  margin-top: 6rpx;
+}
+
+.clear-btn {
+  font-size: 28rpx;
+  color: #E74C3C;
+  padding: 10rpx 20rpx;
+}
+
+/* 空状态 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 160rpx;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #5A6072;
+  font-weight: 600;
+}
+
+.empty-sub {
+  font-size: 26rpx;
+  color: #8A8F99;
+  margin-top: 12rpx;
+}
+
+.empty-btn {
+  margin-top: 50rpx;
+  background: #4A90D9;
+  color: #FFFFFF;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  padding: 20rpx 80rpx;
+  text-align: center;
+  box-shadow: 0 6rpx 20rpx rgba(74, 144, 217, 0.3);
+}
+
+.empty-btn:active {
+  opacity: 0.85;
+}
+
+/* 生词列表 */
+.word-list {
+  padding-top: 10rpx;
+}
+
+.word-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 28rpx 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+}
+
+.word-main {
+  flex: 1;
+}
+
+.word-text {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.word-meaning {
+  font-size: 26rpx;
+  color: #5A6072;
+  margin-top: 8rpx;
+}
+
+.word-actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.word-play {
+  font-size: 36rpx;
+  padding: 8rpx;
+}
+
+.word-remove {
+  font-size: 32rpx;
+  color: #E74C3C;
+  padding: 8rpx 12rpx;
+}
+
+/* 底部 */
+.footer {
+  text-align: center;
+  padding: 40rpx 0 20rpx;
+}
+
+.footer-text {
+  font-size: 24rpx;
+  color: #B0B6C0;
+}

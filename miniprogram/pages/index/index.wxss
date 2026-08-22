@@ -1,0 +1,270 @@
+/* pages/index/index.wxss */
+.container {
+  padding-bottom: 40rpx;
+}
+
+.hero {
+  background: linear-gradient(135deg, #4A90D9 0%, #6FB1F0 100%);
+  padding: 60rpx 40rpx 70rpx;
+  color: #FFFFFF;
+}
+
+.hero-title {
+  font-size: 42rpx;
+  font-weight: 600;
+}
+
+.hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hero-search {
+  font-size: 40rpx;
+  padding: 8rpx 16rpx;
+}
+
+.hero-sub {
+  font-size: 26rpx;
+  opacity: 0.85;
+  margin-top: 12rpx;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  margin-top: -50rpx;
+  padding: 0 24rpx;
+}
+
+.stat-card {
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 30rpx 10rpx;
+  width: 30%;
+  text-align: center;
+  box-shadow: 0 6rpx 20rpx rgba(74, 144, 217, 0.12);
+}
+
+.stat-num {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #4A90D9;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #8A8F99;
+  margin-top: 8rpx;
+}
+
+.book-card {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+}
+
+.book-info {
+  flex: 1;
+}
+
+.book-name {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.book-progress {
+  font-size: 24rpx;
+  color: #8A8F99;
+  margin-top: 8rpx;
+}
+
+.book-due {
+  font-size: 24rpx;
+  color: #F5A623;
+  background: #FFF6E5;
+  border-radius: 16rpx;
+  padding: 8rpx 16rpx;
+  margin-right: 16rpx;
+}
+
+.book-arrow {
+  font-size: 40rpx;
+  color: #C0C6D0;
+  font-weight: 300;
+}
+
+.actions {
+  padding: 40rpx 24rpx 10rpx;
+}
+
+.action-btn {
+  margin-bottom: 24rpx;
+}
+
+.tip-card {
+  margin-top: 20rpx;
+}
+
+.tip-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1F2430;
+  margin-bottom: 12rpx;
+}
+
+.tip-divider {
+  height: 1rpx;
+  background: #EEF1F6;
+  margin: 24rpx 0;
+}
+
+.tip-text {
+  font-size: 26rpx;
+  color: #5A6072;
+  line-height: 1.6;
+}
+
+/* ─── 今日金句 ─── */
+.quote-card {
+  background: linear-gradient(135deg, #FAFCFE 0%, #F0F6FC 100%);
+  border: 1rpx solid #D4E5F7;
+}
+
+.quote-tag {
+  font-size: 24rpx;
+  color: #4A90D9;
+  margin-bottom: 16rpx;
+}
+
+.quote-en {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1F2430;
+  line-height: 1.6;
+  margin-bottom: 12rpx;
+}
+
+.quote-zh {
+  font-size: 28rpx;
+  color: #5A6072;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+}
+
+.quote-author {
+  font-size: 24rpx;
+  color: #8A8F99;
+  text-align: right;
+}
+
+.quote-words {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #E0E8F0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.quote-words-label {
+  font-size: 24rpx;
+  color: #8A8F99;
+}
+
+.quote-word-item {
+  font-size: 24rpx;
+  color: #4A90D9;
+  background: #E8F1FB;
+  border-radius: 8rpx;
+  padding: 6rpx 16rpx;
+}
+
+/* 词书选择弹窗 */
+.picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.picker-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #F6F8FC;
+  border-radius: 24rpx 24rpx 0 0;
+  z-index: 101;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  background: #FFFFFF;
+  border-radius: 24rpx 24rpx 0 0;
+  border-bottom: 1rpx solid #EEF1F6;
+}
+
+.picker-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.picker-close {
+  font-size: 36rpx;
+  color: #B0B6C0;
+  padding: 4rpx 12rpx;
+}
+
+.picker-list {
+  flex: 1;
+  overflow: hidden;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 32rpx;
+  background: #FFFFFF;
+  border-bottom: 1rpx solid #F0F2F5;
+}
+
+.picker-item.active {
+  background: #EAF2FC;
+}
+
+.picker-item-name {
+  font-size: 32rpx;
+  color: #1F2430;
+}
+
+.picker-item.active .picker-item-name {
+  color: #4A90D9;
+  font-weight: 600;
+}
+
+.picker-item-check {
+  font-size: 36rpx;
+  color: #4A90D9;
+  font-weight: 600;
+}

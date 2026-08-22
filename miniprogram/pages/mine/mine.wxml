@@ -1,0 +1,116 @@
+<!-- pages/mine/mine.wxml -->
+<view class="container">
+  <!-- 用户头部 -->
+  <view class="user-header">
+    <view class="avatar">
+      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" class="avatar-img" />
+      <text wx:else class="avatar-placeholder">👤</text>
+    </view>
+    <view class="user-info">
+      <view class="nickname">{{nickname}}</view>
+      <view class="sub-text" wx:if="{{isLogin}}">坚持学习，遇见更好的自己</view>
+      <view class="sub-text login-link" wx:else bindtap="login">点击登录，同步你的学习进度</view>
+    </view>
+  </view>
+
+  <!-- 统计 -->
+  <view class="stats-card">
+    <view class="stat-block">
+      <view class="stat-value">{{stats.learnedToday}}</view>
+      <view class="stat-label">今日学习</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-block">
+      <view class="stat-value">{{stats.streakDays}}</view>
+      <view class="stat-label">连续天数</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-block">
+      <view class="stat-value">{{stats.weeklyLearned}}</view>
+      <view class="stat-label">本周学习</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-block">
+      <view class="stat-value">{{stats.totalWords}}</view>
+      <view class="stat-label">累计单词</view>
+    </view>
+  </view>
+
+  <!-- 打卡按钮 -->
+  <view class="checkin-btn {{stats.checkedIn ? 'checked' : ''}}" bindtap="checkIn">
+    {{stats.checkedIn ? '已打卡 ✓' : '每日打卡'}}
+  </view>
+
+  <!-- 学习日历热力图 -->
+  <view class="heatmap-section">
+    <view class="section-title">学习日历</view>
+    <view class="heatmap-sub">最近 30 天 · 坚持了 {{heatmapTotalDays}} 天</view>
+    <view class="heatmap-grid">
+      <view class="heatmap-cell level-{{item.level}}" wx:for="{{heatmap}}" wx:key="date">
+        <view class="heatmap-tip">{{item.date}} · {{item.count > 0 ? item.count + '个' : '未学习'}}</view>
+      </view>
+    </view>
+    <view class="heatmap-legend">
+      <text class="legend-label">少</text>
+      <view class="heatmap-cell level-0 legend-cell"></view>
+      <view class="heatmap-cell level-1 legend-cell"></view>
+      <view class="heatmap-cell level-2 legend-cell"></view>
+      <view class="heatmap-cell level-3 legend-cell"></view>
+      <view class="heatmap-cell level-4 legend-cell"></view>
+      <text class="legend-label">多</text>
+    </view>
+  </view>
+
+  <!-- 成就徽章 -->
+  <view class="badge-section">
+    <view class="section-title">我的成就</view>
+    <view class="badge-grid">
+      <view class="badge-item {{badge.unlocked ? '' : 'locked'}}" wx:for="{{badges}}" wx:key="name">
+        <view class="badge-icon">{{badge.icon}}</view>
+        <view class="badge-name">{{badge.name}}</view>
+        <view class="badge-desc">{{badge.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 其他 -->
+  <view class="other-section">
+    <view class="other-item" bindtap="goSearch">
+      <view class="other-item-left">
+        <text class="other-icon">🔍</text>
+        <text>搜单词</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    <view class="other-item" bindtap="goPoster">
+      <view class="other-item-left">
+        <text class="other-icon">🖼</text>
+        <text>打卡海报</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    <view class="other-item" bindtap="onToggleReminder">
+      <view class="other-item-left">
+        <text class="other-icon">🔔</text>
+        <text>学习提醒</text>
+      </view>
+      <text class="reminder-status">{{reminderOn ? '已开启' : '未开启'}}</text>
+    </view>
+    <view class="other-item" bindtap="goWrongBook">
+      <view class="other-item-left">
+        <text class="other-icon">📓</text>
+        <text>生词本</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    <view class="other-item" bindtap="goPrivacy">
+      <view class="other-item-left">
+        <text class="other-icon">🔒</text>
+        <text>隐私保护声明</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <view class="footer-text">英语补词达人 · 免费学习工具</view>
+</view>

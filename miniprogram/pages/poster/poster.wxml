@@ -1,0 +1,57 @@
+<!-- pages/poster/poster.wxml -->
+<view class="container">
+  <!-- 海报预览区 -->
+  <view class="poster-wrap">
+    <!-- canvas（隐藏，仅用于绘制） -->
+    <view class="canvas-hidden">
+      <canvas
+        type="2d"
+        id="posterCanvas"
+        class="poster-canvas"
+        style="width: 300px; height: 450px;"
+      ></canvas>
+    </view>
+
+    <!-- 预览生成的图片 -->
+    <view class="poster-preview" wx:if="{{posterPath}}" bindtap="onPreviewPoster">
+      <image src="{{posterPath}}" mode="aspectFit" class="poster-img" />
+    </view>
+
+    <!-- 加载中 -->
+    <view class="poster-loading" wx:if="{{!posterPath}}">
+      <view class="loading-spin">⏳</view>
+      <view class="loading-text">海报生成中...</view>
+    </view>
+  </view>
+
+  <!-- 数据概览 -->
+  <view class="data-row" wx:if="{{posterPath}}">
+    <view class="data-item">
+      <text class="data-val">{{learnedToday}}</text>
+      <text class="data-lbl">今日学习</text>
+    </view>
+    <view class="data-item">
+      <text class="data-val">{{streakDays}}</text>
+      <text class="data-lbl">连续天数</text>
+    </view>
+    <view class="data-item">
+      <text class="data-val">{{totalWords}}</text>
+      <text class="data-lbl">累计单词</text>
+    </view>
+    <view class="data-item">
+      <text class="data-val">{{rate}}%</text>
+      <text class="data-lbl">正确率</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions">
+    <view class="btn-primary save-btn {{!posterPath || saving ? 'disabled' : ''}}" bindtap="onSavePoster">
+      {{saving ? '保存中...' : '保存到相册'}}
+    </view>
+    <view class="btn-secondary back-btn" bindtap="onBack">返回</view>
+  </view>
+
+  <!-- 提示 -->
+  <view class="tip-text" wx:if="{{posterPath}}">点击图片可预览大图，保存后可分享到朋友圈</view>
+</view>

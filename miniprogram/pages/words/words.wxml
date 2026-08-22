@@ -1,0 +1,192 @@
+<!-- pages/words/words.wxml -->
+<view class="container">
+  <!-- 顶部词书信息 -->
+  <view class="book-bar">
+    <view class="book-bar-left" bindtap="changeBook">
+      <view class="book-bar-name">{{bookName}}</view>
+      <view class="book-bar-stats">已掌握 {{masteredCount}}/{{bookTotal}}</view>
+    </view>
+    <view class="book-bar-right">
+      <!-- 练习模式切换 -->
+      <view class="mode-group">
+        <view class="mode-chip {{practiceMode === 'card' ? 'active' : ''}}" data-mode="card" bindtap="onPracticeModeChange">卡片</view>
+        <view class="mode-chip {{practiceMode === 'choice' ? 'active' : ''}}" data-mode="choice" bindtap="onPracticeModeChange">选择</view>
+        <view class="mode-chip {{practiceMode === 'spell' ? 'active' : ''}}" data-mode="spell" bindtap="onPracticeModeChange">拼写</view>
+      </view>
+      <view class="book-bar-switch" bindtap="changeBook">切换</view>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-icon">⏳</view>
+    <view class="loading-text">词库加载中...</view>
+  </view>
+
+  <!-- 进度条 -->
+  <view class="progress-row" wx:if="{{!loading && totalCount > 0 && !showResult}}">
+    <view class="status-tag {{statusLabel === '复习' ? 'review' : (statusLabel === '巩固' ? 'solidify' : '')}}">{{statusLabel}}</view>
+    <view class="progress-text">{{currentIndex + 1}} / {{totalCount}}</view>
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{totalCount > 0 ? (currentIndex + 1) / totalCount * 100 : 0}}%"></view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && totalCount === 0}}">
+    <view class="empty-icon">📚</view>
+    <view class="empty-text">本词书已全部掌握！</view>
+    <view class="empty-sub">可以切换其他词书继续学习</view>
+    <view class="btn-primary empty-btn" bindtap="changeBook">选择词书</view>
+  </view>
+
+  <!-- ═════════ 卡片翻面模式 ═════════ -->
+  <block wx:if="{{!loading && totalCount > 0 && practiceMode === 'card' && !showResult}}">
+    <view class="card-scene" bindtap="flipCard">
+      <view class="card-3d {{isFlipped ? 'flipped' : ''}}">
+        <!-- 正面：单词 -->
+        <view class="card-face card-front">
+          <view class="word-main">{{queue[currentIndex].word}}</view>
+          <view class="word-phonetic-front" wx:if="{{queue[currentIndex].phonetic}}">{{queue[currentIndex].phonetic}}</view>
+          <view class="flip-hint">点击卡片翻面查看释义</view>
+        </view>
+        <!-- 背面：释义 + 例句 -->
+        <view class="card-face card-back">
+          <view class="word-main back-word">{{queue[currentIndex].word}}</view>
+          <view class="word-phonetic">{{queue[currentIndex].phonetic}}</view>
+          <view class="word-meaning">{{queue[currentIndex].meaning}}</view>
+          <view class="word-example" wx:if="{{queue[currentIndex].example}}">{{queue[currentIndex].example}}</view>
+          <view class="flip-hint">点击返回正面</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 发音按钮 -->
+    <view class="audio-row">
+      <view class="audio-btn" catchtap="onPlayAudio">🔊 发音</view>
+      <view class="accent-toggle" catchtap="onToggleAccent">{{accent === 'uk' ? '🇬🇧 英音' : '🇺🇸 美音'}}</view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="actions">
+      <view class="btn-secondary mark-btn" bindtap="markUnknown">不认识</view>
+      <view class="btn-primary mark-btn" bindtap="markKnown">认识 ✓</view>
+    </view>
+  </block>
+
+  <!-- ═════════ 四选一模式 ═════════ -->
+  <block wx:if="{{!loading && totalCount > 0 && practiceMode === 'choice' && !showResult}}">
+    <view class="choice-question">
+      <view class="choice-prompt">下列哪个是该单词的释义？</view>
+      <view class="choice-word-row">
+        <view class="choice-word">{{queue[currentIndex].word}}</view>
+        <view class="choice-phonetic" wx:if="{{queue[currentIndex].phonetic}}">{{queue[currentIndex].phonetic}}</view>
+        <view class="audio-btn-sm" catchtap="onPlayAudio">🔊</view>
+      </view>
+    </view>
+
+    <view class="choice-options">
+      <view
+        class="choice-item {{choiceSelected === index ? (choiceCorrect ? 'correct' : 'wrong') : ''}} {{choiceSelected !== -1 && choiceOptions[index].isCorrect ? 'correct' : ''}}"
+        wx:for="{{choiceOptions}}"
+        wx:key="index"
+        data-idx="{{index}}"
+        bindtap="onChoiceSelect"
+      >
+        <view class="choice-letter">{{['A','B','C','D'][index]}}</view>
+        <view class="choice-text">{{item.meaning}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ═════════ 拼写模式 ═════════ -->
+  <block wx:if="{{!loading && totalCount > 0 && practiceMode === 'spell' && !showResult}}">
+    <view class="spell-card {{spellFeedback !== 'none' ? (spellFeedback === 'correct' ? 'feedback-correct' : 'feedback-wrong') : ''}}">
+      <view class="spell-prompt">请拼写出这个单词</view>
+      <view class="spell-meaning">{{queue[currentIndex].meaning}}</view>
+      <view class="spell-phonetic" wx:if="{{queue[currentIndex].phonetic}}">{{queue[currentIndex].phonetic}}</view>
+      <view class="spell-example" wx:if="{{queue[currentIndex].example}}">{{queue[currentIndex].example}}</view>
+
+      <input
+        class="spell-input"
+        type="text"
+        placeholder="在此输入单词..."
+        value="{{spellInput}}"
+        bindinput="onSpellInput"
+        bindconfirm="onSpellSubmit"
+        confirm-type="done"
+        adjust-position="{{true}}"
+      />
+
+      <view class="spell-feedback-text" wx:if="{{spellFeedback === 'correct'}}">✓ 正确！</view>
+      <view class="spell-feedback-text" wx:if="{{spellFeedback === 'wrong'}}">✗ 正确答案：{{queue[currentIndex].word}}</view>
+
+      <view class="spell-audio-row">
+        <view class="audio-btn" catchtap="onPlayAudio">🔊 听发音</view>
+      </view>
+    </view>
+
+    <view class="actions" wx:if="{{spellFeedback === 'none'}}">
+      <view class="btn-primary mark-btn" bindtap="onSpellSubmit">提交</view>
+    </view>
+  </block>
+
+  <!-- ═════════ 全屏结果页 ═════════ -->
+  <view class="result-overlay" wx:if="{{showResult}}">
+    <view class="result-content">
+      <view class="result-title">本轮完成</view>
+      <!-- 进度环 -->
+      <view class="result-ring-wrap">
+        <view class="result-ring" style="background: conic-gradient(#4A90D9 {{resultRate}}%, #E3E9F2 {{resultRate}}%);">
+          <view class="result-ring-inner">
+            <view class="result-rate">{{resultRate}}%</view>
+            <view class="result-rate-label">正确率</view>
+          </view>
+        </view>
+      </view>
+      <!-- 统计 -->
+      <view class="result-stats-row">
+        <view class="result-stat">
+          <view class="result-stat-num">{{totalCount}}</view>
+          <view class="result-stat-label">总词数</view>
+        </view>
+        <view class="result-stat">
+          <view class="result-stat-num result-correct">{{knownCount}}</view>
+          <view class="result-stat-label">认识</view>
+        </view>
+        <view class="result-stat">
+          <view class="result-stat-num result-wrong">{{unknownCount}}</view>
+          <view class="result-stat-label">不认识</view>
+        </view>
+      </view>
+      <view class="result-praise">{{resultPraise}}</view>
+      <view class="result-actions">
+        <view class="btn-secondary result-btn" bindtap="onResultBack">返回首页</view>
+        <view class="btn-secondary result-btn share-btn" bindtap="onSharePoster">分享打卡</view>
+        <view class="btn-primary result-btn" bindtap="onResultRestart">再来一轮</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 自定义词书选择弹窗 -->
+  <view class="picker-mask" wx:if="{{showBookPicker}}" bindtap="closeBookPicker"></view>
+  <view class="picker-panel" wx:if="{{showBookPicker}}">
+    <view class="picker-header">
+      <view class="picker-title">选择词书</view>
+      <view class="picker-close" bindtap="closeBookPicker">✕</view>
+    </view>
+    <scroll-view scroll-y class="picker-list">
+      <view
+        class="picker-item {{currentBookId === item.id ? 'active' : ''}}"
+        wx:for="{{pickerBooks}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        data-name="{{item.name}}"
+        bindtap="onSelectBook"
+      >
+        <view class="picker-item-name">{{item.name}}</view>
+        <view class="picker-item-check" wx:if="{{currentBookId === item.id}}">✓</view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

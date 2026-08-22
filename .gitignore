@@ -1,0 +1,11 @@
+node_modules/
+miniprogram_npm/
+.DS_Store
+*.log
+project.private.config.json
+
+# 大文件
+ecdict-sqlite.zip
+ecdict.csv
+ecdict.db
+ECDICT/

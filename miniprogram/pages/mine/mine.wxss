@@ -1,0 +1,288 @@
+/* pages/mine/mine.wxss */
+.container {
+  padding-bottom: 60rpx;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  padding: 60rpx 40rpx 40rpx;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: #E3E9F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-right: 30rpx;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-placeholder {
+  font-size: 60rpx;
+}
+
+.nickname {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1F2430;
+}
+
+.sub-text {
+  font-size: 26rpx;
+  color: #8A8F99;
+  margin-top: 8rpx;
+}
+
+.login-link {
+  color: #4A90D9;
+}
+
+.stats-card {
+  display: flex;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  margin: 20rpx 24rpx;
+  padding: 30rpx 0;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.stat-block {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-divider {
+  width: 1rpx;
+  background: #EEF1F6;
+  margin: 8rpx 0;
+}
+
+.stat-value {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #4A90D9;
+}
+
+.stat-label {
+  font-size: 22rpx;
+  color: #8A8F99;
+  margin-top: 8rpx;
+}
+
+.checkin-btn {
+  background: #4A90D9;
+  color: #FFFFFF;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  padding: 22rpx 0;
+  text-align: center;
+  margin: 40rpx 24rpx 10rpx;
+  box-shadow: 0 6rpx 20rpx rgba(74, 144, 217, 0.3);
+}
+
+.checkin-btn.checked {
+  background: #34A853;
+  box-shadow: 0 6rpx 20rpx rgba(52, 168, 83, 0.3);
+}
+
+.checkin-btn:active {
+  opacity: 0.85;
+}
+
+.badge-section {
+  margin-top: 30rpx;
+  padding: 0 24rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1F2430;
+  padding: 20rpx 10rpx;
+}
+
+.badge-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.badge-item {
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 30rpx 20rpx;
+  width: calc(50% - 10rpx);
+  text-align: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.badge-item.locked {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.badge-icon {
+  font-size: 56rpx;
+}
+
+.badge-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #5A6072;
+  margin-top: 12rpx;
+}
+
+.badge-desc {
+  font-size: 22rpx;
+  color: #8A8F99;
+  margin-top: 6rpx;
+}
+
+.other-section {
+  margin-top: 30rpx;
+  padding: 0 24rpx;
+}
+
+/* ─── 热力图 ─── */
+.heatmap-section {
+  margin: 20rpx 24rpx;
+  padding: 30rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.heatmap-sub {
+  font-size: 24rpx;
+  color: #8A8F99;
+  margin-bottom: 24rpx;
+  padding: 0 10rpx;
+}
+
+.heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  padding: 0 10rpx;
+}
+
+.heatmap-cell {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 10rpx;
+  position: relative;
+}
+
+.heatmap-cell.level-0 {
+  background: #EEF1F6;
+}
+
+.heatmap-cell.level-1 {
+  background: #C8DEF5;
+}
+
+.heatmap-cell.level-2 {
+  background: #79AEE8;
+}
+
+.heatmap-cell.level-3 {
+  background: #4A90D9;
+}
+
+.heatmap-cell.level-4 {
+  background: #2E6BBA;
+}
+
+/* tooltip 长按提示 */
+.heatmap-tip {
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #FFFFFF;
+  font-size: 20rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.heatmap-cell:active .heatmap-tip {
+  opacity: 1;
+}
+
+/* 图例 */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6rpx;
+  margin-top: 20rpx;
+  padding: 0 10rpx;
+}
+
+.legend-cell {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 6rpx;
+}
+
+.legend-label {
+  font-size: 22rpx;
+  color: #8A8F99;
+  margin: 0 4rpx;
+}
+
+.other-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 30rpx 28rpx;
+  font-size: 30rpx;
+  color: #1F2430;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+  margin-bottom: 16rpx;
+}
+
+.other-item-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.other-icon {
+  font-size: 34rpx;
+}
+
+.reminder-status {
+  font-size: 26rpx;
+  color: #4A90D9;
+  margin-right: 8rpx;
+}
+
+.other-item .arrow {
+  font-size: 36rpx;
+  color: #C0C6D0;
+  font-weight: 300;
+}
+
+.footer-text {
+  text-align: center;
+  font-size: 24rpx;
+  color: #B0B6C0;
+  margin-top: 50rpx;
+}

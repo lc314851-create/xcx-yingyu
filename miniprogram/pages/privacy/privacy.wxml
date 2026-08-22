@@ -1,0 +1,79 @@
+<!-- pages/privacy/privacy.wxml -->
+<view class="container">
+  <view class="card">
+    <view class="title">隐私保护声明</view>
+    <view class="update-date">更新日期：2026年8月17日</view>
+
+    <view class="section">
+      <view class="section-title">一、引言</view>
+      <view class="section-text">
+        「英语补词达人」（以下简称"本小程序"）是一款免费的英语学习工具，致力于帮助用户背单词和记录学习进度。我们非常重视您的隐私保护。本声明旨在向您说明我们如何收集、使用和保护您的信息。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">二、我们收集的信息</view>
+      <view class="section-text">为了提供基本服务，我们可能收集以下信息：</view>
+      <view class="list-item">1. 微信授权信息：用于识别用户身份（openid），以便保存和同步您的学习进度。我们不获取您的微信号、密码等敏感信息。</view>
+      <view class="list-item">2. 学习数据：您在背单词、打卡过程中产生的学习记录（如已学单词数、连续打卡天数等）。</view>
+      <view class="list-item">3. 设备信息：为保证服务正常运行，微信平台会提供必要的设备环境信息。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">三、信息的使用</view>
+      <view class="section-text">我们收集的信息仅用于以下目的：</view>
+      <view class="list-item">• 提供背单词、学习进度统计和打卡功能；</view>
+      <view class="list-item">• 保存和恢复您的学习记录，使您更换设备后仍可继续学习；</view>
+      <view class="list-item">• 改善小程序功能和用户体验。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">四、信息的存储</view>
+      <view class="section-text">
+        您的学习数据通过微信云开发存储，数据保存在微信提供的安全云环境中。部分临时数据可能保存在您的手机本地存储中。我们不会将您的数据传输至任何第三方服务器。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">五、信息共享与披露</view>
+      <view class="section-text">
+        本小程序为免费学习工具，不涉及任何商业变现。我们不会向任何第三方出售、共享或披露您的个人信息，除非法律法规要求或微信平台规则另有规定。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">六、未成年人保护</view>
+      <view class="section-text">
+        本小程序面向学生群体（含初中、高中及大学生）。如您为未成年人，请在监护人指导下使用本小程序并阅读本声明。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">七、信息安全</view>
+      <view class="section-text">
+        我们采取合理的安全措施保护您的信息。但请注意，互联网传输不存在绝对安全的方式，我们无法保证信息的绝对安全性。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">八、您的权利</view>
+      <view class="section-text">
+        您有权知晓我们收集了您的哪些信息。如您希望删除自己的学习数据，可清除小程序本地存储数据，或通过微信平台的反馈渠道联系我们。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">九、声明更新</view>
+      <view class="section-text">
+        本声明可能不定期更新。更新后的声明将在本页面发布并更新日期。继续使用本小程序即视为您同意更新后的声明。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">十、联系我们</view>
+      <view class="section-text">
+        如您对本声明有任何疑问，可通过微信小程序平台的"投诉与反馈"功能与我们联系。
+      </view>
+    </view>
+  </view>
+</view>
