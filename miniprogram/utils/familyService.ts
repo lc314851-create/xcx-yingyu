@@ -88,7 +88,7 @@ export async function randomFamilyWord(bookId?: string): Promise<string | null> 
   for (const [, members] of idx.rootMap) {
     if (members.length >= 3) {
       for (const m of members) {
-        if ((m.star || 0) >= 2) candidates.push(m.word);
+        if (m.isHighFreq) candidates.push(m.word);
       }
     }
   }
