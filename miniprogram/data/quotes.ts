@@ -181,3 +181,138 @@ export function getDailyQuote(): Quote {
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
   return quotes[dayOfYear % quotes.length];
 }
+
+// ─── 填空练习数据 ──────────────────────────────────────────
+export interface FillBlankItem {
+  en: string;          // 英文句子（含 ___ 占位符）
+  zh: string;          // 中文翻译
+  author?: string;     // 作者
+  answer: string;      // 正确答案
+  options: string[];   // 四选一选项（含正确答案，打乱后使用）
+  authorInfo?: string; // 作者背景
+}
+
+export const fillBlankData: FillBlankItem[] = [
+  {
+    en: 'Practice makes ___.',
+    zh: '熟能生巧。',
+    answer: 'perfect',
+    options: ['perfect', 'better', 'easy', 'fast'],
+    authorInfo: '英语谚语，强调反复练习的重要性'
+  },
+  {
+    en: 'Where there is a ___, there is a way.',
+    zh: '有志者事竟成。',
+    answer: 'will',
+    options: ['will', 'hope', 'dream', 'wish'],
+    authorInfo: '英语谚语，意为有决心就有办法'
+  },
+  {
+    en: 'Actions speak louder than ___.',
+    zh: '行动胜于言辞。',
+    answer: 'words',
+    options: ['words', 'voices', 'sounds', 'talks'],
+    authorInfo: '英语谚语，强调行动比言语更有力'
+  },
+  {
+    en: 'Knowledge is ___.',
+    zh: '知识就是力量。',
+    author: 'Francis Bacon',
+    answer: 'power',
+    options: ['power', 'wealth', 'money', 'fame'],
+    authorInfo: '弗朗西斯·培根（1561-1626），英国哲学家、科学家'
+  },
+  {
+    en: 'Failure is the ___ of success.',
+    zh: '失败是成功之母。',
+    answer: 'mother',
+    options: ['mother', 'father', 'origin', 'start'],
+    authorInfo: '英语谚语，意为从失败中汲取教训才能成功'
+  },
+  {
+    en: 'Rome was not built in a ___.',
+    zh: '罗马不是一天建成的。',
+    answer: 'day',
+    options: ['day', 'year', 'month', 'week'],
+    authorInfo: '英语谚语，意为伟大成就需要时间积累'
+  },
+  {
+    en: 'The early bird catches the ___.',
+    zh: '早起的鸟儿有虫吃。',
+    answer: 'worm',
+    options: ['worm', 'food', 'seed', 'fly'],
+    authorInfo: '英语谚语，强调早行动有优势'
+  },
+  {
+    en: 'Stay hungry, stay ___.',
+    zh: '求知若饥，虚心若愚。',
+    author: 'Steve Jobs',
+    answer: 'foolish',
+    options: ['foolish', 'curious', 'brave', 'calm'],
+    authorInfo: '史蒂夫·乔布斯（1955-2011），苹果公司创始人，2005年斯坦福毕业典礼演讲'
+  },
+  {
+    en: 'Genius is one percent inspiration and ninety-nine percent ___.',
+    zh: '天才是百分之一的灵感加上百分之九十九的汗水。',
+    author: 'Thomas Edison',
+    answer: 'perspiration',
+    options: ['perspiration', 'practice', 'patience', 'effort'],
+    authorInfo: '托马斯·爱迪生（1847-1931），美国发明家，拥有千余项专利'
+  },
+  {
+    en: 'The future belongs to those who believe in the beauty of their ___.',
+    zh: '未来属于那些相信梦想之美的人。',
+    author: 'Eleanor Roosevelt',
+    answer: 'dreams',
+    options: ['dreams', 'hopes', 'plans', 'minds'],
+    authorInfo: '埃莉诺·罗斯福（1884-1962），美国前第一夫人、人道主义者'
+  },
+  {
+    en: 'Education is the most powerful ___ which you can use to change the world.',
+    zh: '教育是你能用来改变世界的最有力的武器。',
+    author: 'Nelson Mandela',
+    answer: 'weapon',
+    options: ['weapon', 'tool', 'method', 'skill'],
+    authorInfo: '纳尔逊·曼德拉（1918-2013），南非前总统、反种族隔离运动领袖'
+  },
+  {
+    en: 'Quality is not an act, it is a ___.',
+    zh: '品质不是一种行为，而是一种习惯。',
+    author: 'Aristotle',
+    answer: 'habit',
+    options: ['habit', 'skill', 'gift', 'rule'],
+    authorInfo: '亚里士多德（前384-前322），古希腊哲学家'
+  },
+  {
+    en: 'No pain, no ___.',
+    zh: '没有付出就没有收获。',
+    answer: 'gain',
+    options: ['gain', 'result', 'prize', 'award'],
+    authorInfo: '英语谚语，意为不劳无获'
+  },
+  {
+    en: 'A journey of a thousand miles begins with a single ___.',
+    zh: '千里之行，始于足下。',
+    answer: 'step',
+    options: ['step', 'move', 'walk', 'start'],
+    authorInfo: '出自《道德经》，英语常用谚语'
+  },
+  {
+    en: 'Better late than ___.',
+    zh: '迟做总比不做好。',
+    answer: 'never',
+    options: ['never', 'ever', 'always', 'none'],
+    authorInfo: '英语谚语，强调及时行动的重要性'
+  }
+];
+
+// 随机获取一条填空练习（避开上一条的 index）
+export function getRandomFillBlank(lastIndex: number = -1): { item: FillBlankItem; index: number } {
+  let index = Math.floor(Math.random() * fillBlankData.length);
+  if (fillBlankData.length > 1) {
+    while (index === lastIndex) {
+      index = Math.floor(Math.random() * fillBlankData.length);
+    }
+  }
+  return { item: fillBlankData[index], index };
+}

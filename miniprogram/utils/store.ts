@@ -452,3 +452,235 @@ export function requestReminderSubscribe(): Promise<boolean> {
     });
   });
 }
+
+// ─── 挑战模式 · 关卡系统 ──────────────────────────────────────
+// 每个词书对应一个「区域」，每区域 10 关，难度递增
+const CHALLENGE_KEY = 'bc_challenge_progress';
+const CHALLENGE_BADGES_KEY = 'bc_challenge_badges';
+
+// 关卡总数（每个词书区域 10 关）
+export const LEVELS_PER_AREA = 10;
+// 每关题目数
+export const QUESTIONS_PER_LEVEL = 10;
+// 通关正确率阈值（%）
+export const PASS_THRESHOLD = 60;
+
+// 区域元数据（词书 → 区域名称 + 难度标签）
+const AREA_META: Record<string, { name: string; icon: string }> = {
+  junior:   { name: '基础营地', icon: '🏕️' },
+  senior:   { name: '进阶山岭', icon: '⛰️' },
+  cet4:     { name: '四级平原', icon: '🌄' },
+  cet6:     { name: '六级高原', icon: '🏔️' },
+  postgrad:  { name: '考研巅峰', icon: '🌋' },
+  ielts:    { name: '雅思海湾', icon: '🌊' },
+  toefl:    { name: '托福密林', icon: '🌳' },
+  gre:      { name: 'GRE 深渊', icon: '🌌' }
+};
+
+export function getAreaMeta(bookId: string): { name: string; icon: string } {
+  return AREA_META[bookId] || { name: '未知区域', icon: '❓' };
+}
+
+export function getAllAreas(): { bookId: string; name: string; icon: string }[] {
+  return Object.entries(AREA_META).map(([bookId, meta]) => ({
+    bookId,
+    name: meta.name,
+    icon: meta.icon
+  }));
+}
+
+// 挑战进度结构
+export interface ChallengeProgress {
+  // key: bookId, value: { cleared: number, stars: Record<level, stars> }
+  [bookId: string]: {
+    cleared: number;  // 已通关数（0~10）
+    stars: Record<number, number>; // { 1: 3, 2: 2, ... } 每关星数
+  };
+}
+
+export function getChallengeProgress(): ChallengeProgress {
+  return wx.getStorageSync(CHALLENGE_KEY) || {};
+}
+
+export function saveChallengeProgress(data: ChallengeProgress): void {
+  wx.setStorageSync(CHALLENGE_KEY, data);
+}
+
+// 获取某区域已通关数
+export function getClearedLevels(bookId: string): number {
+  const all = getChallengeProgress();
+  return all[bookId]?.cleared || 0;
+}
+
+// 获取某关星数（0~3）
+export function getLevelStars(bookId: string, level: number): number {
+  const all = getChallengeProgress();
+  return all[bookId]?.stars?.[level] || 0;
+}
+
+// 记录某关通关结果，返回是否解锁了新关卡
+export function recordLevelResult(
+  bookId: string,
+  level: number,
+  correctCount: number,
+  totalQuestions: number
+): { stars: number; newUnlock: boolean; isNewBadge: boolean } {
+  const all = getChallengeProgress();
+  if (!all[bookId]) {
+    all[bookId] = { cleared: 0, stars: {} };
+  }
+
+  // 计算星数：正确率 100%→3星, >=80%→2星, >=60%→1星, <60%→0星（不通关）
+  const rate = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
+  let stars = 0;
+  if (rate >= 100) stars = 3;
+  else if (rate >= 80) stars = 2;
+  else if (rate >= PASS_THRESHOLD) stars = 1;
+
+  const prevStars = all[bookId].stars[level] || 0;
+  all[bookId].stars[level] = Math.max(prevStars, stars);
+
+  let newUnlock = false;
+  if (stars > 0 && level > all[bookId].cleared) {
+    // 通关了新关卡
+    all[bookId].cleared = level;
+    newUnlock = true;
+  } else if (stars > 0 && level === all[bookId].cleared + 1 && level <= LEVELS_PER_AREA) {
+    all[bookId].cleared = level;
+    newUnlock = true;
+  }
+
+  // 确保 cleared 不超过 LEVELS_PER_AREA
+  if (all[bookId].cleared > LEVELS_PER_AREA) {
+    all[bookId].cleared = LEVELS_PER_AREA;
+  }
+
+  saveChallengeProgress(all);
+
+  // 检查是否解锁新徽章
+  const isNewBadge = checkAndUnlockBadges(all);
+
+  return { stars, newUnlock, isNewBadge };
+}
+
+// 获取某区域总星数
+export function getAreaStars(bookId: string): number {
+  const all = getChallengeProgress();
+  if (!all[bookId]?.stars) return 0;
+  return Object.values(all[bookId].stars).reduce((sum, s) => sum + s, 0);
+}
+
+// ─── 挑战模式 · 徽章系统 ───────────────────────────────────────
+export interface ChallengeBadge {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  unlocked: boolean;
+}
+
+// 徽章定义
+const BADGE_DEFS: Omit<ChallengeBadge, 'unlocked'>[] = [
+  { id: 'first_clear',  name: '初露锋芒', icon: '🎖️', desc: '首次通关一个关卡' },
+  { id: 'area_clear',   name: '区域征服', icon: '🗺️', desc: '通关一个区域的全部 10 关' },
+  { id: 'triple_star',   name: '三星达人', icon: '⭐', desc: '获得 3 颗星（满分通关）' },
+  { id: 'star_15',       name: '群星闪耀', icon: '🌟', desc: '累计获得 15 颗星' },
+  { id: 'star_30',       name: '星光璀璨', icon: '🌠', desc: '累计获得 30 颗星' },
+  { id: 'multi_area',    name: '多面手',   icon: '🎯', desc: '通关 3 个不同区域的首关' },
+  { id: 'all_clear',     name: '全能学霸', icon: '👑', desc: '通关所有区域的全部关卡' }
+];
+
+export function getChallengeBadges(): ChallengeBadge[] {
+  const unlocked = wx.getStorageSync(CHALLENGE_BADGES_KEY) || {} as Record<string, boolean>;
+  return BADGE_DEFS.map(b => ({ ...b, unlocked: !!unlocked[b.id] }));
+}
+
+// 检查并解锁徽章，返回是否解锁了新徽章
+function checkAndUnlockBadges(progress: ChallengeProgress): boolean {
+  const unlocked = wx.getStorageSync(CHALLENGE_BADGES_KEY) || {} as Record<string, boolean>;
+  let changed = false;
+
+  // 计算统计数据
+  let totalStars = 0;
+  let clearedAreas = 0;
+  let firstClearAreas = 0;
+  let hasTripleStar = false;
+  let allCleared = true;
+
+  for (const bookId of Object.keys(AREA_META)) {
+    const area = progress[bookId];
+    if (!area) {
+      allCleared = false;
+      continue;
+    }
+    const areaStars = Object.values(area.stars || {}).reduce((sum, s) => sum + s, 0);
+    totalStars += areaStars;
+
+    if (area.cleared >= LEVELS_PER_AREA) clearedAreas++;
+    if (area.cleared >= 1) firstClearAreas++;
+
+    // 检查是否有三星
+    for (const s of Object.values(area.stars || {})) {
+      if (s >= 3) { hasTripleStar = true; break; }
+    }
+
+    if (area.cleared < LEVELS_PER_AREA) allCleared = false;
+  }
+
+  // 检查每个徽章
+  const checks: Record<string, boolean> = {
+    first_clear: firstClearAreas >= 1,
+    area_clear: clearedAreas >= 1,
+    triple_star: hasTripleStar,
+    star_15: totalStars >= 15,
+    star_30: totalStars >= 30,
+    multi_area: firstClearAreas >= 3,
+    all_clear: allCleared && clearedAreas >= Object.keys(AREA_META).length
+  };
+
+  for (const badge of BADGE_DEFS) {
+    if (checks[badge.id] && !unlocked[badge.id]) {
+      unlocked[badge.id] = true;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    wx.setStorageSync(CHALLENGE_BADGES_KEY, unlocked);
+  }
+  return changed;
+}
+
+// 获取最近解锁的新徽章（用于通关结算页展示）
+export function getNewlyUnlockedBadges(): ChallengeBadge[] {
+  return getChallengeBadges().filter(b => b.unlocked);
+}
+
+// 同步挑战进度到云端
+export function syncChallengeToCloud(): void {
+  const app = getApp() as any;
+  const openid = app.globalData.openid;
+  if (!openid || !wx.cloud) return;
+
+  const db = wx.cloud.database();
+  const progress = getChallengeProgress();
+  const badges = wx.getStorageSync(CHALLENGE_BADGES_KEY) || {};
+
+  db.collection('users')
+    .where({ _openid: openid })
+    .get()
+    .then((res: any) => {
+      if (res.data && res.data.length > 0) {
+        db.collection('users')
+          .doc(res.data[0]._id)
+          .update({
+            data: { challenge: { progress, badges }, updateTime: db.serverDate() }
+          });
+      } else {
+        db.collection('users').add({
+          data: { challenge: { progress, badges }, createTime: db.serverDate() }
+        });
+      }
+    })
+    .catch(() => {});
+}

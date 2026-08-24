@@ -64,7 +64,14 @@ for (const book of bookFiles) {
     phonetic: w.phonetic || '',
     meaning: w.meaning || '',
     example: w.example || '',
-    isHighFreq: w.isHighFreq || false
+    isHighFreq: w.isHighFreq || false,
+    // ECDICT 扩展字段
+    root: w.root || '',
+    synonyms: w.synonyms || '',
+    antonyms: w.antonyms || '',
+    relatedWords: w.relatedWords || '',
+    frequency: w.frequency || 0,
+    star: w.star || 0
   }));
 
   const importFile = path.join(WORDBOOKS_DIR, `${book.id}_import.jsonl`);

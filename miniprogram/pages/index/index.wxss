@@ -3,62 +3,166 @@
   padding-bottom: 40rpx;
 }
 
+/* ═══ Hero 区域 ═══ */
 .hero {
-  background: linear-gradient(135deg, #4A90D9 0%, #6FB1F0 100%);
-  padding: 60rpx 40rpx 70rpx;
+  position: relative;
+  background: linear-gradient(135deg, #4A90D9 0%, #6FB1F0 60%, #7BBFF0 100%);
+  padding: 56rpx 40rpx 80rpx;
   color: #FFFFFF;
+  overflow: hidden;
 }
 
-.hero-title {
-  font-size: 42rpx;
-  font-weight: 600;
+.hero-bg-deco {
+  position: absolute;
+  top: -60rpx;
+  right: -40rpx;
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.hero-bg-deco::after {
+  content: "";
+  position: absolute;
+  top: 40rpx;
+  left: 60rpx;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.hero-greeting {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
 }
 
 .hero-search {
-  font-size: 40rpx;
-  padding: 8rpx 16rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s var(--ease-out), background 0.15s var(--ease-out);
+}
+
+.hero-search:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.hero-search-icon {
+  width: 28rpx;
+  height: 28rpx;
+  border: 4rpx solid #FFFFFF;
+  border-radius: 50%;
+  position: relative;
+}
+
+.hero-search-icon::after {
+  content: "";
+  position: absolute;
+  top: 24rpx;
+  left: 20rpx;
+  width: 12rpx;
+  height: 4rpx;
+  background: #FFFFFF;
+  border-radius: 2rpx;
+  transform: rotate(45deg);
+}
+
+.hero-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 1rpx;
 }
 
 .hero-sub {
   font-size: 26rpx;
-  opacity: 0.85;
+  opacity: 0.8;
   margin-top: 12rpx;
+  font-weight: 400;
 }
 
+/* ═══ 统计卡片 ═══ */
 .stats-row {
   display: flex;
-  justify-content: space-around;
-  margin-top: -50rpx;
+  justify-content: space-between;
+  margin-top: -52rpx;
   padding: 0 24rpx;
+  position: relative;
+  z-index: 2;
 }
 
 .stat-card {
   background: #FFFFFF;
   border-radius: 20rpx;
-  padding: 30rpx 10rpx;
-  width: 30%;
+  padding: 28rpx 12rpx;
+  width: 31%;
   text-align: center;
-  box-shadow: 0 6rpx 20rpx rgba(74, 144, 217, 0.12);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  position: relative;
+  transition: transform 0.2s var(--ease-out);
+}
+
+.stat-card:active {
+  transform: scale(0.96);
+}
+
+.stat-card-accent {
+  border-top: 6rpx solid #4A90D9;
 }
 
 .stat-num {
   font-size: 48rpx;
-  font-weight: 700;
+  font-weight: 800;
+  color: #1F2430;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card-accent .stat-num {
   color: #4A90D9;
 }
 
 .stat-label {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #8A8F99;
-  margin-top: 8rpx;
+  margin-top: 10rpx;
+  font-weight: 500;
 }
 
+.stat-flame {
+  position: absolute;
+  top: 10rpx;
+  right: 16rpx;
+  width: 16rpx;
+  height: 16rpx;
+  background: #F5A623;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 8rpx rgba(245, 166, 35, 0.4);
+}
+
+/* ═══ 当前词书卡片 ═══ */
 .book-card {
   display: flex;
   align-items: center;
@@ -67,11 +171,12 @@
 
 .book-info {
   flex: 1;
+  min-width: 0;
 }
 
 .book-name {
   font-size: 34rpx;
-  font-weight: 600;
+  font-weight: 700;
   color: #1F2430;
 }
 
@@ -79,64 +184,214 @@
   font-size: 24rpx;
   color: #8A8F99;
   margin-top: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  flex-wrap: wrap;
+}
+
+.book-progress-learned {
+  color: #4A90D9;
+  font-weight: 600;
+}
+
+.book-progress-sep {
+  color: #D0D5DD;
+}
+
+.book-progress-bar {
+  margin-top: 14rpx;
+  height: 8rpx;
+  background: #EEF1F6;
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.book-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4A90D9, #6FB1F0);
+  border-radius: 4rpx;
+  transition: width 0.4s var(--ease-out);
+}
+
+.book-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10rpx;
+  margin-left: 20rpx;
 }
 
 .book-due {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #F5A623;
   background: #FFF6E5;
-  border-radius: 16rpx;
-  padding: 8rpx 16rpx;
-  margin-right: 16rpx;
+  border-radius: 12rpx;
+  padding: 6rpx 14rpx;
+  font-weight: 600;
 }
 
 .book-arrow {
   font-size: 40rpx;
   color: #C0C6D0;
   font-weight: 300;
+  line-height: 1;
 }
 
+/* ═══ 操作入口 ═══ */
 .actions {
-  padding: 40rpx 24rpx 10rpx;
+  padding: 36rpx 24rpx 10rpx;
 }
 
 .action-btn {
-  margin-bottom: 24rpx;
+  margin-bottom: 28rpx;
 }
 
-.tip-card {
-  margin-top: 20rpx;
+.actions-grid {
+  display: flex;
+  gap: 16rpx;
 }
 
-.tip-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1F2430;
-  margin-bottom: 12rpx;
+.action-tile {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 24rpx 12rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
 }
 
-.tip-divider {
-  height: 1rpx;
-  background: #EEF1F6;
-  margin: 24rpx 0;
+.action-tile:active {
+  transform: scale(0.95) translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
 }
 
-.tip-text {
-  font-size: 26rpx;
+.action-tile-icon {
+  width: 56rpx;
+  height: 56rpx;
+  margin: 0 auto 12rpx;
+  border-radius: 16rpx;
+  position: relative;
+}
+
+.action-tile-icon-challenge {
+  background: linear-gradient(135deg, #FFF8E1, #FFE082);
+}
+
+.action-tile-icon-challenge::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28rpx;
+  height: 28rpx;
+  background: #F5A623;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.action-tile-icon-fillblank {
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+}
+
+.action-tile-icon-fillblank::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24rpx;
+  height: 24rpx;
+  border: 4rpx solid #34A853;
+  border-radius: 4rpx;
+}
+
+.action-tile-icon-fillblank::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8rpx;
+  height: 8rpx;
+  background: #34A853;
+  border-radius: 50%;
+}
+
+.action-tile-icon-spelling {
+  background: linear-gradient(135deg, #EAF2FC, #D4E5F7);
+}
+
+.action-tile-icon-spelling::before {
+  content: "Aa";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #4A90D9;
+  line-height: 1;
+}
+
+.action-tile-icon-leaderboard {
+  background: linear-gradient(135deg, #F3E5F5, #E1BEE7);
+}
+
+.action-tile-icon-leaderboard::before {
+  content: "";
+  position: absolute;
+  bottom: 14rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32rpx;
+  height: 24rpx;
+  display: flex;
+  background: #9C27B0;
+  border-radius: 4rpx 4rpx 0 0;
+  box-shadow: -18rpx 0 0 -4rpx #BA68C8, 18rpx 0 0 -8rpx #CE93D8;
+}
+
+.action-tile-label {
+  font-size: 24rpx;
   color: #5A6072;
-  line-height: 1.6;
+  font-weight: 600;
 }
 
-/* ─── 今日金句 ─── */
+/* ═══ 今日金句 ═══ */
 .quote-card {
   background: linear-gradient(135deg, #FAFCFE 0%, #F0F6FC 100%);
   border: 1rpx solid #D4E5F7;
 }
 
+.quote-tag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
 .quote-tag {
+  font-size: 22rpx;
+  color: #4A90D9;
+  background: #EAF2FC;
+  border-radius: 8rpx;
+  padding: 6rpx 16rpx;
+  font-weight: 600;
+}
+
+.quote-fill-btn {
   font-size: 24rpx;
   color: #4A90D9;
-  margin-bottom: 16rpx;
+  padding: 8rpx 18rpx;
+  border: 1rpx solid #4A90D9;
+  border-radius: 20rpx;
+  transition: transform 0.15s var(--ease-out);
+}
+
+.quote-fill-btn:active {
+  transform: scale(0.94);
 }
 
 .quote-en {
@@ -161,18 +416,24 @@
 }
 
 .quote-words {
-  margin-top: 16rpx;
-  padding-top: 16rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
   border-top: 1rpx solid #E0E8F0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8rpx;
 }
 
 .quote-words-label {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #8A8F99;
+  display: block;
+  margin-bottom: 12rpx;
+  font-weight: 600;
+}
+
+.quote-words-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10rpx;
 }
 
 .quote-word-item {
@@ -180,18 +441,53 @@
   color: #4A90D9;
   background: #E8F1FB;
   border-radius: 8rpx;
-  padding: 6rpx 16rpx;
+  padding: 8rpx 18rpx;
+  font-weight: 500;
 }
 
-/* 词书选择弹窗 */
+/* ═══ 学习建议 ═══ */
+.tip-card {
+  margin-top: 20rpx;
+}
+
+.tip-section {
+  /* 无额外样式，仅用于语义化 */
+}
+
+.tip-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1F2430;
+  margin-bottom: 12rpx;
+}
+
+.tip-divider {
+  height: 1rpx;
+  background: #EEF1F6;
+  margin: 24rpx 0;
+}
+
+.tip-text {
+  font-size: 26rpx;
+  color: #5A6072;
+  line-height: 1.7;
+}
+
+/* ═══ 词书选择弹窗 ═══ */
 .picker-mask {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .picker-panel {
@@ -200,12 +496,12 @@
   right: 0;
   bottom: 0;
   background: #F6F8FC;
-  border-radius: 24rpx 24rpx 0 0;
+  border-radius: 28rpx 28rpx 0 0;
   z-index: 101;
   max-height: 70vh;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.25s ease;
+  animation: slideUp 0.3s var(--ease-out);
 }
 
 @keyframes slideUp {
@@ -217,22 +513,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28rpx 32rpx;
+  padding: 30rpx 32rpx;
   background: #FFFFFF;
-  border-radius: 24rpx 24rpx 0 0;
+  border-radius: 28rpx 28rpx 0 0;
   border-bottom: 1rpx solid #EEF1F6;
 }
 
 .picker-title {
   font-size: 32rpx;
-  font-weight: 600;
+  font-weight: 700;
   color: #1F2430;
 }
 
 .picker-close {
   font-size: 36rpx;
   color: #B0B6C0;
-  padding: 4rpx 12rpx;
+  padding: 8rpx 16rpx;
 }
 
 .picker-list {
@@ -244,9 +540,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 30rpx 32rpx;
+  padding: 32rpx;
   background: #FFFFFF;
   border-bottom: 1rpx solid #F0F2F5;
+  transition: background 0.15s ease;
+}
+
+.picker-item:active {
+  background: #F8FAFF;
 }
 
 .picker-item.active {
@@ -260,7 +561,7 @@
 
 .picker-item.active .picker-item-name {
   color: #4A90D9;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .picker-item-check {

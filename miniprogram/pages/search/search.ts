@@ -12,6 +12,11 @@ interface SearchResult {
   bookNames: string[];
   learned: boolean;
   status: string;
+  root?: string;
+  synonyms?: string;
+  antonyms?: string;
+  relatedWords?: string;
+  star?: number;
 }
 
 Page({
@@ -64,7 +69,12 @@ Page({
             example: w.example,
             bookNames: [book.name],
             learned,
-            status
+            status,
+            root: w.root || '',
+            synonyms: w.synonyms || '',
+            antonyms: w.antonyms || '',
+            relatedWords: w.relatedWords || '',
+            star: w.star || 0
           });
         } else if (seen.has(w.word) && results.length > 0) {
           // 如果词已找到，补充它所属的其他词书

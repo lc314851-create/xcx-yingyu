@@ -1,0 +1,224 @@
+<!-- pages/challenge/challenge.wxml -->
+<view class="container">
+  <!-- ═════════ 关卡列表页 ═════════ -->
+  <block wx:if="{{pageState === 'list'}}">
+    <!-- 区域信息 -->
+    <view class="area-header">
+      <view class="area-icon">{{areaIcon}}</view>
+      <view class="area-info">
+        <view class="area-name">{{areaName}}</view>
+        <view class="area-stats">已通关 {{cleared}}/{{10}} · ⭐ {{areaStars}}</view>
+      </view>
+      <view class="area-switch" bindtap="changeArea">切换</view>
+    </view>
+
+    <!-- 徽章预览 -->
+    <view class="badges-row">
+      <view class="badges-label">🏅 我的徽章</view>
+      <scroll-view scroll-x class="badges-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="badges-list">
+          <block wx:for="{{[]}}" wx:key="id"> placeholder</block>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 关卡列表 -->
+    <view class="levels-grid">
+      <view
+        class="level-card {{item.locked ? 'locked' : ''}}"
+        wx:for="{{levels}}"
+        wx:key="level"
+        data-level="{{item.level}}"
+        bindtap="onLevelTap"
+      >
+        <view class="level-num">{{item.level}}</view>
+        <view class="level-stars" wx:if="{{item.stars > 0}}">
+          <text class="star {{item.stars >= 1 ? 'active' : ''}}">★</text>
+          <text class="star {{item.stars >= 2 ? 'active' : ''}}">★</text>
+          <text class="star {{item.stars >= 3 ? 'active' : ''}}">★</text>
+        </view>
+        <view class="level-stars" wx:else>
+          <text class="star-dim">☆☆☆</text>
+        </view>
+        <view class="level-lock" wx:if="{{item.locked}}">🔒</view>
+      </view>
+    </view>
+
+    <!-- 规则说明 -->
+    <view class="card rule-card">
+      <view class="rule-title">📋 挑战规则</view>
+      <view class="rule-item">• 每关 10 道题，答对 6 题以上即可通关</view>
+      <view class="rule-item">• 全对 3 星，80% 以上 2 星，60% 以上 1 星</view>
+      <view class="rule-item">• 每 5 题切换题型：看词选义 → 看义拼词 → 看义选词</view>
+      <view class="rule-item">• 关卡难度递增，通关解锁下一关</view>
+    </view>
+  </block>
+
+  <!-- ═════════ 答题页 ═════════ -->
+  <block wx:if="{{pageState === 'playing'}}">
+    <!-- 顶部进度条 + 关卡信息 -->
+    <view class="play-header">
+      <view class="play-back" bindtap="onBackToList">✕</view>
+      <view class="play-level">第 {{currentLevel}} 关</view>
+      <view class="play-progress-text">{{qIndex + 1}}/{{questions.length}}</view>
+    </view>
+
+    <view class="play-progress-bar">
+      <view class="play-progress-fill" style="width: {{progressPct}}%"></view>
+    </view>
+
+    <!-- 正确率/连击信息 -->
+    <view class="play-stats-row">
+      <view class="play-stat">✓ {{correctCount}}</view>
+      <view class="play-stat">✗ {{wrongCount}}</view>
+      <view class="play-stat combo-stat" wx:if="{{combo >= 2}}">🔥 {{combo}} 连</view>
+    </view>
+
+    <!-- 题型标签 -->
+    <view class="qtype-tag">
+      <text>{{qType === 'choice' ? '看词选义' : (qType === 'spell' ? '看义拼词' : '看义选词')}}</text>
+    </view>
+
+    <!-- ─── 看词选义（四选一） ─── -->
+    <block wx:if="{{qType === 'choice'}}">
+      <view class="q-word-card">
+        <view class="q-word">{{questions[qIndex].word}}</view>
+        <view class="q-phonetic" wx:if="{{questions[qIndex].phonetic}}">{{questions[qIndex].phonetic}}</view>
+        <view class="q-audio" catchtap="onPlayAudio">🔊</view>
+      </view>
+      <view class="choice-list">
+        <view
+          class="choice-item {{choiceSelected === index ? (choiceCorrect ? 'correct' : 'wrong') : ''}} {{choiceSelected !== -1 && choiceOptions[index].isCorrect ? 'correct' : ''}}"
+          wx:for="{{choiceOptions}}"
+          wx:key="index"
+          data-idx="{{index}}"
+          bindtap="onChoiceSelect"
+        >
+          <view class="choice-letter">{{['A','B','C','D'][index]}}</view>
+          <view class="choice-text">{{item.text}}</view>
+        </view>
+      </view>
+    </block>
+
+    <!-- ─── 看义拼词（拼写） ─── -->
+    <block wx:if="{{qType === 'spell'}}">
+      <view class="q-word-card">
+        <view class="spell-meaning">{{questions[qIndex].meaning}}</view>
+        <view class="spell-phonetic" wx:if="{{questions[qIndex].phonetic}}">{{questions[qIndex].phonetic}}</view>
+        <view class="spell-audio-row">
+          <view class="spell-audio-btn" catchtap="onPlayAudio">🔊 听发音</view>
+        </view>
+      </view>
+      <input
+        class="spell-input {{spellFeedback === 'correct' ? 'correct' : (spellFeedback === 'wrong' ? 'wrong' : '')}}"
+        type="text"
+        placeholder="输入单词..."
+        value="{{spellInput}}"
+        bindinput="onSpellInput"
+        bindconfirm="onSpellSubmit"
+        confirm-type="done"
+        adjust-position="{{true}}"
+      />
+      <view class="spell-feedback" wx:if="{{spellFeedback === 'correct'}}">✓ 正确！</view>
+      <view class="spell-feedback wrong-text" wx:if="{{spellFeedback === 'wrong'}}">✗ 答案：{{questions[qIndex].word}}</view>
+      <view class="spell-submit-btn {{spellFeedback !== 'none' ? 'disabled' : ''}}" bindtap="onSpellSubmit">提交</view>
+    </block>
+
+    <!-- ─── 看义选词（反向四选一） ─── -->
+    <block wx:if="{{qType === 'reverse'}}">
+      <view class="q-word-card">
+        <view class="q-meaning-large">{{questions[qIndex].meaning}}</view>
+        <view class="q-phonetic" wx:if="{{questions[qIndex].phonetic}}">{{questions[qIndex].phonetic}}</view>
+      </view>
+      <view class="choice-list">
+        <view
+          class="choice-item {{reverseSelected === index ? (reverseCorrect ? 'correct' : 'wrong') : ''}} {{reverseSelected !== -1 && reverseOptions[index].isCorrect ? 'correct' : ''}}"
+          wx:for="{{reverseOptions}}"
+          wx:key="index"
+          data-idx="{{index}}"
+          bindtap="onReverseSelect"
+        >
+          <view class="choice-letter">{{['A','B','C','D'][index]}}</view>
+          <view class="choice-text word-text">{{item.text}}</view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 连击鼓励特效 -->
+    <view class="combo-overlay" wx:if="{{showCombo}}">
+      <view class="combo-bounce">{{comboText}}</view>
+    </view>
+  </block>
+
+  <!-- ═════════ 通关结算页 ═════════ -->
+  <view class="result-overlay" wx:if="{{pageState === 'result'}}">
+    <view class="result-content">
+      <view class="result-title">{{resultIsPass ? '通关成功！' : '再接再厉'}}</view>
+
+      <!-- 星级 -->
+      <view class="result-stars-row">
+        <text class="result-star {{resultStars >= 1 ? 'active' : ''}}">★</text>
+        <text class="result-star {{resultStars >= 2 ? 'active' : ''}}">★</text>
+        <text class="result-star {{resultStars >= 3 ? 'active' : ''}}">★</text>
+      </view>
+
+      <!-- 正确率环 -->
+      <view class="result-ring-wrap">
+        <view class="result-ring" style="background: conic-gradient({{resultIsPass ? '#4A90D9' : '#F5A623'}} {{resultRate}}%, #E3E9F2 {{resultRate}}%);">
+          <view class="result-ring-inner">
+            <view class="result-rate">{{resultRate}}%</view>
+            <view class="result-rate-label">正确率</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 统计 -->
+      <view class="result-stats-row">
+        <view class="result-stat">
+          <view class="result-stat-num">{{resultCorrect}}</view>
+          <view class="result-stat-label">答对</view>
+        </view>
+        <view class="result-stat">
+          <view class="result-stat-num">{{resultTotal - resultCorrect}}</view>
+          <view class="result-stat-label">答错</view>
+        </view>
+        <view class="result-stat">
+          <view class="result-stat-num">{{maxCombo}}</view>
+          <view class="result-stat-label">最高连击</view>
+        </view>
+      </view>
+
+      <!-- 新解锁徽章 -->
+      <view class="result-new-badge" wx:if="{{resultNewBadges.length > 0}}">
+        <view class="new-badge-label">🎉 新徽章解锁！</view>
+        <view class="new-badge-item" wx:for="{{resultNewBadges}}" wx:key="id">
+          <view class="new-badge-icon">{{item.icon}}</view>
+          <view class="new-badge-name">{{item.name}}</view>
+        </view>
+      </view>
+
+      <!-- 新关解锁提示 -->
+      <view class="result-unlock-tip" wx:if="{{resultNewUnlock}}">
+        🎉 已解锁第 {{currentLevel + 1}} 关！
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="result-actions">
+        <view class="btn-secondary result-btn" bindtap="onBackToList">关卡列表</view>
+        <block wx:if="{{resultIsPass && currentLevel < 10}}">
+          <view class="btn-secondary result-btn" bindtap="onRetry">再来一次</view>
+          <view class="btn-primary result-btn" bindtap="onNextLevel">下一关 →</view>
+        </block>
+        <block wx:else>
+          <view class="btn-primary result-btn" bindtap="onRetry">{{resultIsPass ? '再挑战一次' : '重新挑战'}}</view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-icon">⏳</view>
+    <view class="loading-text">准备题目中...</view>
+  </view>
+</view>

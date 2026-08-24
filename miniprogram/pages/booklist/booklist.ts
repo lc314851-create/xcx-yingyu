@@ -97,7 +97,7 @@ Page({
     setTimeout(() => {
       if (this.data.isFirstTime) {
         wx.switchTab({
-          url: '/pages/words/words'
+          url: '/pages/index/index'
         });
       } else {
         wx.navigateBack();

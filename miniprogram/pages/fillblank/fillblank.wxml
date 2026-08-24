@@ -1,0 +1,73 @@
+<!-- pages/fillblank/fillblank.wxml -->
+<view class="container">
+  <!-- 顶部统计 -->
+  <view class="top-bar">
+    <view class="round-info">{{_currentRound}} / {{_maxRounds}}</view>
+    <view class="streak-info" wx:if="{{streak > 0}}">连续答对 {{streak}} 🔥</view>
+  </view>
+
+  <!-- 进度条 -->
+  <view class="progress-bar-bg">
+    <view class="progress-bar-fill" style="width: {{_maxRounds > 0 ? (_currentRound / _maxRounds) * 100 : 0}}%"></view>
+  </view>
+
+  <!-- 题目 -->
+  <view class="question-card" wx:if="{{currentItem && !showResult}}">
+    <view class="question-label">📖 名言填空</view>
+    <view class="question-en">{{currentItem.en}}</view>
+    <view class="question-zh">{{currentItem.zh}}</view>
+    <view class="question-author" wx:if="{{currentItem.author}}">— {{currentItem.author}}</view>
+
+    <!-- 选项 -->
+    <view class="options">
+      <view
+        class="option {{selectedIndex === index ? (isCorrect ? 'correct' : 'wrong') : ''}} {{answered && options[index].isCorrect ? 'correct' : ''}}"
+        wx:for="{{options}}"
+        wx:key="text"
+        data-idx="{{index}}"
+        bindtap="onSelect"
+      >
+        <view class="option-letter">{{['A','B','C','D'][index]}}</view>
+        <view class="option-text">{{item.text}}</view>
+      </view>
+    </view>
+
+    <!-- 答题反馈 -->
+    <view class="feedback" wx:if="{{answered}}">
+      <view class="feedback-correct" wx:if="{{isCorrect}}">
+        ✓ 回答正确！
+      </view>
+      <view class="feedback-wrong" wx:if="{{!isCorrect}}">
+        ✗ 正确答案：{{currentItem.answer}}
+      </view>
+      <view class="feedback-info" wx:if="{{currentItem.authorInfo}}">💡 {{currentItem.authorInfo}}</view>
+    </view>
+
+    <!-- 跳过 -->
+    <view class="skip-btn" wx:if="{{!answered}}" bindtap="onSkip">跳过</view>
+  </view>
+
+  <!-- 结果页 -->
+  <view class="result-overlay" wx:if="{{showResult}}">
+    <view class="result-content">
+      <view class="result-title">练习完成</view>
+      <view class="result-ring-wrap">
+        <view class="result-ring" style="background: conic-gradient(#4A90D9 {{resultRate}}%, #E3E9F2 {{resultRate}}%);">
+          <view class="result-ring-inner">
+            <view class="result-rate">{{resultRate}}%</view>
+            <view class="result-rate-label">正确率</view>
+          </view>
+        </view>
+      </view>
+      <view class="result-stats">
+        <text class="result-stat-num">{{correctCount}}</text>
+        <text class="result-stat-sep">/</text>
+        <text class="result-stat-num">{{_maxRounds}}</text>
+      </view>
+      <view class="result-actions">
+        <view class="btn-secondary result-btn" bindtap="onBack">返回</view>
+        <view class="btn-primary result-btn" bindtap="onRestart">再来一轮</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -7,6 +7,13 @@ export interface WordItem {
   meaning: string;
   example: string;
   isHighFreq?: boolean; // 是否高频词
+  // ─── ECDICT 扩展字段（可选） ───────────
+  root?: string;          // 词根
+  synonyms?: string;      // 同义词（逗号分隔）
+  antonyms?: string;      // 反义词（逗号分隔）
+  relatedWords?: string;  // 形近词（逗号分隔）
+  frequency?: number;     // 词频
+  star?: number;          // 词频星级 0~5
 }
 
 export interface WordBook {

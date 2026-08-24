@@ -11,7 +11,9 @@
 
   <!-- 空状态 -->
   <view class="empty" wx:if="{{isEmpty}}">
-    <view class="empty-icon">📚</view>
+    <view class="empty-icon-wrap">
+      <view class="empty-icon-check"></view>
+    </view>
     <view class="empty-text">生词本还是空的</view>
     <view class="empty-sub">学习时答错的单词会自动收集到这里</view>
     <view class="empty-btn" bindtap="onBack">去学习</view>
@@ -25,7 +27,7 @@
         <view class="word-meaning">{{item.meaning}}</view>
       </view>
       <view class="word-actions">
-        <view class="word-play" bindtap="onPlayAudio" data-word="{{item.word}}">🔊</view>
+        <view class="word-play" bindtap="onPlayAudio" data-word="{{item.word}}">发声</view>
         <view class="word-remove" bindtap="onRemove" data-word="{{item.word}}">✕</view>
       </view>
     </view>

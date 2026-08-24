@@ -1,12 +1,18 @@
 <!-- pages/index/index.wxml -->
 <view class="container">
-  <!-- 顶部问候 -->
+  <!-- 顶部 hero 区域 -->
   <view class="hero">
-    <view class="hero-row">
-      <view class="hero-title">今天也要加油学英语！</view>
-      <view class="hero-search" bindtap="goSearch">🔍</view>
+    <view class="hero-bg-deco"></view>
+    <view class="hero-content">
+      <view class="hero-row">
+        <view class="hero-greeting">{{greetingText}}</view>
+        <view class="hero-search" bindtap="goSearch">
+          <view class="hero-search-icon"></view>
+        </view>
+      </view>
+      <view class="hero-title">{{heroTitle}}</view>
+      <view class="hero-sub">{{heroSub}}</view>
     </view>
-    <view class="hero-sub">九层之台，起于垒土</view>
   </view>
 
   <!-- 统计卡片 -->
@@ -15,9 +21,10 @@
       <view class="stat-num">{{learnedToday}}</view>
       <view class="stat-label">今日已学</view>
     </view>
-    <view class="stat-card">
+    <view class="stat-card stat-card-accent">
       <view class="stat-num">{{streakDays}}</view>
       <view class="stat-label">连续打卡</view>
+      <view class="stat-flame" wx:if="{{streakDays > 0}}"></view>
     </view>
     <view class="stat-card">
       <view class="stat-num">{{totalWords}}</view>
@@ -29,37 +36,75 @@
   <view class="card book-card" bindtap="changeBook">
     <view class="book-info">
       <view class="book-name">{{currentBookName}}</view>
-      <view class="book-progress">已学 {{knownCount}} · 已掌握 {{masteredCount}} / {{currentBookTotal}}</view>
+      <view class="book-progress">
+        <text class="book-progress-learned">已学 {{knownCount}}</text>
+        <text class="book-progress-sep">·</text>
+        <text class="book-progress-mastered">已掌握 {{masteredCount}}</text>
+        <text class="book-progress-sep">·</text>
+        <text class="book-progress-total">{{currentBookTotal}}</text>
+      </view>
+      <!-- 进度条 -->
+      <view class="book-progress-bar" wx:if="{{currentBookTotal > 0}}">
+        <view class="book-progress-fill" style="width: {{currentBookTotal > 0 ? knownCount / currentBookTotal * 100 : 0}}%"></view>
+      </view>
     </view>
-    <view class="book-due" wx:if="{{dueCount > 0}}">{{dueCount}} 个待复习</view>
-    <view class="book-arrow">›</view>
+    <view class="book-right">
+      <view class="book-due" wx:if="{{dueCount > 0}}">{{dueCount}} 待复习</view>
+      <view class="book-arrow">›</view>
+    </view>
   </view>
 
   <!-- 操作入口 -->
   <view class="actions">
     <view class="btn-primary action-btn" bindtap="goWords">开始学习</view>
-    <!-- <view class="btn-secondary action-btn" bindtap="goMine">查看我的</view> -->
+    <view class="actions-grid">
+      <view class="action-tile" bindtap="goChallenge">
+        <view class="action-tile-icon action-tile-icon-challenge"></view>
+        <view class="action-tile-label">挑战模式</view>
+      </view>
+      <view class="action-tile" bindtap="goFillBlank">
+        <view class="action-tile-icon action-tile-icon-fillblank"></view>
+        <view class="action-tile-label">名言填空</view>
+      </view>
+      <view class="action-tile" bindtap="goSpelling">
+        <view class="action-tile-icon action-tile-icon-spelling"></view>
+        <view class="action-tile-label">拼词练习</view>
+      </view>
+      <view class="action-tile" bindtap="goLeaderboard">
+        <view class="action-tile-icon action-tile-icon-leaderboard"></view>
+        <view class="action-tile-label">学习排行</view>
+      </view>
+    </view>
   </view>
 
   <!-- 今日金句 -->
   <view class="card quote-card" wx:if="{{quote}}">
-    <view class="quote-tag">📖 每日金句</view>
+    <view class="quote-tag-row">
+      <view class="quote-tag">每日金句</view>
+      <view class="quote-fill-btn" bindtap="goFillBlank">名言填空 ›</view>
+    </view>
     <view class="quote-en">{{quote.en}}</view>
     <view class="quote-zh">{{quote.zh}}</view>
-    <view class="quote-author" wx:if="{{quote.author}}">— {{quote.author}}</view>
+    <view class="quote-author" wx:if="{{quote.author}}">- {{quote.author}}</view>
     <view class="quote-words" wx:if="{{quoteWords.length}}">
-      <text class="quote-words-label">核心生词：</text>
-      <text class="quote-word-item" wx:for="{{quoteWords}}" wx:key="*this">{{item}}</text>
+      <text class="quote-words-label">核心生词</text>
+      <view class="quote-words-list">
+        <text class="quote-word-item" wx:for="{{quoteWords}}" wx:key="*this">{{item}}</text>
+      </view>
     </view>
   </view>
 
   <!-- 学习建议 -->
   <view class="card tip-card">
-    <view class="tip-title">💡 记忆方法</view>
-    <view class="tip-text">每个单词会经过 5 级间隔记忆：答对 1 次→1天后复习，再答对→2天、4天、7天后复习，连续答对 4 次即标记为「已掌握」。答错则重置重来。坚持复习，才能真正记住。</view>
+    <view class="tip-section">
+      <view class="tip-title">记忆方法</view>
+      <view class="tip-text">每个单词会经过 5 级间隔记忆：答对 1 次后 1 天复习，再答对后 2 天、4 天、7 天后复习，连续答对 4 次即标记为「已掌握」。答错则重置重来。坚持复习，才能真正记住。</view>
+    </view>
     <view class="tip-divider"></view>
-    <view class="tip-title">📊 本周进度</view>
-    <view class="tip-text">本周已学 {{weeklyLearned}} 个单词，累计学习 {{totalWords}} 个，坚持就是胜利！</view>
+    <view class="tip-section">
+      <view class="tip-title">本周进度</view>
+      <view class="tip-text">本周已学 {{weeklyLearned}} 个单词，累计学习 {{totalWords}} 个，坚持就是胜利！</view>
+    </view>
   </view>
 
   <!-- 自定义词书选择弹窗 -->

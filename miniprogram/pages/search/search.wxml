@@ -3,7 +3,7 @@
   <!-- 搜索框 -->
   <view class="search-bar">
     <view class="search-input-wrap">
-      <text class="search-icon">🔍</text>
+      <view class="search-icon"></view>
       <input
         class="search-input"
         type="text"
@@ -14,7 +14,7 @@
         confirm-type="search"
         adjust-position="{{true}}"
       />
-      <text class="search-clear" wx:if="{{keyword}}" bindtap="onClear">✕</text>
+      <view class="search-clear" wx:if="{{keyword}}" bindtap="onClear">✕</view>
     </view>
     <view class="search-btn" bindtap="onSearch">搜索</view>
   </view>
@@ -28,7 +28,9 @@
 
     <!-- 无结果 -->
     <view class="no-result" wx:if="{{!searching && results.length === 0}}">
-      <view class="no-result-icon">🔍</view>
+      <view class="hint-icon-wrap">
+        <view class="search-icon" style="width: 36rpx; height: 36rpx; border-width: 5rpx;"></view>
+      </view>
       <view class="no-result-text">没有找到相关单词</view>
     </view>
 
@@ -39,10 +41,18 @@
         <view class="result-header">
           <view class="result-word" bindtap="onPlayAudio" data-word="{{item.word}}">{{item.word}}</view>
           <view class="result-phonetic" wx:if="{{item.phonetic}}">{{item.phonetic}}</view>
-          <view class="result-play" bindtap="onPlayAudio" data-word="{{item.word}}">🔊</view>
+          <view class="result-play" bindtap="onPlayAudio" data-word="{{item.word}}">发声</view>
         </view>
         <view class="result-meaning">{{item.meaning}}</view>
         <view class="result-example" wx:if="{{item.example}}">{{item.example}}</view>
+        <!-- ECDICT 扩展字段 -->
+        <view class="result-extra" wx:if="{{item.root || item.synonyms || item.antonyms || item.relatedWords || item.star > 0}}">
+          <view class="extra-row" wx:if="{{item.root}}"><text class="extra-key">词根</text><text class="extra-val">{{item.root}}</text></view>
+          <view class="extra-row" wx:if="{{item.synonyms}}"><text class="extra-key">同义</text><text class="extra-val">{{item.synonyms}}</text></view>
+          <view class="extra-row" wx:if="{{item.antonyms}}"><text class="extra-key">反义</text><text class="extra-val">{{item.antonyms}}</text></view>
+          <view class="extra-row" wx:if="{{item.relatedWords}}"><text class="extra-key">形近</text><text class="extra-val">{{item.relatedWords}}</text></view>
+          <view class="extra-row" wx:if="{{item.star > 0}}"><text class="extra-key">词频</text><text class="extra-val">{{['','★','★★','★★★','★★★★','★★★★★'][item.star] || ''}}</text></view>
+        </view>
         <view class="result-tags">
           <view class="result-tag learned-{{item.learned}}">{{item.status}}</view>
           <view class="result-book" wx:for="{{item.bookNames}}" wx:for-item="bookName" wx:key="*this">{{bookName}}</view>
@@ -53,7 +63,9 @@
 
   <!-- 初始提示 -->
   <view class="hint" wx:if="{{!hasSearched}}">
-    <view class="hint-icon">📖</view>
+    <view class="hint-icon-wrap">
+      <view class="hint-icon-book"></view>
+    </view>
     <view class="hint-text">输入单词搜索释义、音标</view>
     <view class="hint-sub">支持模糊搜索，覆盖所有词书</view>
   </view>

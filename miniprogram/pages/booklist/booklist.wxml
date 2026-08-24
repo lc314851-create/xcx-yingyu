@@ -1,7 +1,7 @@
 <!-- pages/booklist/booklist.wxml -->
 <view class="container">
   <view class="page-header">
-    <view class="page-title">{{isFirstTime ? '👋 欢迎使用' : '选择词书'}}</view>
+    <view class="page-title">{{isFirstTime ? '欢迎使用' : '选择词书'}}</view>
     <view class="page-sub">{{isFirstTime ? '请选择适合你的词书，开始背单词' : '选择适合你的词书，开始背单词'}}</view>
   </view>
 

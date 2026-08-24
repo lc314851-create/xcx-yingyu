@@ -20,6 +20,10 @@ const FALLBACK_BOOKS = [
 
 Page({
   data: {
+    // Hero 问候
+    greetingText: '',
+    heroTitle: '今天也要加油学英语！',
+    heroSub: '九层之台，起于垒土',
     learnedToday: 0,
     streakDays: 0,
     totalWords: 0,
@@ -40,6 +44,7 @@ Page({
   },
 
   onLoad() {
+    this.updateGreeting();
     this.loadStats();
     this.loadQuote();
   },
@@ -50,9 +55,40 @@ Page({
       wx.navigateTo({ url: '/pages/booklist/booklist' });
       return;
     }
+    this.updateGreeting();
     this.setData({ currentBookId: getCurrentBookId() });
     this.loadStats();
     this.loadQuote();
+  },
+
+  // 根据时间更新问候语
+  updateGreeting() {
+    const hour = new Date().getHours();
+    let greeting = '';
+    let title = '';
+    if (hour < 6) {
+      greeting = '夜深了，注意休息';
+      title = '坚持学习的人最耀眼';
+    } else if (hour < 9) {
+      greeting = '早上好';
+      title = '新的一天，从单词开始';
+    } else if (hour < 12) {
+      greeting = '上午好';
+      title = '今天也要加油学英语！';
+    } else if (hour < 14) {
+      greeting = '中午好';
+      title = '午间小憩，温故知新';
+    } else if (hour < 18) {
+      greeting = '下午好';
+      title = '继续努力，不要停下';
+    } else if (hour < 22) {
+      greeting = '晚上好';
+      title = '晚间复习，记忆更深';
+    } else {
+      greeting = '夜深了';
+      title = '坚持学习的人最耀眼';
+    }
+    this.setData({ greetingText: greeting, heroTitle: title });
   },
 
   async loadStats() {
@@ -140,6 +176,34 @@ Page({
   goSearch() {
     wx.navigateTo({
       url: '/pages/search/search'
+    });
+  },
+
+  // 跳转名言填空
+  goFillBlank() {
+    wx.navigateTo({
+      url: '/pages/fillblank/fillblank'
+    });
+  },
+
+  // 跳转拼词练习
+  goSpelling() {
+    wx.navigateTo({
+      url: '/pages/spelling/spelling'
+    });
+  },
+
+  // 跳转挑战模式
+  goChallenge() {
+    wx.navigateTo({
+      url: '/pages/challenge/challenge'
+    });
+  },
+
+  // 跳转学习排行榜
+  goLeaderboard() {
+    wx.navigateTo({
+      url: '/pages/leaderboard/leaderboard'
     });
   },
 

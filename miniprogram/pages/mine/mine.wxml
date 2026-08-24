@@ -2,14 +2,19 @@
 <view class="container">
   <!-- 用户头部 -->
   <view class="user-header">
-    <view class="avatar">
-      <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" class="avatar-img" />
-      <text wx:else class="avatar-placeholder">👤</text>
-    </view>
-    <view class="user-info">
-      <view class="nickname">{{nickname}}</view>
-      <view class="sub-text" wx:if="{{isLogin}}">坚持学习，遇见更好的自己</view>
-      <view class="sub-text login-link" wx:else bindtap="login">点击登录，同步你的学习进度</view>
+    <view class="user-header-bg"></view>
+    <view class="user-header-content">
+      <view class="avatar">
+        <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" class="avatar-img" />
+        <view wx:else class="avatar-placeholder">
+          <view class="avatar-placeholder-icon"></view>
+        </view>
+      </view>
+      <view class="user-info">
+        <view class="nickname">{{nickname}}</view>
+        <view class="sub-text" wx:if="{{isLogin}}">坚持学习，遇见更好的自己</view>
+        <view class="sub-text login-link" wx:else bindtap="login">点击登录，同步你的学习进度</view>
+      </view>
     </view>
   </view>
 
@@ -21,7 +26,7 @@
     </view>
     <view class="stat-divider"></view>
     <view class="stat-block">
-      <view class="stat-value">{{stats.streakDays}}</view>
+      <view class="stat-value stat-value-accent">{{stats.streakDays}}</view>
       <view class="stat-label">连续天数</view>
     </view>
     <view class="stat-divider"></view>
@@ -38,13 +43,16 @@
 
   <!-- 打卡按钮 -->
   <view class="checkin-btn {{stats.checkedIn ? 'checked' : ''}}" bindtap="checkIn">
-    {{stats.checkedIn ? '已打卡 ✓' : '每日打卡'}}
+    <view class="checkin-icon" wx:if="{{stats.checkedIn}}"></view>
+    {{stats.checkedIn ? '已打卡' : '每日打卡'}}
   </view>
 
   <!-- 学习日历热力图 -->
   <view class="heatmap-section">
-    <view class="section-title">学习日历</view>
-    <view class="heatmap-sub">最近 30 天 · 坚持了 {{heatmapTotalDays}} 天</view>
+    <view class="section-header">
+      <view class="section-title">学习日历</view>
+      <view class="heatmap-sub">坚持了 {{heatmapTotalDays}} 天</view>
+    </view>
     <view class="heatmap-grid">
       <view class="heatmap-cell level-{{item.level}}" wx:for="{{heatmap}}" wx:key="date">
         <view class="heatmap-tip">{{item.date}} · {{item.count > 0 ? item.count + '个' : '未学习'}}</view>
@@ -63,52 +71,129 @@
 
   <!-- 成就徽章 -->
   <view class="badge-section">
-    <view class="section-title">我的成就</view>
+    <view class="section-header">
+      <view class="section-title">我的成就</view>
+      <view class="badge-count">{{badgesUnlocked}}/{{badges.length}}</view>
+    </view>
     <view class="badge-grid">
       <view class="badge-item {{badge.unlocked ? '' : 'locked'}}" wx:for="{{badges}}" wx:key="name">
-        <view class="badge-icon">{{badge.icon}}</view>
+        <view class="badge-icon-wrap">
+          <text class="badge-icon">{{badge.icon}}</text>
+        </view>
         <view class="badge-name">{{badge.name}}</view>
         <view class="badge-desc">{{badge.desc}}</view>
       </view>
     </view>
   </view>
 
-  <!-- 其他 -->
+  <!-- 功能入口 - 练习 -->
   <view class="other-section">
-    <view class="other-item" bindtap="goSearch">
-      <view class="other-item-left">
-        <text class="other-icon">🔍</text>
-        <text>搜单词</text>
+    <view class="section-title section-title-sm">练习工具</view>
+    <view class="other-group">
+      <view class="other-item" bindtap="goSearch">
+        <view class="other-icon-wrap other-icon-wrap-blue">
+          <view class="other-icon-search"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">搜单词</view>
+          <view class="other-item-desc">查询释义和词根</view>
+        </view>
+        <text class="arrow">›</text>
       </view>
-      <text class="arrow">›</text>
+      <view class="other-item" bindtap="goChallenge">
+        <view class="other-icon-wrap other-icon-wrap-amber">
+          <view class="other-icon-challenge"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">挑战模式</view>
+          <view class="other-item-desc">闯关赢取徽章</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="other-item" bindtap="goFillBlank">
+        <view class="other-icon-wrap other-icon-wrap-green">
+          <view class="other-icon-fillblank"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">名言填空</view>
+          <view class="other-item-desc">在语境中记单词</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="other-item" bindtap="goSpelling">
+        <view class="other-icon-wrap other-icon-wrap-purple">
+          <view class="other-icon-spelling"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">拼词练习</view>
+          <view class="other-item-desc">字母拼图练拼写</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
     </view>
-    <view class="other-item" bindtap="goPoster">
-      <view class="other-item-left">
-        <text class="other-icon">🖼</text>
-        <text>打卡海报</text>
+  </view>
+
+  <!-- 功能入口 - 数据 -->
+  <view class="other-section">
+    <view class="section-title section-title-sm">学习数据</view>
+    <view class="other-group">
+      <view class="other-item" bindtap="goLeaderboard">
+        <view class="other-icon-wrap other-icon-wrap-blue">
+          <view class="other-icon-leaderboard"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">学习排行榜</view>
+          <view class="other-item-desc">看看你在哪</view>
+        </view>
+        <text class="arrow">›</text>
       </view>
-      <text class="arrow">›</text>
+      <view class="other-item" bindtap="goWrongBook">
+        <view class="other-icon-wrap other-icon-wrap-red">
+          <view class="other-icon-wrongbook"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">生词本</view>
+          <view class="other-item-desc">复习错过的单词</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+      <view class="other-item" bindtap="goPoster">
+        <view class="other-icon-wrap other-icon-wrap-cyan">
+          <view class="other-icon-poster"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">打卡海报</view>
+          <view class="other-item-desc">生成你的学习海报</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
     </view>
-    <view class="other-item" bindtap="onToggleReminder">
-      <view class="other-item-left">
-        <text class="other-icon">🔔</text>
-        <text>学习提醒</text>
+  </view>
+
+  <!-- 功能入口 - 设置 -->
+  <view class="other-section">
+    <view class="section-title section-title-sm">设置</view>
+    <view class="other-group">
+      <view class="other-item" bindtap="onToggleReminder">
+        <view class="other-icon-wrap other-icon-wrap-orange">
+          <view class="other-icon-reminder"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">学习提醒</view>
+          <view class="other-item-desc">每天提醒你背单词</view>
+        </view>
+        <text class="reminder-status {{reminderOn ? 'reminder-on' : 'reminder-off'}}">{{reminderOn ? '已开启' : '未开启'}}</text>
       </view>
-      <text class="reminder-status">{{reminderOn ? '已开启' : '未开启'}}</text>
-    </view>
-    <view class="other-item" bindtap="goWrongBook">
-      <view class="other-item-left">
-        <text class="other-icon">📓</text>
-        <text>生词本</text>
+      <view class="other-item" bindtap="goPrivacy">
+        <view class="other-icon-wrap other-icon-wrap-gray">
+          <view class="other-icon-privacy"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">隐私保护声明</view>
+          <view class="other-item-desc">查看隐私政策</view>
+        </view>
+        <text class="arrow">›</text>
       </view>
-      <text class="arrow">›</text>
-    </view>
-    <view class="other-item" bindtap="goPrivacy">
-      <view class="other-item-left">
-        <text class="other-icon">🔒</text>
-        <text>隐私保护声明</text>
-      </view>
-      <text class="arrow">›</text>
     </view>
   </view>
 

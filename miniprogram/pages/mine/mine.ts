@@ -1,5 +1,5 @@
 // pages/mine/mine.ts
-import { getStats, doCheckIn, saveStats, getHeatmapData, isReminderSubscribed, requestReminderSubscribe } from '../../utils/store';
+import { getStats, doCheckIn, saveStats, getHeatmapData, isReminderSubscribed, requestReminderSubscribe, todayStr } from '../../utils/store';
 
 interface Badge {
   name: string;
@@ -21,6 +21,7 @@ Page({
       checkedIn: false
     },
     badges: [] as Badge[],
+    badgesUnlocked: 0,
     // 热力图
     heatmap: [] as Array<{ date: string; count: number; level: number }>,
     heatmapWeekLabels: [] as string[],
@@ -46,6 +47,7 @@ Page({
   loadStats() {
     const stats = getStats();
     const badges = this.computeBadges(stats);
+    const badgesUnlocked = badges.filter(b => b.unlocked).length;
     const heatmap = getHeatmapData(30);
     // 统计有学习的天数
     const heatmapTotalDays = heatmap.filter(d => d.count > 0).length;
@@ -60,6 +62,7 @@ Page({
         checkedIn: stats.checkedIn
       },
       badges,
+      badgesUnlocked,
       heatmap,
       heatmapWeekLabels: weekLabels,
       heatmapTotalDays,
@@ -116,20 +119,40 @@ Page({
       .then((res: any) => {
         if (res.data && res.data.length > 0) {
           const cloudData = res.data[0];
-          // 合并云端数据（以云端为准，但保留本地未同步的数据）
           const localStats = getStats();
-          // 如果云端有更新的数据，使用云端
+
           if (cloudData.stats) {
             const cloud = cloudData.stats;
-            // 取较大值，避免本地数据丢失
+            // 策略：累计值取较大值（防丢失），当日/本周值以本地为准（防覆盖）
+            const today = todayStr();
+
+            // 如果本地的 lastStudyDate 是今天，说明今天已经学了，本地数据是最新
+            // 如果本地 lastStudyDate 不是今天，且云端也不是今天，看谁的 totalWords 更大
             const merged = {
               ...localStats,
-              ...cloud,
+              // 累计值取较大值
               totalWords: Math.max(localStats.totalWords || 0, cloud.totalWords || 0),
-              streakDays: Math.max(localStats.streakDays || 0, cloud.streakDays || 0)
+              streakDays: Math.max(localStats.streakDays || 0, cloud.streakDays || 0),
+              // 今日/本周：如果本地的 lastStudyDate 是今天，用本地；否则用云端
+              learnedToday: localStats.lastStudyDate === today
+                ? localStats.learnedToday
+                : (cloud.lastStudyDate === today ? (cloud.learnedToday || 0) : 0),
+              weeklyLearned: localStats.lastStudyDate === today
+                ? localStats.weeklyLearned
+                : Math.max(localStats.weeklyLearned || 0, cloud.weeklyLearned || 0),
+              checkedIn: localStats.lastStudyDate === today
+                ? localStats.checkedIn
+                : (cloud.lastStudyDate === today ? cloud.checkedIn : false),
+              // 日期字段取较新的
+              lastStudyDate: localStats.lastStudyDate >= (cloud.lastStudyDate || '')
+                ? localStats.lastStudyDate
+                : cloud.lastStudyDate,
+              weeklyStart: localStats.weeklyStart || cloud.weeklyStart || ''
             };
             saveStats(merged);
             this.loadStats();
+            // 同步合并后的数据回云端
+            this.uploadToCloud();
           }
         } else {
           // 云端无数据，上传本地
@@ -214,6 +237,34 @@ Page({
   goSearch() {
     wx.navigateTo({
       url: '/pages/search/search'
+    });
+  },
+
+  // 跳转名言填空
+  goFillBlank() {
+    wx.navigateTo({
+      url: '/pages/fillblank/fillblank'
+    });
+  },
+
+  // 跳转拼词练习
+  goSpelling() {
+    wx.navigateTo({
+      url: '/pages/spelling/spelling'
+    });
+  },
+
+  // 跳转挑战模式
+  goChallenge() {
+    wx.navigateTo({
+      url: '/pages/challenge/challenge'
+    });
+  },
+
+  // 跳转学习排行榜
+  goLeaderboard() {
+    wx.navigateTo({
+      url: '/pages/leaderboard/leaderboard'
     });
   },
 

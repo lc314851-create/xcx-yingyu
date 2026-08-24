@@ -19,7 +19,11 @@
 
   <!-- 加载中 -->
   <view class="loading-state" wx:if="{{loading}}">
-    <view class="loading-icon">⏳</view>
+    <view class="loading-dots">
+      <view class="loading-dot"></view>
+      <view class="loading-dot"></view>
+      <view class="loading-dot"></view>
+    </view>
     <view class="loading-text">词库加载中...</view>
   </view>
 
@@ -34,7 +38,9 @@
 
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && totalCount === 0}}">
-    <view class="empty-icon">📚</view>
+    <view class="empty-icon-wrap">
+      <view class="empty-icon-book"></view>
+    </view>
     <view class="empty-text">本词书已全部掌握！</view>
     <view class="empty-sub">可以切换其他词书继续学习</view>
     <view class="btn-primary empty-btn" bindtap="changeBook">选择词书</view>
@@ -56,6 +62,14 @@
           <view class="word-phonetic">{{queue[currentIndex].phonetic}}</view>
           <view class="word-meaning">{{queue[currentIndex].meaning}}</view>
           <view class="word-example" wx:if="{{queue[currentIndex].example}}">{{queue[currentIndex].example}}</view>
+          <!-- ECDICT 扩展字段 -->
+          <view class="word-extra" wx:if="{{queue[currentIndex].root || queue[currentIndex].synonyms || queue[currentIndex].antonyms || queue[currentIndex].relatedWords || queue[currentIndex].star}}">
+            <view class="word-extra-row" wx:if="{{queue[currentIndex].root}}"><text class="extra-label">词根：</text><text class="extra-text">{{queue[currentIndex].root}}</text></view>
+            <view class="word-extra-row" wx:if="{{queue[currentIndex].synonyms}}"><text class="extra-label">同义：</text><text class="extra-text">{{queue[currentIndex].synonyms}}</text></view>
+            <view class="word-extra-row" wx:if="{{queue[currentIndex].antonyms}}"><text class="extra-label">反义：</text><text class="extra-text">{{queue[currentIndex].antonyms}}</text></view>
+            <view class="word-extra-row" wx:if="{{queue[currentIndex].relatedWords}}"><text class="extra-label">形近：</text><text class="extra-text">{{queue[currentIndex].relatedWords}}</text></view>
+            <view class="word-extra-row" wx:if="{{queue[currentIndex].star > 0}}"><text class="extra-label">词频：</text><text class="extra-text">{{['','★','★★','★★★','★★★★','★★★★★'][queue[currentIndex].star] || ''}}</text></view>
+          </view>
           <view class="flip-hint">点击返回正面</view>
         </view>
       </view>
@@ -63,8 +77,8 @@
 
     <!-- 发音按钮 -->
     <view class="audio-row">
-      <view class="audio-btn" catchtap="onPlayAudio">🔊 发音</view>
-      <view class="accent-toggle" catchtap="onToggleAccent">{{accent === 'uk' ? '🇬🇧 英音' : '🇺🇸 美音'}}</view>
+      <view class="audio-btn" catchtap="onPlayAudio">发音</view>
+      <view class="accent-toggle" catchtap="onToggleAccent">{{accent === 'uk' ? '英音' : '美音'}}</view>
     </view>
 
     <!-- 操作按钮 -->
@@ -81,7 +95,7 @@
       <view class="choice-word-row">
         <view class="choice-word">{{queue[currentIndex].word}}</view>
         <view class="choice-phonetic" wx:if="{{queue[currentIndex].phonetic}}">{{queue[currentIndex].phonetic}}</view>
-        <view class="audio-btn-sm" catchtap="onPlayAudio">🔊</view>
+        <view class="audio-btn-sm" catchtap="onPlayAudio">发声</view>
       </view>
     </view>
 
@@ -122,7 +136,7 @@
       <view class="spell-feedback-text" wx:if="{{spellFeedback === 'wrong'}}">✗ 正确答案：{{queue[currentIndex].word}}</view>
 
       <view class="spell-audio-row">
-        <view class="audio-btn" catchtap="onPlayAudio">🔊 听发音</view>
+        <view class="audio-btn" catchtap="onPlayAudio">听发音</view>
       </view>
     </view>
 

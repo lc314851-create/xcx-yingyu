@@ -1,8 +1,10 @@
 // cloudfunctions/initWords/index.js
-// 云函数：初始化/批量导入词库到云开发数据库
-// 调用方式：wx.cloud.callFunction({ name: 'initWords', data: { action: 'import', bookId: 'junior', words: [...] } })
-//           wx.cloud.callFunction({ name: 'initWords', data: { action: 'check' } })
-//           wx.cloud.callFunction({ name: 'initWords', data: { action: 'getMeta' } })
+// 云函数：初始化/批量导入词库到云开发数据库 + 上传 JSON 到云存储
+// 调用方式：
+//   wx.cloud.callFunction({ name: 'initWords', data: { action: 'import', bookId: 'junior', words: [...] } })
+//   wx.cloud.callFunction({ name: 'initWords', data: { action: 'check' } })
+//   wx.cloud.callFunction({ name: 'initWords', data: { action: 'getMeta' } })
+//   wx.cloud.callFunction({ name: 'initWords', data: { action: 'uploadFile', bookId: 'junior' } })
 
 const cloud = require('wx-server-sdk');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -55,8 +57,7 @@ exports.main = async (event, context) => {
       return { books: result };
     }
 
-    // 3. 获取某词书的词汇（云函数有管理员权限，不受数据库权限限制）
-    //    支持分批获取：传入 page 和 pageSize，避免单次返回超过 1MB 限制
+    // 3. 获取某词书的词汇（支持分批获取）
     if (action === 'getWords' && bookId) {
       const page = event.page || 0;
       const pageSize = event.pageSize || 500;
@@ -66,14 +67,35 @@ exports.main = async (event, context) => {
         .where({ bookId })
         .skip(offset)
         .limit(pageSize)
-        .field({ word: true, phonetic: true, meaning: true, isHighFreq: true })
+        .field({
+          word: true,
+          phonetic: true,
+          meaning: true,
+          example: true,
+          isHighFreq: true,
+          // ECDICT 扩展字段
+          root: true,
+          synonyms: true,
+          antonyms: true,
+          relatedWords: true,
+          frequency: true,
+          star: true
+        })
         .get();
 
       const words = res.data.map(item => ({
         word: item.word,
         phonetic: item.phonetic || '',
         meaning: item.meaning || '',
-        isHighFreq: item.isHighFreq || false
+        example: item.example || '',
+        isHighFreq: item.isHighFreq || false,
+        // ECDICT 扩展字段（可选）
+        root: item.root || '',
+        synonyms: item.synonyms || '',
+        antonyms: item.antonyms || '',
+        relatedWords: item.relatedWords || '',
+        frequency: item.frequency || 0,
+        star: item.star || 0
       }));
 
       return {
@@ -98,7 +120,7 @@ exports.main = async (event, context) => {
       let inserted = 0;
       for (let i = 0; i < words.length; i += batchSize) {
         const batch = words.slice(i, i + batchSize);
-        const tasks = batch.map(w => 
+        const tasks = batch.map(w =>
           db.collection('wordbooks').add({
             data: {
               bookId,
@@ -106,7 +128,14 @@ exports.main = async (event, context) => {
               phonetic: w.phonetic || '',
               meaning: w.meaning || '',
               example: w.example || '',
-              isHighFreq: w.isHighFreq || false
+              isHighFreq: w.isHighFreq || false,
+              // ECDICT 扩展字段
+              root: w.root || '',
+              synonyms: w.synonyms || '',
+              antonyms: w.antonyms || '',
+              relatedWords: w.relatedWords || '',
+              frequency: w.frequency || 0,
+              star: w.star || 0
             }
           })
         );
@@ -127,8 +156,108 @@ exports.main = async (event, context) => {
       return { success: true, removed: res.stats.removed };
     }
 
+    // 6. 上传词书 JSON 到云存储（生成 CDN 缓存文件，前端秒开）
+    if (action === 'uploadFile' && bookId) {
+      // 从数据库拉取全部词汇
+      let allWords = [];
+      let page = 0;
+      const pageSize = 500;
+      let hasMore = true;
+
+      while (hasMore) {
+        const res = await db.collection('wordbooks')
+          .where({ bookId })
+          .skip(page * pageSize)
+          .limit(pageSize)
+          .field({
+            word: true,
+            phonetic: true,
+            meaning: true,
+            example: true,
+            isHighFreq: true,
+            root: true,
+            synonyms: true,
+            antonyms: true,
+            relatedWords: true,
+            frequency: true,
+            star: true
+          })
+          .get();
+
+        if (res.data && res.data.length > 0) {
+          allWords = allWords.concat(res.data.map(item => ({
+            word: item.word,
+            phonetic: item.phonetic || '',
+            meaning: item.meaning || '',
+            example: item.example || '',
+            isHighFreq: item.isHighFreq || false,
+            root: item.root || '',
+            synonyms: item.synonyms || '',
+            antonyms: item.antonyms || '',
+            relatedWords: item.relatedWords || '',
+            frequency: item.frequency || 0,
+            star: item.star || 0
+          })));
+          hasMore = res.data.length === pageSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      if (allWords.length === 0) {
+        return { error: `词书 ${bookId} 数据库中无数据` };
+      }
+
+      // 写入临时文件并上传到云存储
+      const cloudPath = `wordbooks/${bookId}.json`;
+      const result = await cloud.uploadFile({
+        cloudPath,
+        fileContent: Buffer.from(JSON.stringify(allWords), 'utf-8')
+      });
+
+      return {
+        success: true,
+        bookId,
+        wordCount: allWords.length,
+        fileID: result.fileID,
+        cloudPath
+      };
+    }
+
+    // 7. 上传元数据 JSON 到云存储
+    if (action === 'uploadMeta') {
+      const metaResult = {};
+      for (const meta of BOOK_META) {
+        const totalRes = await db.collection('wordbooks')
+          .where({ bookId: meta.id })
+          .count();
+        const hfRes = await db.collection('wordbooks')
+          .where({ bookId: meta.id, isHighFreq: true })
+          .count();
+        metaResult[meta.id] = {
+          ...meta,
+          wordCount: totalRes.total,
+          highFreqCount: hfRes.total
+        };
+      }
+
+      const cloudPath = 'wordbooks/books_meta.json';
+      const result = await cloud.uploadFile({
+        cloudPath,
+        fileContent: Buffer.from(JSON.stringify({ books: metaResult }), 'utf-8')
+      });
+
+      return {
+        success: true,
+        fileID: result.fileID,
+        cloudPath,
+        meta: metaResult
+      };
+    }
+
     return {
-      error: 'Invalid action. Use: check | getMeta | getWords | import | clear'
+      error: 'Invalid action. Use: check | getMeta | getWords | import | clear | uploadFile | uploadMeta'
     };
   } catch (err) {
     console.error('initWords error:', err);

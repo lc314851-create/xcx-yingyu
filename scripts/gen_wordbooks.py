@@ -148,12 +148,40 @@ def process_from_sqlite():
             frq = str(row['frq'] or '')
             high_freq = is_high_freq(bnc, frq)
 
+            # ECDICT 扩展字段
+            root = row['root'] or '' if 'root' in row.keys() else ''
+            synonyms = ''
+            if 'synonym' in row.keys():
+                synonyms = (row['synonym'] or '').strip()
+            antonyms = ''
+            if 'antonym' in row.keys():
+                antonyms = (row['antonym'] or '').strip()
+            related_words = ''
+            if 'relate' in row.keys():
+                related_words = (row['relate'] or '').strip()
+            # 词频
+            try:
+                frequency = int(row['frq'] or 0) if 'frq' in row.keys() else 0
+            except (ValueError, TypeError):
+                frequency = 0
+            # 词频星级（0-5）
+            try:
+                star = int(row['collins'] or 0) if 'collins' in row.keys() else 0
+            except (ValueError, TypeError):
+                star = 0
+
             words.append({
                 'word': word,
                 'phonetic': phonetic,
                 'meaning': translation,
                 'example': f'Learn the word "{word}".',
-                'isHighFreq': high_freq
+                'isHighFreq': high_freq,
+                'root': root,
+                'synonyms': synonyms,
+                'antonyms': antonyms,
+                'relatedWords': related_words,
+                'frequency': frequency,
+                'star': star
             })
 
         # 词内去重（同一个词在同一本书里不重复出现）
@@ -201,12 +229,32 @@ def process_from_csv():
             frq = str(row.get('frq', '') or '')
             high_freq = is_high_freq(bnc, frq)
 
+            # ECDICT 扩展字段
+            root = row.get('root', '') or ''
+            synonyms = (row.get('synonym', '') or '').strip()
+            antonyms = (row.get('antonym', '') or '').strip()
+            related_words = (row.get('relate', '') or '').strip()
+            try:
+                frequency = int(row.get('frq', 0) or 0)
+            except (ValueError, TypeError):
+                frequency = 0
+            try:
+                star = int(row.get('collins', 0) or 0)
+            except (ValueError, TypeError):
+                star = 0
+
             words.append({
                 'word': word,
                 'phonetic': phonetic,
                 'meaning': translation,
                 'example': f'Learn the word "{word}".',
-                'isHighFreq': high_freq
+                'isHighFreq': high_freq,
+                'root': root,
+                'synonyms': synonyms,
+                'antonyms': antonyms,
+                'relatedWords': related_words,
+                'frequency': frequency,
+                'star': star
             })
 
         seen = set()

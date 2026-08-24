@@ -36,15 +36,30 @@
   padding-top: 160rpx;
 }
 
-.empty-icon {
-  font-size: 100rpx;
+.empty-icon-wrap {
+  width: 120rpx;
+  height: 120rpx;
   margin-bottom: 30rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon-check {
+  width: 40rpx;
+  height: 24rpx;
+  border-right: 6rpx solid #34A853;
+  border-bottom: 6rpx solid #34A853;
+  transform: rotate(45deg);
+  margin-top: -8rpx;
 }
 
 .empty-text {
   font-size: 32rpx;
   color: #5A6072;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .empty-sub {
@@ -107,8 +122,17 @@
 }
 
 .word-play {
-  font-size: 36rpx;
-  padding: 8rpx;
+  font-size: 24rpx;
+  color: #4A90D9;
+  background: #EAF2FC;
+  border-radius: 20rpx;
+  padding: 8rpx 16rpx;
+  font-weight: 600;
+  transition: transform 0.15s var(--ease-out);
+}
+
+.word-play:active {
+  transform: scale(0.9);
 }
 
 .word-remove {

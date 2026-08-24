@@ -1,48 +1,153 @@
 /* app.wxss - 全局样式 */
+
+/* ═════════════════════════════════════════ */
+/* 设计 Token 变量系统                         */
+/* ═════════════════════════════════════════ */
 page {
-  background-color: #F6F8FC;
+  /* 主色调 */
+  --color-primary: #4A90D9;
+  --color-primary-light: #6FB1F0;
+  --color-primary-dark: #2E6BBA;
+  --color-primary-bg: #EAF2FC;
+  --color-primary-bg-light: #F0F7FF;
+
+  /* 功能色 */
+  --color-success: #34A853;
+  --color-success-bg: #E8F5E9;
+  --color-warning: #F5A623;
+  --color-warning-bg: #FFF6E5;
+  --color-danger: #E74C3C;
+  --color-danger-bg: #FFEBEE;
+  --color-info: #4A90D9;
+  --color-info-bg: #EAF2FC;
+
+  /* 文字色 */
+  --text-primary: #1F2430;
+  --text-secondary: #5A6072;
+  --text-tertiary: #8A8F99;
+  --text-quaternary: #B0B6C0;
+  --text-on-primary: #FFFFFF;
+
+  /* 背景色 */
+  --bg-page: #F6F8FC;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-muted: #F0F2F5;
+  --bg-hover: #F8FAFF;
+
+  /* 边框 */
+  --border-light: #EEF1F6;
+  --border-default: #E3E9F2;
+  --border-strong: #D0D5DD;
+
+  /* 圆角 */
+  --radius-sm: 8rpx;
+  --radius-md: 16rpx;
+  --radius-lg: 20rpx;
+  --radius-xl: 24rpx;
+  --radius-pill: 44rpx;
+  --radius-circle: 50%;
+
+  /* 间距 */
+  --space-xs: 8rpx;
+  --space-sm: 16rpx;
+  --space-md: 24rpx;
+  --space-lg: 32rpx;
+  --space-xl: 40rpx;
+  --space-2xl: 60rpx;
+
+  /* 阴影 */
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8rpx 30rpx rgba(74, 144, 217, 0.10);
+  --shadow-primary: 0 6rpx 20rpx rgba(74, 144, 217, 0.12);
+  --shadow-primary-strong: 0 6rpx 20rpx rgba(74, 144, 217, 0.3);
+
+  /* 字号 */
+  --font-xs: 22rpx;
+  --font-sm: 26rpx;
+  --font-base: 28rpx;
+  --font-md: 30rpx;
+  --font-lg: 34rpx;
+  --font-xl: 40rpx;
+  --font-2xl: 48rpx;
+  --font-3xl: 56rpx;
+  --font-4xl: 64rpx;
+
+  /* 动画 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.4s;
+
+  /* 应用基础样式 */
+  background-color: var(--bg-page);
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
-  font-size: 28rpx;
-  color: #2B2F36;
+  font-size: var(--font-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* ═════════════════════════════════════════ */
+/* 通用组件                                    */
+/* ═════════════════════════════════════════ */
 
 /* 通用卡片 */
 .card {
-  background: #FFFFFF;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin: 20rpx 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin: var(--space-md) var(--space-md);
+  box-shadow: var(--shadow-md);
 }
 
 /* 主按钮 */
 .btn-primary {
-  background: #4A90D9;
-  color: #FFFFFF;
-  border-radius: 44rpx;
-  font-size: 32rpx;
-  padding: 20rpx 0;
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-md);
+  font-weight: 600;
+  padding: 22rpx 0;
   text-align: center;
+  box-shadow: var(--shadow-primary);
+  transition: transform var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .btn-primary:active {
-  opacity: 0.85;
+  transform: scale(0.97) translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(74, 144, 217, 0.2);
 }
 
 /* 副按钮 */
 .btn-secondary {
-  background: #EEF3FB;
-  color: #4A90D9;
-  border-radius: 44rpx;
-  font-size: 30rpx;
-  padding: 16rpx 0;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-base);
+  font-weight: 600;
+  padding: 18rpx 0;
   text-align: center;
+  transition: transform var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97) translateY(2rpx);
+  background: #D8E8FA;
 }
 
 /* 标题 */
 .page-title {
-  font-size: 40rpx;
-  font-weight: 600;
-  color: #1F2430;
-  padding: 30rpx 30rpx 10rpx;
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: var(--space-xl) var(--space-lg) var(--space-sm);
+}
+
+/* 通用安全区域底部 */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }

@@ -7,7 +7,11 @@
     "pages/privacy/privacy",
     "pages/wrongbook/wrongbook",
     "pages/poster/poster",
-    "pages/search/search"
+    "pages/search/search",
+    "pages/fillblank/fillblank",
+    "pages/spelling/spelling",
+    "pages/challenge/challenge",
+    "pages/leaderboard/leaderboard"
   ],
   "window": {
     "backgroundColor": "#F6F8FC",

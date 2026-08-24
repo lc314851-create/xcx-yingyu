@@ -8,9 +8,10 @@
 }
 
 .page-title {
-  font-size: 40rpx;
-  font-weight: 600;
+  font-size: 42rpx;
+  font-weight: 800;
   color: #1F2430;
+  line-height: 1.2;
 }
 
 .page-sub {
@@ -30,9 +31,15 @@
   background: #FFFFFF;
   border-radius: 24rpx;
   padding: 36rpx 32rpx 36rpx 36rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
   border: 2rpx solid transparent;
   overflow: hidden;
+  transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
+}
+
+.book-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 
 .book-card.current {
@@ -57,15 +64,15 @@
 
 .book-name {
   font-size: 36rpx;
-  font-weight: 600;
+  font-weight: 800;
   color: #1F2430;
 }
 
 .book-level-tag {
-  font-size: 24rpx;
+  font-size: 22rpx;
   border-radius: 20rpx;
-  padding: 6rpx 20rpx;
-  font-weight: 600;
+  padding: 6rpx 18rpx;
+  font-weight: 700;
 }
 
 .book-desc {
@@ -114,8 +121,10 @@
 
 .stat-val {
   font-size: 36rpx;
-  font-weight: 700;
+  font-weight: 800;
   color: #4A90D9;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .stat-val.due {
@@ -134,7 +143,8 @@
   right: 32rpx;
   background: #4A90D9;
   color: #FFFFFF;
-  font-size: 22rpx;
+  font-size: 20rpx;
+  font-weight: 600;
   border-radius: 12rpx;
-  padding: 4rpx 16rpx;
+  padding: 4rpx 14rpx;
 }
