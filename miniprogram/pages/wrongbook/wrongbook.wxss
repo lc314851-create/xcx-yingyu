@@ -24,7 +24,7 @@
 
 .clear-btn {
   font-size: 28rpx;
-  color: #E74C3C;
+  color: #B84A3E;
   padding: 10rpx 20rpx;
 }
 
@@ -41,7 +41,7 @@
   height: 120rpx;
   margin-bottom: 30rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  background: linear-gradient(135deg, #E5F1E9, #C8E6C9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -50,8 +50,8 @@
 .empty-icon-check {
   width: 40rpx;
   height: 24rpx;
-  border-right: 6rpx solid #34A853;
-  border-bottom: 6rpx solid #34A853;
+  border-right: 6rpx solid #3E8E5E;
+  border-bottom: 6rpx solid #3E8E5E;
   transform: rotate(45deg);
   margin-top: -8rpx;
 }
@@ -70,13 +70,13 @@
 
 .empty-btn {
   margin-top: 50rpx;
-  background: #4A90D9;
+  background: #2F5746;
   color: #FFFFFF;
   border-radius: 44rpx;
   font-size: 30rpx;
   padding: 20rpx 80rpx;
   text-align: center;
-  box-shadow: 0 6rpx 20rpx rgba(74, 144, 217, 0.3);
+  box-shadow: 0 6rpx 20rpx rgba(47, 87, 70, 0.3);
 }
 
 .empty-btn:active {
@@ -123,8 +123,8 @@
 
 .word-play {
   font-size: 24rpx;
-  color: #4A90D9;
-  background: #EAF2FC;
+  color: #2F5746;
+  background: #E9F0EB;
   border-radius: 20rpx;
   padding: 8rpx 16rpx;
   font-weight: 600;
@@ -137,7 +137,7 @@
 
 .word-remove {
   font-size: 32rpx;
-  color: #E74C3C;
+  color: #B84A3E;
   padding: 8rpx 12rpx;
 }
 

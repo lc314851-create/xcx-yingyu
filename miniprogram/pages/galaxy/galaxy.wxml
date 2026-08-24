@@ -1,0 +1,76 @@
+<!-- pages/galaxy/galaxy.wxml -->
+<view class="page">
+  <!-- 顶部说明 -->
+  <view class="page-head">
+    <view class="page-head-title serif">词根星系</view>
+    <view class="page-head-sub">点击任意单词，沿着词族漫游</view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-dots">
+      <view class="loading-dot"></view>
+      <view class="loading-dot"></view>
+      <view class="loading-dot"></view>
+    </view>
+    <view class="loading-text">正在集结词族...</view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && !hasResult}}">
+    <view class="empty-text">这本词书还没有可探索的词族</view>
+    <view class="empty-sub">切换词书后再来试试</view>
+  </view>
+
+  <block wx:if="{{!loading && hasResult}}">
+    <!-- 星系轨道区 -->
+    <view class="orbit-scene">
+      <!-- 轨道虚线 -->
+      <view class="orbit-ring orbit-ring-inner"></view>
+      <view class="orbit-ring orbit-ring-outer"></view>
+
+      <!-- 中心词卡 -->
+      <view class="center-card card-taped" bindtap="onPlayCenter">
+        <view class="center-word serif">{{word}}</view>
+        <view class="center-phonetic" wx:if="{{phonetic}}">{{phonetic}}</view>
+        <view class="center-root" wx:if="{{root}}">
+          <text class="center-root-tag">{{root}}</text>
+          <text class="center-root-gloss" wx:if="{{rootGloss}}">· {{rootGloss}}</text>
+        </view>
+      </view>
+
+      <!-- 环绕词节点 -->
+      <view
+        class="node {{item.ring === 1 ? 'node-outer' : ''}}"
+        wx:for="{{nodes}}"
+        wx:key="word"
+        data-word="{{item.word}}"
+        data-meaning="{{item.meaning}}"
+        style="left: {{item.x}}%; top: {{item.y}}%;"
+        bindtap="onNodeTap"
+        bindlongpress="onNodeLongPress"
+      >
+        {{item.word}}
+      </view>
+    </view>
+
+    <!-- 释义卡 -->
+    <view class="meaning-card">
+      <view class="meaning-label">释义</view>
+      <view class="meaning-text">{{meaning}}</view>
+    </view>
+
+    <!-- 关系切换 + 随机漫游 -->
+    <view class="bottom-bar">
+      <view class="relation-tabs">
+        <view class="rel-tab {{tab === 'family' ? 'active' : ''}}" data-tab="family" bindtap="onTabChange">
+          同根词族 {{familyTotal}}
+        </view>
+        <view class="rel-tab {{tab === 'similar' ? 'active' : ''}}" data-tab="similar" bindtap="onTabChange">
+          形近易混 {{similarTotal}}
+        </view>
+      </view>
+      <view class="random-btn" bindtap="onRandomTap">随机漫游</view>
+    </view>
+  </block>
+</view>

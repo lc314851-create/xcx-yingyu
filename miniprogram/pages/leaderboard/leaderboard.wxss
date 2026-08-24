@@ -26,19 +26,19 @@
 }
 
 .tab-item.active {
-  background: #4A90D9;
+  background: #2F5746;
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 2rpx 8rpx rgba(74, 144, 217, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(47, 87, 70, 0.3);
 }
 
 /* 我的排名卡片 */
 .my-rank-card {
-  background: linear-gradient(135deg, #4A90D9 0%, #6FB1F0 100%);
+  background: linear-gradient(135deg, #2F5746 0%, #5F8F7A 100%);
   border-radius: 20rpx;
   padding: 30rpx 36rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 8rpx 30rpx rgba(74, 144, 217, 0.15);
+  box-shadow: 0 8rpx 30rpx rgba(47, 87, 70, 0.15);
 }
 
 .my-rank-label {
@@ -143,7 +143,7 @@
 }
 
 .rank-row.is-me {
-  background: #EAF2FC;
+  background: #E9F0EB;
 }
 
 .rank-num {
@@ -174,7 +174,7 @@
 .rank-me-tag {
   font-size: 20rpx;
   color: #FFFFFF;
-  background: #4A90D9;
+  background: #2F5746;
   border-radius: 8rpx;
   padding: 4rpx 12rpx;
   margin-left: 12rpx;

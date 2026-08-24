@@ -64,12 +64,13 @@
           <view class="word-example" wx:if="{{queue[currentIndex].example}}">{{queue[currentIndex].example}}</view>
           <!-- ECDICT 扩展字段 -->
           <view class="word-extra" wx:if="{{queue[currentIndex].root || queue[currentIndex].synonyms || queue[currentIndex].antonyms || queue[currentIndex].relatedWords || queue[currentIndex].star}}">
-            <view class="word-extra-row" wx:if="{{queue[currentIndex].root}}"><text class="extra-label">词根：</text><text class="extra-text">{{queue[currentIndex].root}}</text></view>
+            <view class="word-extra-row" wx:if="{{queue[currentIndex].root}}"><text class="extra-label">词根：</text><text class="extra-text">{{queue[currentIndex].root}}{{queue[currentIndex].rootGloss ? ' · ' + queue[currentIndex].rootGloss : ''}}</text></view>
             <view class="word-extra-row" wx:if="{{queue[currentIndex].synonyms}}"><text class="extra-label">同义：</text><text class="extra-text">{{queue[currentIndex].synonyms}}</text></view>
             <view class="word-extra-row" wx:if="{{queue[currentIndex].antonyms}}"><text class="extra-label">反义：</text><text class="extra-text">{{queue[currentIndex].antonyms}}</text></view>
             <view class="word-extra-row" wx:if="{{queue[currentIndex].relatedWords}}"><text class="extra-label">形近：</text><text class="extra-text">{{queue[currentIndex].relatedWords}}</text></view>
             <view class="word-extra-row" wx:if="{{queue[currentIndex].star > 0}}"><text class="extra-label">词频：</text><text class="extra-text">{{['','★','★★','★★★','★★★★','★★★★★'][queue[currentIndex].star] || ''}}</text></view>
           </view>
+          <view class="word-galaxy-link" wx:if="{{queue[currentIndex].root || queue[currentIndex].relatedWords}}" catchtap="goGalaxy">漫游词族 ›</view>
           <view class="flip-hint">点击返回正面</view>
         </view>
       </view>

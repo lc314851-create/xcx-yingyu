@@ -74,6 +74,18 @@
         <view class="action-tile-icon action-tile-icon-leaderboard"></view>
         <view class="action-tile-label">学习排行</view>
       </view>
+      <view class="action-tile" bindtap="goGalaxy">
+        <view class="action-tile-icon action-tile-icon-galaxy"></view>
+        <view class="action-tile-label">词根星系</view>
+      </view>
+      <view class="action-tile" bindtap="goScene">
+        <view class="action-tile-icon action-tile-icon-scene"></view>
+        <view class="action-tile-label">情景剧本</view>
+      </view>
+      <view class="action-tile" bindtap="goMemory">
+        <view class="action-tile-icon action-tile-icon-memory"></view>
+        <view class="action-tile-label">记忆体检</view>
+      </view>
     </view>
   </view>
 

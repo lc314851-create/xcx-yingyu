@@ -1,0 +1,254 @@
+/* pages/galaxy/galaxy.wxss - 词根星系·手账星图 */
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 60rpx;
+}
+
+/* ─── 页头 ─── */
+.page-head {
+  padding: 40rpx 40rpx 10rpx;
+}
+
+.page-head-title {
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+  font-size: 44rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 4rpx;
+}
+
+.page-head-sub {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+  letter-spacing: 2rpx;
+}
+
+/* ─── 加载 / 空态 ─── */
+.loading-state, .empty-state {
+  padding: 120rpx 0;
+  text-align: center;
+}
+
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.loading-dot {
+  width: 16rpx;
+  height: 16rpx;
+  background: var(--color-primary-light);
+  border-radius: 50%;
+  animation: dotWave 1.2s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) { animation-delay: 0.15s; }
+.loading-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes dotWave {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-16rpx); }
+}
+
+.loading-text, .empty-text {
+  margin-top: 24rpx;
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+}
+
+.empty-sub {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--text-quaternary);
+}
+
+/* ─── 星系轨道 ─── */
+.orbit-scene {
+  position: relative;
+  margin: 30rpx 40rpx 20rpx;
+  height: 700rpx;
+}
+
+.orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scaleY(0.82);
+  border: 2rpx dashed var(--border-strong);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.orbit-ring-inner {
+  width: 64%;
+  height: 64%;
+}
+
+.orbit-ring-outer {
+  width: 92%;
+  height: 92%;
+  opacity: 0.6;
+}
+
+/* 中心词卡：贴了胶带的便签 */
+.center-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  min-width: 240rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
+  border-radius: 16rpx;
+  padding: 32rpx 36rpx;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.15s var(--ease-out);
+}
+
+.center-card:active {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+.center-word {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.center-phonetic {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+
+.center-root {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+}
+
+.center-root-tag {
+  display: inline-block;
+  padding: 2rpx 14rpx;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  border-radius: 999rpx;
+  font-weight: 600;
+}
+
+.center-root-gloss {
+  color: var(--text-secondary);
+  margin-left: 8rpx;
+}
+
+/* 环绕词节点：纸条钉在轨道上 */
+.node {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  padding: 12rpx 20rpx;
+  font-size: 26rpx;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--color-primary-dark);
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
+  border-bottom: 4rpx solid var(--border-strong);
+  border-radius: 10rpx;
+  box-shadow: var(--shadow-sm);
+  animation: floaty 4s ease-in-out infinite;
+  transition: transform 0.15s var(--ease-out);
+  white-space: nowrap;
+  max-width: 220rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-outer {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.node:active {
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-8rpx); }
+}
+
+/* ─── 释义卡 ─── */
+.meaning-card {
+  margin: 10rpx 40rpx 0;
+  padding: 26rpx 30rpx;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
+  border-left: 6rpx solid var(--color-highlight);
+  border-radius: 12rpx;
+  box-shadow: var(--shadow-sm);
+}
+
+.meaning-label {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  letter-spacing: 4rpx;
+}
+
+.meaning-text {
+  margin-top: 8rpx;
+  font-size: 30rpx;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* ─── 底部操作 ─── */
+.bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 30rpx 40rpx 0;
+  gap: 20rpx;
+}
+
+.relation-tabs {
+  display: flex;
+  gap: 14rpx;
+  flex: 1;
+}
+
+.rel-tab {
+  padding: 14rpx 24rpx;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
+  border-radius: 999rpx;
+  transition: all 0.15s var(--ease-out);
+}
+
+.rel-tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--text-on-primary);
+  font-weight: 600;
+}
+
+.random-btn {
+  padding: 14rpx 26rpx;
+  font-size: 26rpx;
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+  border: 2rpx dashed var(--color-accent);
+  border-radius: 999rpx;
+  transition: transform 0.15s var(--ease-out);
+}
+
+.random-btn:active {
+  transform: scale(0.94);
+}

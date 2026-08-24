@@ -9,11 +9,11 @@
 .area-header {
   display: flex;
   align-items: center;
-  background: linear-gradient(145deg, #4A90D9 0%, #6FB1F0 100%);
+  background: linear-gradient(145deg, #2F5746 0%, #5F8F7A 100%);
   border-radius: 20rpx;
   padding: 30rpx 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 8rpx 30rpx rgba(74, 144, 217, 0.15);
+  box-shadow: 0 8rpx 30rpx rgba(47, 87, 70, 0.15);
 }
 
 .area-icon {
@@ -39,7 +39,7 @@
 
 .area-switch {
   font-size: 26rpx;
-  color: #4A90D9;
+  color: #2F5746;
   background: #FFFFFF;
   border-radius: 20rpx;
   padding: 10rpx 24rpx;
@@ -101,7 +101,7 @@
 .level-num {
   font-size: 48rpx;
   font-weight: 700;
-  color: #4A90D9;
+  color: #2F5746;
 }
 
 .level-card.locked .level-num {
@@ -120,7 +120,7 @@
 }
 
 .star.active {
-  color: #F5A623;
+  color: #C98F2C;
 }
 
 .star-dim {
@@ -192,7 +192,7 @@
 
 .play-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4A90D9, #6FB1F0);
+  background: linear-gradient(90deg, #2F5746, #5F8F7A);
   border-radius: 6rpx;
   transition: width 0.4s ease;
 }
@@ -212,8 +212,8 @@
 }
 
 .combo-stat {
-  color: #F5A623;
-  background: #FFF6E5;
+  color: #C98F2C;
+  background: #F9F1DE;
   font-weight: 600;
 }
 
@@ -221,8 +221,8 @@
 .qtype-tag {
   display: inline-block;
   font-size: 22rpx;
-  color: #4A90D9;
-  background: #EAF2FC;
+  color: #2F5746;
+  background: #E9F0EB;
   border-radius: 12rpx;
   padding: 6rpx 16rpx;
   margin-bottom: 20rpx;
@@ -234,7 +234,7 @@
   border-radius: 24rpx;
   padding: 50rpx 40rpx;
   text-align: center;
-  box-shadow: 0 8rpx 30rpx rgba(74, 144, 217, 0.10);
+  box-shadow: 0 8rpx 30rpx rgba(47, 87, 70, 0.10);
   margin-bottom: 30rpx;
   position: relative;
 }
@@ -262,7 +262,7 @@
 
 .q-phonetic {
   font-size: 28rpx;
-  color: #4A90D9;
+  color: #2F5746;
   margin-top: 12rpx;
 }
 
@@ -305,12 +305,12 @@
 }
 
 .choice-item.correct {
-  background: #E8F5E9;
-  border-color: #34A853;
+  background: #E5F1E9;
+  border-color: #3E8E5E;
 }
 
 .choice-item.wrong {
-  background: #FFEBEE;
+  background: #F6E8E4;
   border-color: #F44336;
 }
 
@@ -330,7 +330,7 @@
 }
 
 .choice-item.correct .choice-letter {
-  background: #34A853;
+  background: #3E8E5E;
   color: #FFFFFF;
 }
 
@@ -381,7 +381,7 @@
 
 .spell-phonetic {
   font-size: 28rpx;
-  color: #4A90D9;
+  color: #2F5746;
   margin-top: 12rpx;
 }
 
@@ -393,14 +393,14 @@
 
 .spell-audio-btn {
   font-size: 28rpx;
-  color: #4A90D9;
-  background: #EAF2FC;
+  color: #2F5746;
+  background: #E9F0EB;
   border-radius: 40rpx;
   padding: 14rpx 36rpx;
 }
 
 .spell-input.correct {
-  border-color: #34A853;
+  border-color: #3E8E5E;
   color: #2E7D32;
 }
 
@@ -424,8 +424,8 @@
   display: inline-block;
   font-size: 48rpx;
   font-weight: 700;
-  color: #F5A623;
-  text-shadow: 0 4rpx 20rpx rgba(245, 166, 35, 0.3);
+  color: #C98F2C;
+  text-shadow: 0 4rpx 20rpx rgba(201, 143, 44, 0.3);
   animation: comboBounce 0.6s ease;
 }
 
@@ -443,7 +443,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #F6F8FC;
+  background: #F7F3EA;
   z-index: 200;
   display: flex;
   align-items: center;
@@ -496,8 +496,8 @@
 .result-star:nth-child(3) { animation-delay: 0.6s; }
 
 .result-star.active {
-  color: #F5A623;
-  text-shadow: 0 4rpx 20rpx rgba(245, 166, 35, 0.3);
+  color: #C98F2C;
+  text-shadow: 0 4rpx 20rpx rgba(201, 143, 44, 0.3);
 }
 
 @keyframes starPop {
@@ -536,7 +536,7 @@
 .result-rate {
   font-size: 60rpx;
   font-weight: 800;
-  color: #4A90D9;
+  color: #2F5746;
   line-height: 1;
 }
 
@@ -612,7 +612,7 @@
 /* 解锁提示 */
 .result-unlock-tip {
   font-size: 28rpx;
-  color: #34A853;
+  color: #3E8E5E;
   font-weight: 600;
   margin-bottom: 20rpx;
 }
@@ -674,7 +674,7 @@
 
 /* 通用按钮 */
 .btn-primary {
-  background: #4A90D9;
+  background: #2F5746;
   color: #FFFFFF;
   text-align: center;
   border-radius: 16rpx;
@@ -682,8 +682,8 @@
 }
 
 .btn-secondary {
-  background: #EAF2FC;
-  color: #4A90D9;
+  background: #E9F0EB;
+  color: #2F5746;
   text-align: center;
   border-radius: 16rpx;
   font-weight: 600;

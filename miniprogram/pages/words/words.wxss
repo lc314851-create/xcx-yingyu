@@ -40,9 +40,9 @@
 
 .book-bar-switch {
   font-size: 26rpx;
-  color: #4A90D9;
+  color: #2F5746;
   padding: 10rpx 22rpx;
-  background: #EAF2FC;
+  background: #E9F0EB;
   border-radius: 20rpx;
   font-weight: 600;
   transition: transform 0.15s var(--ease-out);
@@ -70,10 +70,10 @@
 }
 
 .mode-chip.active {
-  background: #4A90D9;
+  background: #2F5746;
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 2rpx 8rpx rgba(74, 144, 217, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(47, 87, 70, 0.3);
 }
 
 /* ═══ 进度条 ═══ */
@@ -86,8 +86,8 @@
 
 .status-tag {
   font-size: 22rpx;
-  color: #4A90D9;
-  background: #EAF2FC;
+  color: #2F5746;
+  background: #E9F0EB;
   border-radius: 12rpx;
   padding: 6rpx 14rpx;
   min-width: 60rpx;
@@ -95,13 +95,13 @@
 }
 
 .status-tag.review {
-  color: #F5A623;
-  background: #FFF6E5;
+  color: #C98F2C;
+  background: #F9F1DE;
 }
 
 .status-tag.solidify {
-  color: #34A853;
-  background: #E8F5E9;
+  color: #3E8E5E;
+  background: #E5F1E9;
 }
 
 .progress-text {
@@ -120,7 +120,7 @@
 
 .progress-fill {
   height: 100%;
-  background: #4A90D9;
+  background: #2F5746;
   border-radius: 7rpx;
   transition: width 0.3s ease;
 }
@@ -166,28 +166,74 @@
   box-sizing: border-box;
 }
 
+/* 正面：横线便签单词卡，顶部貼和纸膠帶 */
 .card-front {
-  background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFF 100%);
-  box-shadow: 0 12rpx 40rpx rgba(74, 144, 217, 0.12);
+  background-color: #FFFDF6;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 62rpx,
+    rgba(47, 87, 70, 0.10) 62rpx,
+    rgba(47, 87, 70, 0.10) 64rpx
+  ),
+  linear-gradient(to right,
+    transparent 0,
+    transparent 72rpx,
+    rgba(184, 74, 62, 0.18) 72rpx,
+    rgba(184, 74, 62, 0.18) 74rpx,
+    transparent 74rpx
+  );
+  border: 2rpx solid #E0D7C2;
+  box-shadow: 0 12rpx 40rpx rgba(88, 70, 42, 0.12);
 }
 
+.card-front::before {
+  content: "";
+  position: absolute;
+  top: -20rpx;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 150rpx;
+  height: 38rpx;
+  background: rgba(242, 201, 76, 0.6);
+  border-left: 2rpx dashed rgba(255, 255, 255, 0.7);
+  border-right: 2rpx dashed rgba(255, 255, 255, 0.7);
+  box-shadow: 0 3rpx 6rpx rgba(88, 70, 42, 0.12);
+  z-index: 2;
+}
+
+/* 背面：墨绿卡纸 + 车线内框 */
 .card-back {
-  background: linear-gradient(145deg, #4A90D9 0%, #6FB1F0 100%);
-  box-shadow: 0 12rpx 40rpx rgba(74, 144, 217, 0.25);
+  background: #24473A;
+  border: 2rpx solid #1C3A2F;
+  box-shadow: 0 12rpx 40rpx rgba(36, 71, 58, 0.30);
   transform: rotateY(180deg);
-  color: #FFFFFF;
+  color: #F9F6EE;
+}
+
+.card-back::before {
+  content: "";
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  right: 12rpx;
+  bottom: 12rpx;
+  border: 2rpx dashed rgba(249, 246, 238, 0.25);
+  border-radius: 16rpx;
+  pointer-events: none;
 }
 
 .word-main {
-  font-size: 64rpx;
-  font-weight: 800;
-  color: #1F2430;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 72rpx;
+  font-weight: 700;
+  color: #2B2620;
   letter-spacing: 2rpx;
   line-height: 1.2;
 }
 
 .card-back .word-main {
-  color: #FFFFFF;
+  color: #F9F6EE;
 }
 
 .back-word {
@@ -196,7 +242,7 @@
 
 .word-phonetic-front {
   font-size: 30rpx;
-  color: #4A90D9;
+  color: #2F5746;
   margin-top: 20rpx;
 }
 
@@ -250,8 +296,9 @@
 
 .flip-hint {
   font-size: 24rpx;
-  color: #B0B6C0;
+  color: #9A9078;
   margin-top: 40rpx;
+  letter-spacing: 2rpx;
 }
 
 .card-back .flip-hint {
@@ -272,8 +319,8 @@
 
 .audio-btn {
   font-size: 28rpx;
-  color: #4A90D9;
-  background: #EAF2FC;
+  color: #2F5746;
+  background: #E9F0EB;
   border-radius: 40rpx;
   padding: 14rpx 36rpx;
   font-weight: 600;
@@ -282,7 +329,7 @@
 
 .audio-btn:active {
   transform: scale(0.93);
-  background: #D8E8FA;
+  background: #DCE8DE;
 }
 
 .accent-toggle {
@@ -326,7 +373,7 @@
   border-radius: 24rpx;
   padding: 50rpx 40rpx;
   text-align: center;
-  box-shadow: 0 12rpx 40rpx rgba(74, 144, 217, 0.12);
+  box-shadow: 0 12rpx 40rpx rgba(47, 87, 70, 0.12);
   margin-bottom: 30rpx;
 }
 
@@ -353,7 +400,7 @@
 
 .choice-phonetic {
   font-size: 28rpx;
-  color: #4A90D9;
+  color: #2F5746;
 }
 
 .audio-btn-sm {
@@ -384,12 +431,12 @@
 }
 
 .choice-item.correct {
-  background: #E8F5E9;
-  border-color: #34A853;
+  background: #E5F1E9;
+  border-color: #3E8E5E;
 }
 
 .choice-item.wrong {
-  background: #FFEBEE;
+  background: #F6E8E4;
   border-color: #F44336;
 }
 
@@ -409,7 +456,7 @@
 }
 
 .choice-item.correct .choice-letter {
-  background: #34A853;
+  background: #3E8E5E;
   color: #FFFFFF;
 }
 
@@ -442,20 +489,20 @@
   border-radius: 24rpx;
   padding: 50rpx 40rpx;
   text-align: center;
-  box-shadow: 0 12rpx 40rpx rgba(74, 144, 217, 0.12);
+  box-shadow: 0 12rpx 40rpx rgba(47, 87, 70, 0.12);
   margin-bottom: 30rpx;
   border: 3rpx solid transparent;
   transition: border-color 0.3s, background 0.3s;
 }
 
 .spell-card.feedback-correct {
-  border-color: #34A853;
-  background: linear-gradient(145deg, #E8F5E9 0%, #F1F8E9 100%);
+  border-color: #3E8E5E;
+  background: linear-gradient(145deg, #E5F1E9 0%, #F1F8E9 100%);
 }
 
 .spell-card.feedback-wrong {
   border-color: #F44336;
-  background: linear-gradient(145deg, #FFEBEE 0%, #FFF8F8 100%);
+  background: linear-gradient(145deg, #F6E8E4 0%, #FFF8F8 100%);
 }
 
 .spell-prompt {
@@ -473,7 +520,7 @@
 
 .spell-phonetic {
   font-size: 28rpx;
-  color: #4A90D9;
+  color: #2F5746;
   margin-top: 12rpx;
 }
 
@@ -499,7 +546,7 @@
 }
 
 .spell-card.feedback-correct .spell-input {
-  border-color: #34A853;
+  border-color: #3E8E5E;
   color: #2E7D32;
 }
 
@@ -515,7 +562,7 @@
 }
 
 .spell-card.feedback-correct .spell-feedback-text {
-  color: #34A853;
+  color: #3E8E5E;
 }
 
 .spell-card.feedback-wrong .spell-feedback-text {
@@ -538,7 +585,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #F6F8FC;
+  background: #F7F3EA;
   z-index: 200;
   display: flex;
   align-items: center;
@@ -603,7 +650,7 @@
 .result-rate {
   font-size: 72rpx;
   font-weight: 800;
-  color: #4A90D9;
+  color: #2F5746;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -633,7 +680,7 @@
 }
 
 .result-stat-num.result-correct {
-  color: #34A853;
+  color: #3E8E5E;
 }
 
 .result-stat-num.result-wrong {
@@ -692,7 +739,7 @@
   width: 16rpx;
   height: 16rpx;
   border-radius: 50%;
-  background: #4A90D9;
+  background: #2F5746;
   animation: loadingDot 1.2s ease infinite;
 }
 
@@ -721,7 +768,7 @@
   height: 120rpx;
   margin: 0 auto 30rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #EAF2FC, #D4E5F7);
+  background: linear-gradient(135deg, #E9F0EB, #D4E5F7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -730,7 +777,7 @@
 .empty-icon-book {
   width: 48rpx;
   height: 40rpx;
-  border: 4rpx solid #4A90D9;
+  border: 4rpx solid #2F5746;
   border-radius: 4rpx;
   position: relative;
 }
@@ -743,7 +790,7 @@
   transform: translateX(-50%);
   width: 4rpx;
   height: 16rpx;
-  background: #4A90D9;
+  background: #2F5746;
 }
 
 .empty-text {
@@ -779,7 +826,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #F6F8FC;
+  background: #F7F3EA;
   border-radius: 24rpx 24rpx 0 0;
   z-index: 101;
   max-height: 70vh;
@@ -830,7 +877,7 @@
 }
 
 .picker-item.active {
-  background: #EAF2FC;
+  background: #E9F0EB;
 }
 
 .picker-item-name {
@@ -839,12 +886,30 @@
 }
 
 .picker-item.active .picker-item-name {
-  color: #4A90D9;
+  color: #2F5746;
   font-weight: 600;
 }
 
 .picker-item-check {
   font-size: 36rpx;
-  color: #4A90D9;
+  color: #2F5746;
   font-weight: 600;
+}
+
+/* 漫游词族入口（卡背） */
+.word-galaxy-link {
+  display: inline-block;
+  margin-top: 24rpx;
+  padding: 10rpx 30rpx;
+  font-size: 26rpx;
+  color: #F2C94C;
+  border: 2rpx solid rgba(242, 201, 76, 0.6);
+  border-radius: 999rpx;
+  letter-spacing: 2rpx;
+  transition: transform 0.15s var(--ease-out);
+}
+
+.word-galaxy-link:active {
+  transform: scale(0.94);
+  background: rgba(242, 201, 76, 0.12);
 }

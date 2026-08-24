@@ -16,7 +16,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #4A90D9 0%, #6FB1F0 100%);
+  background: linear-gradient(135deg, #2F5746 0%, #5F8F7A 100%);
   border-radius: 0 0 32rpx 32rpx;
 }
 
@@ -134,7 +134,7 @@
 }
 
 .stat-value-accent {
-  color: #4A90D9;
+  color: #2F5746;
 }
 
 .stat-label {
@@ -146,7 +146,7 @@
 
 /* ═══ 打卡按钮 ═══ */
 .checkin-btn {
-  background: #4A90D9;
+  background: #2F5746;
   color: #FFFFFF;
   border-radius: 44rpx;
   font-size: 32rpx;
@@ -154,7 +154,7 @@
   padding: 22rpx 0;
   text-align: center;
   margin: 24rpx 24rpx 10rpx;
-  box-shadow: 0 6rpx 20rpx rgba(74, 144, 217, 0.3);
+  box-shadow: 0 6rpx 20rpx rgba(47, 87, 70, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -164,12 +164,12 @@
 
 .checkin-btn:active {
   transform: scale(0.97) translateY(2rpx);
-  box-shadow: 0 2rpx 8rpx rgba(74, 144, 217, 0.2);
+  box-shadow: 0 2rpx 8rpx rgba(47, 87, 70, 0.2);
 }
 
 .checkin-btn.checked {
-  background: #34A853;
-  box-shadow: 0 6rpx 20rpx rgba(52, 168, 83, 0.3);
+  background: #3E8E5E;
+  box-shadow: 0 6rpx 20rpx rgba(62, 142, 94, 0.3);
 }
 
 .checkin-icon {
@@ -246,8 +246,8 @@
 .heatmap-cell.level-0 { background: #EEF1F6; }
 .heatmap-cell.level-1 { background: #C8DEF5; }
 .heatmap-cell.level-2 { background: #79AEE8; }
-.heatmap-cell.level-3 { background: #4A90D9; }
-.heatmap-cell.level-4 { background: #2E6BBA; }
+.heatmap-cell.level-3 { background: #2F5746; }
+.heatmap-cell.level-4 { background: #24473A; }
 
 .heatmap-tip {
   position: absolute;
@@ -326,7 +326,7 @@
   height: 80rpx;
   margin: 0 auto;
   border-radius: 50%;
-  background: linear-gradient(135deg, #F0F7FF, #EAF2FC);
+  background: linear-gradient(135deg, #F3F7F1, #E9F0EB);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -389,11 +389,11 @@
   flex-shrink: 0;
 }
 
-.other-icon-wrap-blue { background: linear-gradient(135deg, #EAF2FC, #D4E5F7); }
-.other-icon-wrap-amber { background: linear-gradient(135deg, #FFF6E5, #FFE0B2); }
-.other-icon-wrap-green { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); }
+.other-icon-wrap-blue { background: linear-gradient(135deg, #E9F0EB, #D4E5F7); }
+.other-icon-wrap-amber { background: linear-gradient(135deg, #F9F1DE, #FFE0B2); }
+.other-icon-wrap-green { background: linear-gradient(135deg, #E5F1E9, #C8E6C9); }
 .other-icon-wrap-purple { background: linear-gradient(135deg, #F3E5F5, #E1BEE7); }
-.other-icon-wrap-red { background: linear-gradient(135deg, #FFEBEE, #FFCDD2); }
+.other-icon-wrap-red { background: linear-gradient(135deg, #F6E8E4, #FFCDD2); }
 .other-icon-wrap-cyan { background: linear-gradient(135deg, #E0F7FA, #B2EBF2); }
 .other-icon-wrap-orange { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); }
 .other-icon-wrap-gray { background: linear-gradient(135deg, #F5F5F5, #E0E0E0); }
@@ -402,7 +402,7 @@
 .other-icon-search {
   width: 24rpx;
   height: 24rpx;
-  border: 4rpx solid #4A90D9;
+  border: 4rpx solid #2F5746;
   border-radius: 50%;
   position: relative;
 }
@@ -414,7 +414,7 @@
   left: 16rpx;
   width: 10rpx;
   height: 4rpx;
-  background: #4A90D9;
+  background: #2F5746;
   border-radius: 2rpx;
   transform: rotate(45deg);
 }
@@ -422,14 +422,14 @@
 .other-icon-challenge {
   width: 28rpx;
   height: 28rpx;
-  background: #F5A623;
+  background: #C98F2C;
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
 
 .other-icon-fillblank {
   width: 24rpx;
   height: 24rpx;
-  border: 4rpx solid #34A853;
+  border: 4rpx solid #3E8E5E;
   border-radius: 4rpx;
   position: relative;
 }
@@ -442,7 +442,7 @@
   transform: translate(-50%, -50%);
   width: 8rpx;
   height: 8rpx;
-  background: #34A853;
+  background: #3E8E5E;
   border-radius: 50%;
 }
 
@@ -456,15 +456,15 @@
 .other-icon-leaderboard {
   width: 28rpx;
   height: 22rpx;
-  background: #4A90D9;
+  background: #2F5746;
   border-radius: 4rpx 4rpx 0 0;
-  box-shadow: -16rpx 0 0 -2rpx #6FB1F0, 16rpx 0 0 -6rpx #A8D0F4;
+  box-shadow: -16rpx 0 0 -2rpx #5F8F7A, 16rpx 0 0 -6rpx #A8D0F4;
 }
 
 .other-icon-wrongbook {
   width: 24rpx;
   height: 28rpx;
-  border: 3rpx solid #E74C3C;
+  border: 3rpx solid #B84A3E;
   border-radius: 3rpx;
   position: relative;
 }
@@ -477,8 +477,8 @@
   transform: translate(-50%, -50%) rotate(45deg);
   width: 12rpx;
   height: 12rpx;
-  border-right: 3rpx solid #E74C3C;
-  border-bottom: 3rpx solid #E74C3C;
+  border-right: 3rpx solid #B84A3E;
+  border-bottom: 3rpx solid #B84A3E;
 }
 
 .other-icon-poster {
@@ -569,8 +569,8 @@
 }
 
 .reminder-on {
-  color: #34A853;
-  background: #E8F5E9;
+  color: #3E8E5E;
+  background: #E5F1E9;
 }
 
 .reminder-off {

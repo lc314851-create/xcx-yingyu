@@ -43,8 +43,8 @@
 }
 
 .book-card.current {
-  border-color: #4A90D9;
-  background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%);
+  border-color: #2F5746;
+  background: linear-gradient(135deg, #F3F7F1 0%, #FFFFFF 100%);
 }
 
 /* 难度色条（左侧竖条） */
@@ -122,13 +122,13 @@
 .stat-val {
   font-size: 36rpx;
   font-weight: 800;
-  color: #4A90D9;
+  color: #2F5746;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .stat-val.due {
-  color: #F5A623;
+  color: #C98F2C;
 }
 
 .stat-lbl {
@@ -141,7 +141,7 @@
   position: absolute;
   top: 24rpx;
   right: 32rpx;
-  background: #4A90D9;
+  background: #2F5746;
   color: #FFFFFF;
   font-size: 20rpx;
   font-weight: 600;

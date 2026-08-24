@@ -267,6 +267,15 @@ Page({
   },
 
   // ─── 卡片翻面模式 ───
+  // 漫游词族：带着当前词跳转到词根星系
+  goGalaxy() {
+    const w = this.data.queue[this.data.currentIndex];
+    if (!w) return;
+    wx.navigateTo({
+      url: `/pages/galaxy/galaxy?word=${encodeURIComponent(w.word)}`
+    });
+  },
+
   flipCard() {
     const flipped = !this.data.isFlipped;
     this.setData({

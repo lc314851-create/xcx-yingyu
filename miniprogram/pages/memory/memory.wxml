@@ -1,0 +1,98 @@
+<!-- pages/memory/memory.wxml -->
+<view class="page">
+  <view class="page-head">
+    <view class="page-head-title serif">记忆体检报告</view>
+    <view class="page-head-sub">{{reportDate}} · 基于你的真实答题节律拟合</view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-text">正在翻你的学习手账...</view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && !hasData}}">
+    <view class="empty-text">学习数据还太少，暂时生成不了体检报告</view>
+    <view class="empty-sub">先去背几个单词，过几天再来看看</view>
+    <view class="btn-primary empty-btn" bindtap="goReview">去背单词</view>
+  </view>
+
+  <block wx:if="{{!loading && hasData}}">
+    <!-- 总览：体检结论 -->
+    <view class="card card-taped overview-card">
+      <view class="overview-score-ring">
+        <view class="overview-score serif">{{stabilityScore}}</view>
+        <view class="overview-score-label">记忆稳定度</view>
+      </view>
+      <view class="overview-stats">
+        <view class="overview-row">
+          <text class="overview-k">已学单词</text>
+          <text class="overview-v serif">{{learnedCount}}</text>
+        </view>
+        <view class="overview-row">
+          <text class="overview-k">本周新学</text>
+          <text class="overview-v serif">{{weeklyLearned}}</text>
+        </view>
+        <view class="overview-row">
+          <text class="overview-k">连续打卡</text>
+          <text class="overview-v serif">{{streakDays}} 天</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 个人遗忘曲线 -->
+    <view class="card curve-card">
+      <view class="section-title">你的遗忘曲线</view>
+      <view class="section-sub">若今天不复习，8 天后的记忆保持率预测</view>
+      <view class="curve-bars">
+        <view class="curve-bar-wrap" wx:for="{{curve}}" wx:key="label">
+          <view class="curve-bar-v serif">{{item.v}}</view>
+          <view class="curve-bar" style="height: {{item.v * 2}}rpx; background: {{item.v >= 70 ? '#3E8E5E' : (item.v >= 40 ? '#C98F2C' : '#B84A3E')}};"></view>
+          <view class="curve-bar-label">{{item.label}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 高危遗忘词 -->
+    <view class="card risk-card" wx:if="{{riskWords.length}}">
+      <view class="section-title">最可能忘记的词</view>
+      <view class="section-sub">按当前的记忆保持率排序，建议优先复习</view>
+      <view class="risk-row" wx:for="{{riskWords}}" wx:key="word" data-word="{{item.word}}" bindtap="onWordTap">
+        <view class="risk-r" style="color: {{item.r >= 70 ? '#3E8E5E' : (item.r >= 40 ? '#C98F2C' : '#B84A3E')}}">{{item.r}}%</view>
+        <view class="risk-main">
+          <view class="risk-word serif">{{item.word}}</view>
+          <view class="risk-meaning">{{item.meaning}}</view>
+        </view>
+        <view class="risk-days">{{item.days === 0 ? '今天' : item.days + '天前'}}</view>
+      </view>
+      <view class="btn-primary go-review" bindtap="goReview">立即复习这些词</view>
+    </view>
+
+    <!-- 易混词对 -->
+    <view class="card confuse-card" wx:if="{{confusePairs.length}}">
+      <view class="section-title">容易张冠李戴的词对</view>
+      <view class="section-sub">形近又都学过，红线标出的是你记忆更弱的那个</view>
+      <view class="pair-hint" wx:if="{{false}}"></view>
+      <view
+        class="pair-row"
+        wx:for="{{confusePairs}}"
+        wx:key="a"
+        data-word="{{item.weakSide === 'a' ? item.a : item.b}}"
+        bindtap="onPairTap"
+      >
+        <view class="pair-side {{item.weakSide === 'a' ? 'weak' : ''}}">
+          <view class="pair-word serif">{{item.a}}</view>
+          <view class="pair-meaning">{{item.aMeaning}}</view>
+        </view>
+        <view class="pair-vs serif">⇄</view>
+        <view class="pair-side {{item.weakSide === 'b' ? 'weak' : ''}}">
+          <view class="pair-word serif">{{item.b}}</view>
+          <view class="pair-meaning">{{item.bMeaning}}</view>
+        </view>
+      </view>
+      <view class="pair-tip">点击词对，去词根星系里对比着看清楚</view>
+    </view>
+
+    <view class="footnote">保持率模型：R = e^(−Δt/S)，S 由你的连续答对次数决定</view>
+  </block>
+</view>

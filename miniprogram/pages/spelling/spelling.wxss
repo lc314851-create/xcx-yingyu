@@ -33,7 +33,7 @@
 
 .progress-fill {
   height: 100%;
-  background: #4A90D9;
+  background: #2F5746;
   border-radius: 5rpx;
   transition: width 0.3s ease;
 }
@@ -48,16 +48,16 @@
 }
 
 .question-card.feedback-correct {
-  background: #E8F5E9;
+  background: #E5F1E9;
 }
 
 .question-card.feedback-wrong {
-  background: #FFEBEE;
+  background: #F6E8E4;
 }
 
 .prompt {
   font-size: 26rpx;
-  color: #4A90D9;
+  color: #2F5746;
   margin-bottom: 20rpx;
 }
 
@@ -92,7 +92,7 @@
 .input-slot {
   width: 56rpx;
   height: 72rpx;
-  border-bottom: 4rpx solid #4A90D9;
+  border-bottom: 4rpx solid #2F5746;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -132,7 +132,7 @@
   justify-content: center;
   font-size: 36rpx;
   font-weight: 700;
-  color: #4A90D9;
+  color: #2F5746;
   border: 2rpx solid #D4E5F7;
 }
 
@@ -216,7 +216,7 @@
 .result-rate {
   font-size: 56rpx;
   font-weight: 700;
-  color: #4A90D9;
+  color: #2F5746;
 }
 
 .result-rate-label {
@@ -235,7 +235,7 @@
 .result-stat-num {
   font-size: 40rpx;
   font-weight: 700;
-  color: #4A90D9;
+  color: #2F5746;
 }
 
 .result-stat-sep {

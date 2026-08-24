@@ -1,51 +1,61 @@
-/* app.wxss - 全局样式 */
+/* app.wxss - 全局样式 ·「拾词手账」设计系统
+   人格：米纸底 + 松绿墨 + 朱砂印 + 荧光笔 + 和纸胶带 */
 
 /* ═════════════════════════════════════════ */
 /* 设计 Token 变量系统                         */
 /* ═════════════════════════════════════════ */
 page {
-  /* 主色调 */
-  --color-primary: #4A90D9;
-  --color-primary-light: #6FB1F0;
-  --color-primary-dark: #2E6BBA;
-  --color-primary-bg: #EAF2FC;
-  --color-primary-bg-light: #F0F7FF;
+  /* 主色调：松绿墨 */
+  --color-primary: #2F5746;
+  --color-primary-light: #5F8F7A;
+  --color-primary-dark: #24473A;
+  --color-primary-bg: #E9F0EB;
+  --color-primary-bg-light: #F3F7F1;
+
+  /* 强调色：朱砂印 */
+  --color-accent: #B84A3E;
+  --color-accent-bg: #F6E8E4;
+
+  /* 荧光笔黄 */
+  --color-highlight: #F2C94C;
+  --color-highlight-soft: #FAEDCB;
 
   /* 功能色 */
-  --color-success: #34A853;
-  --color-success-bg: #E8F5E9;
-  --color-warning: #F5A623;
-  --color-warning-bg: #FFF6E5;
-  --color-danger: #E74C3C;
-  --color-danger-bg: #FFEBEE;
-  --color-info: #4A90D9;
-  --color-info-bg: #EAF2FC;
+  --color-success: #3E8E5E;
+  --color-success-bg: #E5F1E9;
+  --color-warning: #C98F2C;
+  --color-warning-bg: #F9F1DE;
+  --color-danger: #B84A3E;
+  --color-danger-bg: #F6E8E4;
+  --color-info: #2F5746;
+  --color-info-bg: #E9F0EB;
 
-  /* 文字色 */
-  --text-primary: #1F2430;
-  --text-secondary: #5A6072;
-  --text-tertiary: #8A8F99;
-  --text-quaternary: #B0B6C0;
-  --text-on-primary: #FFFFFF;
+  /* 文字色：墨 */
+  --text-primary: #2B2620;
+  --text-secondary: #6E6656;
+  --text-tertiary: #9A9078;
+  --text-quaternary: #C6BCA4;
+  --text-on-primary: #F9F6EE;
 
-  /* 背景色 */
-  --bg-page: #F6F8FC;
-  --bg-card: #FFFFFF;
-  --bg-elevated: #FFFFFF;
-  --bg-muted: #F0F2F5;
-  --bg-hover: #F8FAFF;
+  /* 背景色：纸 */
+  --bg-page: #F7F3EA;
+  --bg-card: #FFFDF6;
+  --bg-elevated: #FFFDF6;
+  --bg-muted: #EFE9DA;
+  --bg-hover: #FBF7EC;
 
   /* 边框 */
-  --border-light: #EEF1F6;
-  --border-default: #E3E9F2;
-  --border-strong: #D0D5DD;
+  --border-light: #EBE4D3;
+  --border-default: #E0D7C2;
+  --border-strong: #C9BEA2;
+  --border-ink: #2B2620;
 
-  /* 圆角 */
-  --radius-sm: 8rpx;
-  --radius-md: 16rpx;
-  --radius-lg: 20rpx;
-  --radius-xl: 24rpx;
-  --radius-pill: 44rpx;
+  /* 圆角：纸品small radius */
+  --radius-sm: 6rpx;
+  --radius-md: 12rpx;
+  --radius-lg: 16rpx;
+  --radius-xl: 20rpx;
+  --radius-pill: 999rpx;
   --radius-circle: 50%;
 
   /* 间距 */
@@ -56,12 +66,12 @@ page {
   --space-xl: 40rpx;
   --space-2xl: 60rpx;
 
-  /* 阴影 */
-  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 8rpx 30rpx rgba(74, 144, 217, 0.10);
-  --shadow-primary: 0 6rpx 20rpx rgba(74, 144, 217, 0.12);
-  --shadow-primary-strong: 0 6rpx 20rpx rgba(74, 144, 217, 0.3);
+  /* 阴影：暖纸阴影 */
+  --shadow-sm: 0 2rpx 6rpx rgba(88, 70, 42, 0.06);
+  --shadow-md: 0 4rpx 14rpx rgba(88, 70, 42, 0.08);
+  --shadow-lg: 0 8rpx 28rpx rgba(88, 70, 42, 0.14);
+  --shadow-primary: 0 6rpx 18rpx rgba(47, 87, 70, 0.18);
+  --shadow-primary-strong: 0 6rpx 20rpx rgba(47, 87, 70, 0.35);
 
   /* 字号 */
   --font-xs: 22rpx;
@@ -72,7 +82,7 @@ page {
   --font-xl: 40rpx;
   --font-2xl: 48rpx;
   --font-3xl: 56rpx;
-  --font-4xl: 64rpx;
+  --font-4xl: 72rpx;
 
   /* 动画 */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -90,19 +100,88 @@ page {
 }
 
 /* ═════════════════════════════════════════ */
-/* 通用组件                                    */
+/* 手账风通用元素                                */
 /* ═════════════════════════════════════════ */
 
-/* 通用卡片 */
+/* 衬线字：英文单词、数字、标题装饰 */
+.serif {
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+}
+
+/* 通用卡片：纸卡 */
 .card {
   background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
   margin: var(--space-md) var(--space-md);
   box-shadow: var(--shadow-md);
 }
 
-/* 主按钮 */
+/* 纸卡 + 和纸胶带（卡片顶部一条斜贴胶带）*/
+.card-taped {
+  position: relative;
+  overflow: visible;
+}
+
+.card-taped::before {
+  content: "";
+  position: absolute;
+  top: -18rpx;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 130rpx;
+  height: 34rpx;
+  background: rgba(242, 201, 76, 0.55);
+  border-left: 2rpx dashed rgba(255, 255, 255, 0.7);
+  border-right: 2rpx dashed rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2rpx 4rpx rgba(88, 70, 42, 0.10);
+}
+
+/* 横线便签底（index card 风格） */
+.lined-paper {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 62rpx,
+    rgba(47, 87, 70, 0.10) 62rpx,
+    rgba(47, 87, 70, 0.10) 64rpx
+  );
+  background-position: 0 14rpx;
+}
+
+/* 虚线分隔线（手账剪贴线） */
+.dashed-divider {
+  border-top: 2rpx dashed var(--border-strong);
+}
+
+/* 印章角标（红色“印”） */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 14rpx;
+  border: 3rpx solid var(--color-accent);
+  border-radius: 8rpx;
+  color: var(--color-accent);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  transform: rotate(-3deg);
+  background: var(--color-accent-bg);
+}
+
+/* 荧光笔标注文字 */
+.marker-text {
+  background: linear-gradient(180deg, transparent 55%, var(--color-highlight-soft) 55%, var(--color-highlight-soft) 92%, transparent 92%);
+  padding: 0 6rpx;
+}
+
+/* ═════════════════════════════════════════ */
+/* 通用组件                                    */
+/* ═════════════════════════════════════════ */
+
+/* 主按钮：松绿墨 */
 .btn-primary {
   background: var(--color-primary);
   color: var(--text-on-primary);
@@ -118,13 +197,14 @@ page {
 
 .btn-primary:active {
   transform: scale(0.97) translateY(2rpx);
-  box-shadow: 0 2rpx 8rpx rgba(74, 144, 217, 0.2);
+  box-shadow: 0 2rpx 8rpx rgba(47, 87, 70, 0.25);
 }
 
-/* 副按钮 */
+/* 副按钮：纸面墨边 */
 .btn-secondary {
-  background: var(--color-primary-bg);
+  background: var(--bg-card);
   color: var(--color-primary);
+  border: 2rpx solid var(--border-strong);
   border-radius: var(--radius-pill);
   font-size: var(--font-base);
   font-weight: 600;
@@ -136,7 +216,7 @@ page {
 
 .btn-secondary:active {
   transform: scale(0.97) translateY(2rpx);
-  background: #D8E8FA;
+  background: var(--bg-muted);
 }
 
 /* 标题 */

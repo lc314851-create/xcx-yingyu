@@ -9,6 +9,8 @@ export interface WordItem {
   isHighFreq?: boolean; // 是否高频词
   // ─── ECDICT 扩展字段（可选） ───────────
   root?: string;          // 词根
+  rootGloss?: string;     // 词根中文释义
+  lemma?: string;         // 原型词（派生词的词干）
   synonyms?: string;      // 同义词（逗号分隔）
   antonyms?: string;      // 反义词（逗号分隔）
   relatedWords?: string;  // 形近词（逗号分隔）

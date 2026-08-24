@@ -207,6 +207,27 @@ Page({
     });
   },
 
+  // 跳转词根星系
+  goGalaxy() {
+    wx.navigateTo({
+      url: '/pages/galaxy/galaxy'
+    });
+  },
+
+  // 跳转情景剧本
+  goScene() {
+    wx.navigateTo({
+      url: '/pages/scene/scene'
+    });
+  },
+
+  // 跳转记忆体检
+  goMemory() {
+    wx.navigateTo({
+      url: '/pages/memory/memory'
+    });
+  },
+
   // 加载今日金句
   loadQuote() {
     const q = getDailyQuote();

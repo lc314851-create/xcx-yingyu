@@ -78,8 +78,8 @@ Page({
 
     // ── 顶部渐变区域 ──
     const grad = ctx.createLinearGradient(0, 0, 0, 160);
-    grad.addColorStop(0, '#4A90D9');
-    grad.addColorStop(1, '#6FB1F0');
+    grad.addColorStop(0, '#2F5746');
+    grad.addColorStop(1, '#5F8F7A');
     ctx.fillStyle = grad;
     // 圆角矩形
     this.roundRect(ctx, 15, 15, w - 30, 150, 16);
@@ -89,7 +89,7 @@ Page({
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('英语补词达人', w / 2, 55);
+    ctx.fillText('拾词手账', w / 2, 55);
 
     ctx.font = '13px sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
@@ -103,7 +103,7 @@ Page({
     const cardY = 190;
     const cardH = 110;
     this.roundRect(ctx, 30, cardY, w - 60, cardH, 14);
-    ctx.fillStyle = '#F6F8FC';
+    ctx.fillStyle = '#F7F3EA';
     ctx.fill();
 
     // 三列数据
@@ -115,7 +115,7 @@ Page({
     ];
     dataItems.forEach((item, i) => {
       const cx = 30 + colW * (i + 0.5);
-      ctx.fillStyle = '#4A90D9';
+      ctx.fillStyle = '#2F5746';
       ctx.font = 'bold 28px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(item.val, cx, cardY + 50);
@@ -160,12 +160,12 @@ Page({
     const angle = (this.data.rate / 100) * Math.PI * 2;
     ctx.beginPath();
     ctx.arc(ringX, ringY, ringR, -Math.PI / 2, -Math.PI / 2 + angle);
-    ctx.strokeStyle = '#4A90D9';
+    ctx.strokeStyle = '#2F5746';
     ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.stroke();
 
-    ctx.fillStyle = '#4A90D9';
+    ctx.fillStyle = '#2F5746';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(this.data.rate + '%', ringX, ringY + 5);
@@ -174,7 +174,7 @@ Page({
     ctx.fillStyle = '#B0B6C0';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('英语补词达人 · 免费英语学习工具', w / 2, h - 18);
+    ctx.fillText('拾词手账 · 免费英语学习工具', w / 2, h - 18);
 
     // ── 导出图片 ──
     wx.canvasToTempFilePath({

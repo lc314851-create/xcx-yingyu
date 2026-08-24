@@ -11,19 +11,22 @@
     "pages/fillblank/fillblank",
     "pages/spelling/spelling",
     "pages/challenge/challenge",
-    "pages/leaderboard/leaderboard"
+    "pages/leaderboard/leaderboard",
+    "pages/galaxy/galaxy",
+    "pages/scene/scene",
+    "pages/memory/memory"
   ],
   "window": {
-    "backgroundColor": "#F6F8FC",
+    "backgroundColor": "#F7F3EA",
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#4A90D9",
-    "navigationBarTitleText": "英语补词达人",
+    "navigationBarBackgroundColor": "#2F5746",
+    "navigationBarTitleText": "拾词手账",
     "navigationBarTextStyle": "white"
   },
   "tabBar": {
-    "color": "#8A8F99",
-    "selectedColor": "#4A90D9",
-    "backgroundColor": "#FFFFFF",
+    "color": "#9A9078",
+    "selectedColor": "#2F5746",
+    "backgroundColor": "#FFFDF6",
     "borderStyle": "black",
     "list": [
       {

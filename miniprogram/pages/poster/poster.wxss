@@ -82,7 +82,7 @@
 .data-val {
   font-size: 40rpx;
   font-weight: 700;
-  color: #4A90D9;
+  color: #2F5746;
 }
 
 .data-lbl {

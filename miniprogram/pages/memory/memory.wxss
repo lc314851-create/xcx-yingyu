@@ -1,0 +1,265 @@
+/* pages/memory/memory.wxss - 记忆体检报告 */
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 80rpx;
+}
+
+.page-head {
+  padding: 40rpx 40rpx 24rpx;
+}
+
+.page-head-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 4rpx;
+}
+
+.page-head-sub {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+  letter-spacing: 2rpx;
+}
+
+.loading-state, .empty-state {
+  padding: 120rpx 40rpx;
+  text-align: center;
+}
+
+.loading-text, .empty-text {
+  font-size: 28rpx;
+  color: var(--text-tertiary);
+}
+
+.empty-sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: var(--text-quaternary);
+}
+
+.empty-btn {
+  margin-top: 40rpx;
+}
+
+/* ─── 总览卡 ─── */
+.overview-card {
+  display: flex;
+  align-items: center;
+  gap: 40rpx;
+  padding: 48rpx 36rpx 30rpx;
+}
+
+.overview-score-ring {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.overview-score {
+  font-size: 88rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-score::after {
+  content: "";
+  display: block;
+  width: 70%;
+  margin: 10rpx auto 0;
+  border-top: 4rpx dashed var(--border-strong);
+}
+
+.overview-score-label {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  letter-spacing: 3rpx;
+  margin-top: 10rpx;
+}
+
+.overview-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.overview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2rpx dashed var(--border-light);
+  padding-bottom: 12rpx;
+}
+
+.overview-k {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.overview-v {
+  font-size: 32rpx;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* ─── 章节标题 ─── */
+.section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 2rpx;
+}
+
+.section-sub {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+
+/* ─── 遗忘曲线 ─── */
+.curve-bars {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 36rpx;
+  height: 220rpx;
+}
+
+.curve-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.curve-bar-v {
+  font-size: 22rpx;
+  color: var(--text-secondary);
+  margin-bottom: 6rpx;
+}
+
+.curve-bar {
+  width: 36rpx;
+  border-radius: 8rpx 8rpx 0 0;
+  transition: height 0.6s var(--ease-out);
+}
+
+.curve-bar-label {
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+  margin-top: 10rpx;
+}
+
+/* ─── 高危词 ─── */
+.risk-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 0;
+  border-bottom: 2rpx dashed var(--border-light);
+}
+
+.risk-row:last-child {
+  border-bottom: none;
+}
+
+.risk-r {
+  width: 84rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  font-family: Georgia, 'Times New Roman', serif;
+  flex-shrink: 0;
+}
+
+.risk-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.risk-word {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.risk-meaning {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.risk-days {
+  font-size: 22rpx;
+  color: var(--text-quaternary);
+  flex-shrink: 0;
+}
+
+.go-review {
+  margin-top: 28rpx;
+}
+
+/* ─── 易混词对 ─── */
+.pair-row {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 0;
+  border-bottom: 2rpx dashed var(--border-light);
+}
+
+.pair-side {
+  flex: 1;
+}
+
+.pair-word {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pair-meaning {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pair-side.weak .pair-word {
+  color: var(--color-accent);
+}
+
+.pair-side.weak .pair-word::after {
+  content: "";
+  display: inline-block;
+  width: 100%;
+  border-bottom: 3rpx solid var(--color-highlight);
+}
+
+.pair-vs {
+  width: 70rpx;
+  text-align: center;
+  color: var(--text-quaternary);
+  font-size: 30rpx;
+  flex-shrink: 0;
+}
+
+.pair-tip {
+  margin-top: 18rpx;
+  font-size: 22rpx;
+  color: var(--text-quaternary);
+}
+
+.footnote {
+  margin: 40rpx 40rpx 0;
+  font-size: 22rpx;
+  color: var(--text-quaternary);
+  text-align: center;
+}
