@@ -18,8 +18,9 @@ const BOOK_META: Omit<WordBook, 'words'>[] = [
 // 本地种子词库（云存储和云函数都不可用时的兜底）
 import { wordBooks as localBooks } from '../data/index';
 
-const CACHE_PREFIX = 'bc_words_';
-const CACHE_META_KEY = 'bc_words_meta';
+// v2：词库字段升级（root/rootGloss/relatedWords/lemma），旧缓存不可复用
+const CACHE_PREFIX = 'bc_words_v2_';
+const CACHE_META_KEY = 'bc_words_meta_v2';
 const CACHE_EXPIRE = 7 * 24 * 60 * 60 * 1000; // 7天缓存
 
 // 云存储 JSON 文件的路径前缀
