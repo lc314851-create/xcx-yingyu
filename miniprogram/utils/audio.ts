@@ -201,4 +201,102 @@ export function preloadAudio(word: string, accent?: 'uk' | 'us') {
  */
 export function destroyAudio() {
   destroyCurrent();
+  stopSentence();
+}
+
+/* ═════════════════════════════════════════ */
+/* 整句 TTS：多源降级播放                      */
+/* ═════════════════════════════════════════ */
+
+export interface SentencePlayOptions {
+  onStart?: () => void;
+  onEnded?: () => void;
+  onError?: () => void;
+}
+
+let sentenceCtx: any = null;
+let sentenceSeq = 0;
+
+// 句子 TTS 候选源（按可用性降级）
+function sentenceSources(text: string): string[] {
+  return [
+    `https://fanyi.baidu.com/gettts?lan=en&text=${encodeURIComponent(text)}&spd=3&source=web`,
+    `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&type=2`,
+    `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`
+  ];
+}
+
+/**
+ * 播放整句英文（逐句跟读/听力用）
+ * 依次尝试 百度 → 有道 → Google，失败自动降级到下一个源
+ */
+export function playSentence(text: string, opts: SentencePlayOptions = {}) {
+  if (!text) return;
+  stopSentence();
+  const myId = ++sentenceSeq;
+  tryPlaySentenceSource(sentenceSources(text), 0, myId, opts);
+}
+
+function tryPlaySentenceSource(
+  sources: string[],
+  idx: number,
+  myId: number,
+  opts: SentencePlayOptions
+) {
+  if (idx >= sources.length) {
+    if (myId === sentenceSeq) opts.onError && opts.onError();
+    return;
+  }
+  if (myId !== sentenceSeq) return;
+
+  const ctx = wx.createInnerAudioContext();
+  sentenceCtx = ctx;
+  ctx.src = sources[idx];
+  ctx.autoplay = true;
+
+  let started = false;
+  let done = false;
+
+  const next = () => {
+    if (done) return;
+    done = true;
+    try { ctx.destroy(); } catch (e) {}
+    if (myId === sentenceSeq) {
+      tryPlaySentenceSource(sources, idx + 1, myId, opts);
+    }
+  };
+
+  ctx.onPlay(() => {
+    started = true;
+    if (myId === sentenceSeq) opts.onStart && opts.onStart();
+  });
+
+  ctx.onEnded(() => {
+    if (done) return;
+    done = true;
+    try { ctx.destroy(); } catch (e) {}
+    sentenceCtx = null;
+    if (myId === sentenceSeq) {
+      sentenceSeq++;
+      opts.onEnded && opts.onEnded();
+    }
+  });
+
+  ctx.onError(() => next());
+
+  // 2.2s 内未起播视为当前源不可用，切下一个
+  setTimeout(() => {
+    if (!started) next();
+  }, 2200);
+}
+
+/**
+ * 停止整句播放（换句/切页/页面卸载时调用）
+ */
+export function stopSentence() {
+  if (sentenceCtx) {
+    try { sentenceCtx.stop(); sentenceCtx.destroy(); } catch (e) {}
+    sentenceCtx = null;
+  }
+  sentenceSeq++;
 }

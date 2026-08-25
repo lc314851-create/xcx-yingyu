@@ -86,6 +86,10 @@
         <view class="action-tile-icon action-tile-icon-memory"></view>
         <view class="action-tile-label">记忆体检</view>
       </view>
+      <view class="action-tile" bindtap="goStory">
+        <view class="action-tile-icon action-tile-icon-story"></view>
+        <view class="action-tile-label">双语阅读</view>
+      </view>
     </view>
   </view>
 

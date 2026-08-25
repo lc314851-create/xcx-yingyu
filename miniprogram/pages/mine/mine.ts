@@ -278,6 +278,13 @@ Page({
     });
   },
 
+  // 跳转双语阅读
+  goStory() {
+    wx.navigateTo({
+      url: '/pages/story/story'
+    });
+  },
+
   // 跳转学习排行榜
   goLeaderboard() {
     wx.navigateTo({

@@ -233,6 +233,13 @@ Page({
     });
   },
 
+  // 跳转双语阅读
+  goStory() {
+    wx.navigateTo({
+      url: '/pages/story/story'
+    });
+  },
+
   // 加载今日金句
   loadQuote() {
     const q = getDailyQuote();

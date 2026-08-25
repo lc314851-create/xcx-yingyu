@@ -141,6 +141,16 @@
         </view>
         <text class="arrow">›</text>
       </view>
+      <view class="other-item" bindtap="goStory">
+        <view class="other-icon-wrap other-icon-wrap-cyan">
+          <view class="other-icon-book"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">双语阅读</view>
+          <view class="other-item-desc">短文故事逐句朗读</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
       <view class="other-item" bindtap="goFillBlank">
         <view class="other-icon-wrap other-icon-wrap-green">
           <view class="other-icon-fillblank"></view>

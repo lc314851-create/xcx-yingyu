@@ -704,3 +704,25 @@
   color: var(--text-tertiary);
   padding: 8rpx 0;
 }
+
+/* 双语阅读：打开的书 */
+.other-icon-book {
+  width: 30rpx;
+  height: 26rpx;
+  background: linear-gradient(to right, transparent 46%, #2F5746 46%, #2F5746 54%, transparent 54%);
+  border: 4rpx solid #2F5746;
+  border-radius: 4rpx;
+  position: relative;
+}
+
+.other-icon-book::after {
+  content: "";
+  position: absolute;
+  left: 4rpx;
+  top: 6rpx;
+  width: 8rpx;
+  height: 12rpx;
+  background: #2F5746;
+  border-radius: 2rpx;
+  opacity: 0.4;
+}

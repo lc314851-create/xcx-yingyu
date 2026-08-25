@@ -450,6 +450,37 @@
   border-top: 10rpx solid var(--color-warning);
 }
 
+/* 双语阅读：翻开书页 */
+.action-tile-icon-story {
+  background: linear-gradient(135deg, #E3EDF6, #C4D9E8);
+}
+
+.action-tile-icon-story::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34rpx;
+  height: 30rpx;
+  background: linear-gradient(to right, transparent 48%, #fff 48%, #fff 52%, transparent 52%),
+              linear-gradient(to bottom, var(--color-primary) 0 22%, transparent 22%);
+  border: 4rpx solid var(--color-primary);
+  border-radius: 6rpx;
+}
+
+.action-tile-icon-story::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(6deg);
+  width: 36rpx;
+  height: 30rpx;
+  background: #fff;
+  border-radius: 6rpx;
+}
+
 /* 记忆体检：脑电波 */
 .action-tile-icon-memory {
   background: linear-gradient(135deg, #F6E8E4, #EFCFC5);
