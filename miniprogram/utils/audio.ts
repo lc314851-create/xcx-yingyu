@@ -220,6 +220,49 @@ let sentenceSeq = 0;
 // 会话内内存缓存：同一句只调一次云函数/下载
 const sentenceFileCache = new Map<string, string>();
 
+// 句子音频本地持久目录（避免 downloadFile 临时文件被系统回收）
+const SENTENCE_CACHE_DIR = `${wx.env.USER_DATA_PATH}/tts_cache`;
+let sentenceCacheReady = false;
+
+function ensureSentenceCacheDir() {
+  if (sentenceCacheReady) return;
+  try {
+    const fs = wx.getFileSystemManager();
+    fs.mkdirSync(SENTENCE_CACHE_DIR, true);
+    sentenceCacheReady = true;
+  } catch (e) {
+    sentenceCacheReady = false;
+  }
+}
+
+// 文本 → 本地稳定文件名
+function sentenceFileName(text: string): string {
+  let h = 0;
+  const s = text.toLowerCase();
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  }
+  return `${h.toString(36)}.mp3`;
+}
+
+// 保存临时音频为本地持久文件，返回可稳定重播的路径
+function persistSentenceFile(tempPath: string, text: string): string {
+  ensureSentenceCacheDir();
+  const target = `${SENTENCE_CACHE_DIR}/${sentenceFileName(text)}`;
+  try {
+    const fs = wx.getFileSystemManager();
+    if (!fs.accessSync) {
+      // 基础库较老时无 accessSync，直接复制
+    } else {
+      try { fs.accessSync(target); return target; } catch (e) { /* 不存在则复制 */ }
+    }
+    fs.copyFileSync(tempPath, target);
+    return target;
+  } catch (e) {
+    return tempPath;
+  }
+}
+
 /**
  * 播放整句英文（逐句跟读/听力用）
  * 主链路：调 tts 云函数生成/取缓存音频（云存储 fileID 直接播放，无域名白名单问题）
@@ -230,9 +273,18 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   stopSentence();
   const myId = ++sentenceSeq;
 
+  // 1) 会话内内存缓存
   const cached = sentenceFileCache.get(text);
   if (cached) {
     playSentenceFile(cached, myId, () => onSentenceFail(myId, text, opts), opts);
+    return;
+  }
+
+  // 2) 本地持久缓存（上次下载过的音频，避免再调云函数/外网）
+  const localPath = localSentencePath(text);
+  if (localPath) {
+    sentenceFileCache.set(text, localPath);
+    playSentenceFile(localPath, myId, () => onSentenceFail(myId, text, opts), opts);
     return;
   }
 
@@ -255,7 +307,20 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   }
 }
 
-// 云函数不可用/失败时的本地兜庇：直接下载百度 TTS
+// 检查本地持久缓存中是否已有该句音频
+function localSentencePath(text: string): string {
+  ensureSentenceCacheDir();
+  const target = `${SENTENCE_CACHE_DIR}/${sentenceFileName(text)}`;
+  try {
+    const fs = wx.getFileSystemManager();
+    fs.accessSync(target);
+    return target;
+  } catch (e) {
+    return '';
+  }
+}
+
+// 云函数不可用/失败时的本地兜庇：直接下载百度 TTS 并持久化
 function onSentenceFail(myId: number, text: string, opts: SentencePlayOptions) {
   if (myId !== sentenceSeq) return;
   const baidu = `https://fanyi.baidu.com/gettts?lan=en&text=${encodeURIComponent(text)}&spd=3&source=web`;
@@ -266,8 +331,9 @@ function onSentenceFail(myId: number, text: string, opts: SentencePlayOptions) {
       if (myId !== sentenceSeq) return;
       const ct = (res.header && (res.header['content-type'] || res.header['Content-Type'])) || '';
       if (res.statusCode === 200 && res.tempFilePath && ct.indexOf('audio') > -1) {
-        sentenceFileCache.set(text, res.tempFilePath);
-        playSentenceFile(res.tempFilePath, myId, () => {
+        const path = persistSentenceFile(res.tempFilePath, text);
+        sentenceFileCache.set(text, path);
+        playSentenceFile(path, myId, () => {
           if (myId === sentenceSeq) opts.onError && opts.onError();
         }, opts);
       } else {
