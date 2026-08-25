@@ -13,6 +13,14 @@ const cloud = require('wx-server-sdk');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
+// 合并每日学习历史（同一天取较大值，绝不相加，防重复累计）
+function mergeHistory(a, b) {
+  const out = {};
+  for (const k of Object.keys(a || {})) out[k] = a[k] || 0;
+  for (const k of Object.keys(b || {})) out[k] = Math.max(out[k] || 0, b[k] || 0);
+  return out;
+}
+
 // 与客户端 mergeStats 同策略的合并实现
 function mergeStats(local, cloudStats, today) {
   const L = local || {};
@@ -38,6 +46,7 @@ exports.main = async (event) => {
   const col = db.collection('users');
   const today = event.today || '';
   const incomingStats = event.stats;
+  const incomingHistory = event.history;
   const nickname = event.nickname;
   const avatarUrl = event.avatarUrl;
 
@@ -49,6 +58,7 @@ exports.main = async (event) => {
   if (docs.length === 0) {
     const data = { _openid: OPENID, createTime: db.serverDate(), updateTime: db.serverDate() };
     if (incomingStats) data.stats = incomingStats;
+    if (incomingHistory) data.history = incomingHistory;
     if (nickname !== undefined) data.nickname = nickname;
     if (avatarUrl !== undefined) data.avatarUrl = avatarUrl;
     await col.add({ data });
@@ -56,20 +66,24 @@ exports.main = async (event) => {
       openid: OPENID,
       profile: { nickname: nickname || '', avatarUrl: avatarUrl || '' },
       stats: incomingStats || null,
+      history: incomingHistory || null,
       isNew: true
     };
   }
 
-  // ─── 老用户：先在所有文档间取「最优统计」与「已有资料」 ───
+  // ─── 老用户：先在所有文档间取「最优统计」「最优日历」「已有资料」 ───
   let best = null;
+  let bestHistory = null;
   let curProfile = { nickname: '', avatarUrl: '' };
   for (const d of docs) {
     if (d.stats) best = best ? mergeStats(best, d.stats, today) : { ...d.stats };
+    if (d.history) bestHistory = bestHistory ? mergeHistory(bestHistory, d.history) : { ...d.history };
     if (!curProfile.nickname && d.nickname) curProfile.nickname = d.nickname;
     if (!curProfile.avatarUrl && d.avatarUrl) curProfile.avatarUrl = d.avatarUrl;
   }
-  // 再与本次传入的本地统计合并（同样取较大值）
+  // 再与本次传入的本地统计/日历合并（同样取较大值）
   if (incomingStats) best = best ? mergeStats(best, incomingStats, today) : { ...incomingStats };
+  if (incomingHistory) bestHistory = bestHistory ? mergeHistory(bestHistory, incomingHistory) : { ...incomingHistory };
 
   if (nickname !== undefined) curProfile.nickname = nickname;
   if (avatarUrl !== undefined) curProfile.avatarUrl = avatarUrl;
@@ -78,6 +92,7 @@ exports.main = async (event) => {
   for (const d of docs) {
     const patch = { updateTime: db.serverDate() };
     if (best) patch.stats = best;
+    if (bestHistory) patch.history = bestHistory;
     if (nickname !== undefined) patch.nickname = nickname;
     if (avatarUrl !== undefined) patch.avatarUrl = avatarUrl;
     await col.doc(d._id).update({ data: patch });
@@ -87,6 +102,7 @@ exports.main = async (event) => {
     openid: OPENID,
     profile: curProfile,
     stats: best,
+    history: bestHistory,
     isNew: false
   };
 };

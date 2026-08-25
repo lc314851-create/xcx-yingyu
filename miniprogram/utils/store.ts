@@ -83,14 +83,27 @@ export function recordDailyHistory(count: number = 1): void {
   const history = getDailyHistory();
   const today = todayStr();
   history[today] = (history[today] || 0) + count;
-  // 清理超过 60 天的旧数据，避免无限增长
+  saveDailyHistory(history);
+}
+
+// 保存每日学习历史（供云端同步后写回）
+export function saveDailyHistory(history: Record<string, number>): void {
+  // 清理超过 90 天的旧数据，避免无限增长
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 60);
+  cutoff.setDate(cutoff.getDate() - 90);
   const cutoffStr = formatDate(cutoff);
   for (const key of Object.keys(history)) {
     if (key < cutoffStr) delete history[key];
   }
   wx.setStorageSync(DAILY_HISTORY_KEY, history);
+}
+
+// 合并两份每日历史（同一天取较大值，绝不相加，防重复累计）
+export function mergeDailyHistory(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const k of Object.keys(a || {})) out[k] = a[k] || 0;
+  for (const k of Object.keys(b || {})) out[k] = Math.max(out[k] || 0, b[k] || 0);
+  return out;
 }
 
 // 获取最近 N 天的热力图数据
@@ -212,6 +225,7 @@ export interface SyncUserResult {
   openid?: string;
   profile?: UserProfile;
   stats?: StudyStats;
+  history?: Record<string, number>;
   isNew?: boolean;
 }
 
@@ -227,12 +241,13 @@ function callSyncUser(event: any): Promise<SyncUserResult | null> {
     });
 }
 
-// 上传统计到云端（服务端合并取较大值，并把合并结果同步回本地）
+// 上传统计与学习日历到云端（服务端合并取较大值，并把合并结果同步回本地）
 export function syncStatsToCloud(stats: StudyStats): Promise<StudyStats | null> {
-  return callSyncUser({ stats, today: todayStr() }).then(res => {
+  return callSyncUser({ stats, history: getDailyHistory(), today: todayStr() }).then(res => {
     if (res && res.stats) {
       const merged = mergeStats(getStats(), res.stats);
       saveStats(merged);
+      if (res.history) saveDailyHistory(res.history);
       if (res.profile) saveLocalProfile(res.profile);
       return merged;
     }
@@ -250,6 +265,7 @@ export function restoreStatsFromCloud(): Promise<void> {
   restorePending = callSyncUser({ today: todayStr() }).then(res => {
     if (res) {
       if (res.stats) saveStats(mergeStats(getStats(), res.stats));
+      if (res.history) saveDailyHistory(mergeDailyHistory(getDailyHistory(), res.history));
       if (res.profile) saveLocalProfile(res.profile);
     }
   }).then(() => { restorePending = null; });
