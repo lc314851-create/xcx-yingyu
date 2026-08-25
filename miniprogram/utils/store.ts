@@ -193,22 +193,42 @@ export function mergeStats(local: StudyStats, cloud: StudyStats): StudyStats {
   };
 }
 
+// 云端可能有多条重复文档（历史版本/空文档污染），这里取统计最大的那条作为可信备份。
+// 有 stats 的文档用 mergeStats 折叠取最大，绝不让空文档把累计值冲回 0。
+export function pickBestCloudStats(docs: any[]): StudyStats | null {
+  let best: StudyStats | null = null;
+  for (const d of docs) {
+    if (d && d.stats && typeof d.stats === 'object') {
+      best = best ? mergeStats(best, d.stats) : { ...defaultStats(), ...d.stats };
+    }
+  }
+  return best;
+}
+
 // 从云端拉取用户统计并合并回本地（静默，失败不打扰）
+// 单例锁：防止首页/我的页并发触发多次拉取，造成互相覆盖
+let restorePending: Promise<void> | null = null;
 export function restoreStatsFromCloud(): Promise<void> {
+  if (restorePending) return restorePending;
+
   const app = getApp() as any;
   const openid = app && app.globalData ? app.globalData.openid : '';
   if (!openid || !wx.cloud) return Promise.resolve();
   const db = wx.cloud.database();
-  return db.collection('users')
+
+  restorePending = db.collection('users')
     .where({ _openid: openid })
     .get()
     .then((res: any) => {
       if (!res.data || res.data.length === 0) return;
-      const cloud = res.data[0].stats;
+      const cloud = pickBestCloudStats(res.data);
       if (!cloud) return;
       saveStats(mergeStats(getStats(), cloud));
     })
-    .catch(() => {});
+    .catch(() => {})
+    .then(() => { restorePending = null; });
+
+  return restorePending;
 }
 
 // ─── 打卡 ──────────────────────────────────────────────────────

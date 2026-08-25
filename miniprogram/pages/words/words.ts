@@ -9,6 +9,7 @@ import {
   getBookProgressStats,
   getStats,
   mergeStats,
+  pickBestCloudStats,
   saveStats,
   hasSelectedBook,
   getStudyMode,
@@ -579,8 +580,9 @@ Page({
       .then((res: any) => {
         let toSave = local;
         if (res.data && res.data.length > 0) {
-          // 云端已有备份：先合并（累计取较大值），再回写，并把合并结果同步写回本地
-          const cloud = res.data[0].stats;
+          // 云端已有备份：取所有重复文档中统计最大者，先合并（累计取较大值）再回写，
+          // 并把合并结果同步写回本地，避免空文档把历史冲小
+          const cloud = pickBestCloudStats(res.data);
           if (cloud) {
             toSave = mergeStats(local, cloud);
             saveStats(toSave);

@@ -1,5 +1,5 @@
 // pages/mine/mine.ts
-import { getStats, doCheckIn, saveStats, mergeStats, getHeatmapData, isReminderSubscribed, requestReminderSubscribe, todayStr } from '../../utils/store';
+import { getStats, doCheckIn, saveStats, mergeStats, pickBestCloudStats, getHeatmapData, isReminderSubscribed, requestReminderSubscribe, todayStr } from '../../utils/store';
 
 interface Badge {
   name: string;
@@ -118,11 +118,11 @@ Page({
       .get()
       .then((res: any) => {
         if (res.data && res.data.length > 0) {
-          const cloudData = res.data[0];
+          // 云端可能有多条重复文档，取统计最大的那条，避免空文档覆盖历史
+          const cloud = pickBestCloudStats(res.data);
           const localStats = getStats();
 
-          if (cloudData.stats) {
-            const cloud = cloudData.stats;
+          if (cloud) {
             // 统一合并策略（累计取较大值、今日以本地为准，绝不相加）
             saveStats(mergeStats(localStats, cloud));
             this.loadStats();
