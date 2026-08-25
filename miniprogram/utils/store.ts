@@ -193,42 +193,79 @@ export function mergeStats(local: StudyStats, cloud: StudyStats): StudyStats {
   };
 }
 
-// 云端可能有多条重复文档（历史版本/空文档污染），这里取统计最大的那条作为可信备份。
-// 有 stats 的文档用 mergeStats 折叠取最大，绝不让空文档把累计值冲回 0。
-export function pickBestCloudStats(docs: any[]): StudyStats | null {
-  let best: StudyStats | null = null;
-  for (const d of docs) {
-    if (d && d.stats && typeof d.stats === 'object') {
-      best = best ? mergeStats(best, d.stats) : { ...defaultStats(), ...d.stats };
-    }
-  }
-  return best;
+// ─── 云端同步（经 syncUser 云函数，服务端权限，可读全量并自动去重合并） ───
+
+// 用户资料
+const PROFILE_KEY = 'bc_profile';
+export interface UserProfile {
+  nickname: string;
+  avatarUrl: string; // 云存储 fileID
+}
+export function getLocalProfile(): UserProfile {
+  return wx.getStorageSync(PROFILE_KEY) || { nickname: '', avatarUrl: '' };
+}
+export function saveLocalProfile(p: UserProfile): void {
+  wx.setStorageSync(PROFILE_KEY, p);
 }
 
-// 从云端拉取用户统计并合并回本地（静默，失败不打扰）
-// 单例锁：防止首页/我的页并发触发多次拉取，造成互相覆盖
+export interface SyncUserResult {
+  openid?: string;
+  profile?: UserProfile;
+  stats?: StudyStats;
+  isNew?: boolean;
+}
+
+// 调 syncUser 云函数（服务端合并统计+资料、自动去重）
+function callSyncUser(event: any): Promise<SyncUserResult | null> {
+  if (!wx.cloud) return Promise.resolve(null);
+  return wx.cloud
+    .callFunction({ name: 'syncUser', data: event })
+    .then((res: any) => (res && res.result) || null)
+    .catch((err: any) => {
+      console.error('syncUser 失败', err);
+      return null;
+    });
+}
+
+// 上传统计到云端（服务端合并取较大值，并把合并结果同步回本地）
+export function syncStatsToCloud(stats: StudyStats): Promise<StudyStats | null> {
+  return callSyncUser({ stats, today: todayStr() }).then(res => {
+    if (res && res.stats) {
+      const merged = mergeStats(getStats(), res.stats);
+      saveStats(merged);
+      if (res.profile) saveLocalProfile(res.profile);
+      return merged;
+    }
+    return null;
+  });
+}
+
+// 从云端拉取统计与资料并合并回本地（静默，失败不打扰）
+// 单例锁：防止首页/我的页并发触发多次拉取
 let restorePending: Promise<void> | null = null;
 export function restoreStatsFromCloud(): Promise<void> {
   if (restorePending) return restorePending;
+  if (!wx.cloud) return Promise.resolve();
 
-  const app = getApp() as any;
-  const openid = app && app.globalData ? app.globalData.openid : '';
-  if (!openid || !wx.cloud) return Promise.resolve();
-  const db = wx.cloud.database();
-
-  restorePending = db.collection('users')
-    .where({ _openid: openid })
-    .get()
-    .then((res: any) => {
-      if (!res.data || res.data.length === 0) return;
-      const cloud = pickBestCloudStats(res.data);
-      if (!cloud) return;
-      saveStats(mergeStats(getStats(), cloud));
-    })
-    .catch(() => {})
-    .then(() => { restorePending = null; });
+  restorePending = callSyncUser({ today: todayStr() }).then(res => {
+    if (res) {
+      if (res.stats) saveStats(mergeStats(getStats(), res.stats));
+      if (res.profile) saveLocalProfile(res.profile);
+    }
+  }).then(() => { restorePending = null; });
 
   return restorePending;
+}
+
+// 保存用户资料（头像需先由调用方上传为云存储 fileID）
+export function updateUserProfile(nickname: string, avatarUrl: string): Promise<UserProfile | null> {
+  return callSyncUser({ nickname, avatarUrl, today: todayStr() }).then(res => {
+    if (res && res.profile) {
+      saveLocalProfile(res.profile);
+      return res.profile;
+    }
+    return null;
+  });
 }
 
 // ─── 打卡 ──────────────────────────────────────────────────────

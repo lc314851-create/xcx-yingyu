@@ -235,3 +235,30 @@
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
+
+/* 头像（云存储 fileID 直接显示） */
+.podium-avatar-img {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  border: 4rpx solid var(--bg-card);
+  box-shadow: var(--shadow-md);
+  background: var(--bg-muted);
+}
+
+.rank-avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--border-light);
+  background: var(--bg-muted);
+  flex-shrink: 0;
+}
+
+.rank-avatar-default {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+}

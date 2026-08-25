@@ -4,16 +4,16 @@
   <view class="user-header">
     <view class="user-header-bg"></view>
     <view class="user-header-content">
-      <view class="avatar">
+      <view class="avatar" bindtap="onHeaderTap">
         <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" class="avatar-img" />
         <view wx:else class="avatar-placeholder">
           <view class="avatar-placeholder-icon"></view>
         </view>
       </view>
-      <view class="user-info">
+      <view class="user-info" bindtap="onHeaderTap">
         <view class="nickname">{{nickname}}</view>
-        <view class="sub-text" wx:if="{{isLogin}}">坚持学习，遇见更好的自己</view>
-        <view class="sub-text login-link" wx:else bindtap="login">点击登录，同步你的学习进度</view>
+        <view class="sub-text" wx:if="{{hasProfile}}">坚持学习，遇见更好的自己</view>
+        <view class="sub-text login-link" wx:else>登录并完善头像昵称，登上学习排行榜</view>
       </view>
     </view>
   </view>
@@ -84,6 +84,37 @@
         <view class="badge-desc">{{badge.desc}}</view>
       </view>
     </view>
+  </view>
+
+  <!-- 登录/资料编辑弹窗 -->
+  <view class="profile-mask" wx:if="{{showProfileEdit}}" bindtap="closeProfileEdit"></view>
+  <view class="profile-panel card-taped" wx:if="{{showProfileEdit}}">
+    <view class="profile-panel-title">登录 · 完善资料</view>
+    <view class="profile-panel-sub">设置头像和昵称后，就能在学习排行榜上展示</view>
+
+    <view class="profile-avatar-row">
+      <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image wx:if="{{editAvatar}}" src="{{editAvatar}}" class="profile-avatar" />
+        <view wx:else class="profile-avatar profile-avatar-empty">+</view>
+      </button>
+      <view class="avatar-btn-tip">点击选择微信头像</view>
+    </view>
+
+    <view class="profile-nick-row">
+      <input
+        class="profile-nick-input"
+        type="nickname"
+        placeholder="请输入昵称（必填）"
+        placeholder-class="profile-nick-placeholder"
+        value="{{editNickname}}"
+        bindinput="onNicknameInput"
+      />
+    </view>
+
+    <button class="btn-primary profile-save" bindtap="onSaveProfile" disabled="{{savingProfile}}">
+      {{savingProfile ? '保存中...' : '确认登录'}}
+    </button>
+    <view class="profile-cancel" bindtap="closeProfileEdit">暂不登录</view>
   </view>
 
   <!-- 功能入口 - 练习 -->

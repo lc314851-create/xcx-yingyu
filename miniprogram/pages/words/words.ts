@@ -8,9 +8,7 @@ import {
   recordStudy,
   getBookProgressStats,
   getStats,
-  mergeStats,
-  pickBestCloudStats,
-  saveStats,
+  syncStatsToCloud,
   hasSelectedBook,
   getStudyMode,
   setStudyMode,
@@ -566,38 +564,8 @@ Page({
     });
   },
 
-  // 同步学习统计到云端（先与云端合并再回写，防止本地清缓存后把历史备份冲小）
+  // 同步学习统计到云端（经 syncUser 云函数：服务端合并取较大值，防历史被冲小）
   syncToCloud() {
-    const app = getApp() as any;
-    const openid = app.globalData.openid;
-    if (!openid || !wx.cloud) return;
-
-    const db = wx.cloud.database();
-    const local = getStats();
-    db.collection('users')
-      .where({ _openid: openid })
-      .get()
-      .then((res: any) => {
-        let toSave = local;
-        if (res.data && res.data.length > 0) {
-          // 云端已有备份：取所有重复文档中统计最大者，先合并（累计取较大值）再回写，
-          // 并把合并结果同步写回本地，避免空文档把历史冲小
-          const cloud = pickBestCloudStats(res.data);
-          if (cloud) {
-            toSave = mergeStats(local, cloud);
-            saveStats(toSave);
-          }
-          db.collection('users')
-            .doc(res.data[0]._id)
-            .update({
-              data: { stats: toSave, updateTime: db.serverDate() }
-            });
-        } else {
-          db.collection('users').add({
-            data: { stats: toSave, createTime: db.serverDate() }
-          });
-        }
-      })
-      .catch(() => {});
+    syncStatsToCloud(getStats());
   }
 });

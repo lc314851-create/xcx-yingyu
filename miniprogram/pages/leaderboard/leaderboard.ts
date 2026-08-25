@@ -5,6 +5,7 @@ import { getStats } from '../../utils/store';
 interface RankItem {
   rank: number;
   nickname: string;
+  avatarUrl: string;
   count: number;
   isMe: boolean;
 }
@@ -63,9 +64,9 @@ Page({
       this.setData({ loading: false, hasCloud: false });
       // 无云端时，展示自己的数据作为兜底
       this.setData({
-        weeklyList: [{ rank: 1, nickname: '我', count: myStats.weeklyLearned, isMe: true }],
-        totalList: [{ rank: 1, nickname: '我', count: myStats.totalWords, isMe: true }],
-        currentList: [{ rank: 1, nickname: '我', count: myStats.weeklyLearned, isMe: true }],
+        weeklyList: [{ rank: 1, nickname: '我', avatarUrl: '', count: myStats.weeklyLearned, isMe: true }],
+        totalList: [{ rank: 1, nickname: '我', avatarUrl: '', count: myStats.totalWords, isMe: true }],
+        currentList: [{ rank: 1, nickname: '我', avatarUrl: '', count: myStats.weeklyLearned, isMe: true }],
         myWeeklyRank: 1,
         myTotalRank: 1
       });
@@ -73,85 +74,43 @@ Page({
     }
 
     try {
-      const db = wx.cloud.database();
-      const _ = db.command;
+      // 走 getRanking 云函数：服务端读全量用户并排序，规避客户端权限读不到他人文档
+      const res = await wx.cloud.callFunction({ name: 'getRanking', data: {} });
+      const r = res.result || {};
 
-      // 获取本周榜（按 weeklyLearned 降序，取前 50）
-      const weeklyRes = await db.collection('users')
-        .where({ 'stats.weeklyLearned': _.gt(0) })
-        .orderBy('stats.weeklyLearned', 'desc')
-        .limit(50)
-        .get();
+      const weeklyList: RankItem[] = (r.weekly || []).map((item: any, idx: number) => ({
+        rank: idx + 1,
+        nickname: item.nickname || '同学',
+        avatarUrl: item.avatarUrl || '',
+        count: item.count || 0,
+        isMe: item.openid === openid
+      }));
 
-      const weeklyList: RankItem[] = (weeklyRes.data || []).map((item: any, idx: number) => {
-        const stats = item.stats || {};
-        return {
-          rank: idx + 1,
-          nickname: item.nickname || '同学',
-          count: stats.weeklyLearned || 0,
-          isMe: item._openid === openid
-        };
-      });
-
-      // 获取总榜（按 totalWords 降序，取前 50）
-      const totalRes = await db.collection('users')
-        .where({ 'stats.totalWords': _.gt(0) })
-        .orderBy('stats.totalWords', 'desc')
-        .limit(50)
-        .get();
-
-      const totalList: RankItem[] = (totalRes.data || []).map((item: any, idx: number) => {
-        const stats = item.stats || {};
-        return {
-          rank: idx + 1,
-          nickname: item.nickname || '同学',
-          count: stats.totalWords || 0,
-          isMe: item._openid === openid
-        };
-      });
-
-      // 找到我的排名
-      let myWeeklyRank = 0;
-      let myTotalRank = 0;
-      for (const item of weeklyList) {
-        if (item.isMe) { myWeeklyRank = item.rank; break; }
-      }
-      for (const item of totalList) {
-        if (item.isMe) { myTotalRank = item.rank; break; }
-      }
-
-      // 如果我不在榜内，计算我的实际排名
-      if (myWeeklyRank === 0) {
-        // 统计比我 weeklyLearned 多的人数
-        const higherCount = await db.collection('users')
-          .where({ 'stats.weeklyLearned': _.gt(myStats.weeklyLearned) })
-          .count();
-        myWeeklyRank = (higherCount?.total || 0) + 1;
-      }
-      if (myTotalRank === 0) {
-        const higherCount = await db.collection('users')
-          .where({ 'stats.totalWords': _.gt(myStats.totalWords) })
-          .count();
-        myTotalRank = (higherCount?.total || 0) + 1;
-      }
+      const totalList: RankItem[] = (r.total || []).map((item: any, idx: number) => ({
+        rank: idx + 1,
+        nickname: item.nickname || '同学',
+        avatarUrl: item.avatarUrl || '',
+        count: item.count || 0,
+        isMe: item.openid === openid
+      }));
 
       this.setData({
         weeklyList,
         totalList,
         currentList: this.data.tab === 'weekly' ? weeklyList : totalList,
-        myWeeklyRank,
-        myTotalRank,
+        myWeeklyRank: r.myWeeklyRank || 0,
+        myTotalRank: r.myTotalRank || 0,
         loading: false,
         hasCloud: true
       });
     } catch (err) {
       console.error('获取排行榜失败', err);
-      const fallback = [{ rank: 1, nickname: '我', count: this.data.tab === 'weekly' ? myStats.weeklyLearned : myStats.totalWords, isMe: true }];
+      const fallback = [{ rank: 1, nickname: '我', avatarUrl: '', count: this.data.tab === 'weekly' ? myStats.weeklyLearned : myStats.totalWords, isMe: true }];
       this.setData({
         loading: false,
         hasCloud: false,
-        weeklyList: [{ rank: 1, nickname: '我', count: myStats.weeklyLearned, isMe: true }],
-        totalList: [{ rank: 1, nickname: '我', count: myStats.totalWords, isMe: true }],
+        weeklyList: [{ rank: 1, nickname: '我', avatarUrl: '', count: myStats.weeklyLearned, isMe: true }],
+        totalList: [{ rank: 1, nickname: '我', avatarUrl: '', count: myStats.totalWords, isMe: true }],
         currentList: fallback,
         myWeeklyRank: 1,
         myTotalRank: 1

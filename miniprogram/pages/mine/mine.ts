@@ -1,5 +1,5 @@
 // pages/mine/mine.ts
-import { getStats, doCheckIn, saveStats, mergeStats, pickBestCloudStats, getHeatmapData, isReminderSubscribed, requestReminderSubscribe, todayStr } from '../../utils/store';
+import { getStats, doCheckIn, getHeatmapData, getLocalProfile, updateUserProfile, syncStatsToCloud, restoreStatsFromCloud, isReminderSubscribed, requestReminderSubscribe } from '../../utils/store';
 
 interface Badge {
   name: string;
@@ -10,9 +10,15 @@ interface Badge {
 
 Page({
   data: {
-    nickname: '同学',
+    nickname: '',
     avatarUrl: '',
     isLogin: false,
+    hasProfile: false,
+    // 资料编辑弹窗
+    showProfileEdit: false,
+    editAvatar: '',
+    editNickname: '',
+    savingProfile: false,
     stats: {
       learnedToday: 0,
       streakDays: 0,
@@ -35,9 +41,32 @@ Page({
     const app = getApp() as any;
     if (app.globalData.openid) {
       this.setData({ isLogin: true });
-      // 尝试从云端拉取用户数据
-      this.syncFromCloud();
+      // 先展示本地缓存的资料，再尝试从云端拉取最新
+      this.loadProfile();
+      restoreStatsFromCloud().then(() => {
+        this.loadProfile();
+        this.loadStats();
+      });
+    } else {
+      // 静默登录后补充资料
+      app.login().then(() => {
+        this.setData({ isLogin: true });
+        this.loadProfile();
+        restoreStatsFromCloud().then(() => this.loadStats());
+      });
     }
+  },
+
+  // 读取资料（本地缓存优先，无则显示默认）
+  loadProfile() {
+    const app = getApp() as any;
+    const profile = getLocalProfile() || (app.globalData && app.globalData.userInfo) || {};
+    const nickname = profile.nickname || '同学';
+    this.setData({
+      nickname,
+      avatarUrl: profile.avatarUrl || '',
+      hasProfile: !!(profile.nickname || profile.avatarUrl)
+    });
   },
 
   onShow() {
@@ -93,85 +122,98 @@ Page({
     return badges;
   },
 
-  // 微信登录
+  // 头像/昵称区域点击：未登录则登录并弹面板，已登录直接改资料
+  onHeaderTap() {
+    if (!this.data.isLogin) {
+      this.login();
+      return;
+    }
+    this.openProfileEdit();
+  },
+
+  // 登录/完善资料：弹出资料编辑面板（头像 + 昵称）
   login() {
     const app = getApp() as any;
     app.login().then((openid: string) => {
       if (openid) {
         this.setData({ isLogin: true });
-        this.syncFromCloud();
+        this.openProfileEdit();
       } else {
         wx.showToast({ title: '登录失败，请稍后重试', icon: 'none' });
       }
     });
   },
 
-  // 从云端同步用户数据
-  syncFromCloud() {
-    const app = getApp() as any;
-    const openid = app.globalData.openid;
-    if (!openid || !wx.cloud) return;
-
-    const db = wx.cloud.database();
-    db.collection('users')
-      .where({ _openid: openid })
-      .get()
-      .then((res: any) => {
-        if (res.data && res.data.length > 0) {
-          // 云端可能有多条重复文档，取统计最大的那条，避免空文档覆盖历史
-          const cloud = pickBestCloudStats(res.data);
-          const localStats = getStats();
-
-          if (cloud) {
-            // 统一合并策略（累计取较大值、今日以本地为准，绝不相加）
-            saveStats(mergeStats(localStats, cloud));
-            this.loadStats();
-            // 同步合并后的数据回云端
-            this.uploadToCloud();
-          }
-        } else {
-          // 云端无数据，上传本地
-          this.uploadToCloud();
-        }
-      })
-      .catch((err: any) => {
-        console.error('同步失败', err);
-      });
+  // ─── 资料编辑面板 ───
+  openProfileEdit() {
+    this.setData({
+      showProfileEdit: true,
+      editAvatar: this.data.avatarUrl || '',
+      editNickname: this.data.nickname === '同学' ? '' : this.data.nickname
+    });
   },
 
-  // 上传数据到云端
-  uploadToCloud() {
-    const app = getApp() as any;
-    const openid = app.globalData.openid;
-    if (!openid || !wx.cloud) return;
+  closeProfileEdit() {
+    if (this.data.savingProfile) return;
+    this.setData({ showProfileEdit: false });
+  },
 
-    const db = wx.cloud.database();
-    const stats = getStats();
-    db.collection('users')
-      .where({ _openid: openid })
-      .get()
-      .then((res: any) => {
-        if (res.data && res.data.length > 0) {
-          // 已有记录，更新
-          db.collection('users')
-            .doc(res.data[0]._id)
-            .update({
-              data: {
-                stats,
-                updateTime: db.serverDate()
-              }
-            });
-        } else {
-          // 新用户，添加
-          db.collection('users').add({
-            data: {
-              stats,
-              createTime: db.serverDate()
-            }
-          });
-        }
-      })
-      .catch(() => {});
+  noop() {},
+
+  // 选择微信头像
+  onChooseAvatar(e: any) {
+    const temp = e.detail.avatarUrl;
+    if (!temp) return;
+    this.setData({ editAvatar: temp });
+  },
+
+  // 输入昵称
+  onNicknameInput(e: any) {
+    this.setData({ editNickname: e.detail.value });
+  },
+
+  // 保存资料：上传头像到云存储 → syncUser 云函数写入 users 集合
+  async onSaveProfile() {
+    const nickname = (this.data.editNickname || '').trim();
+    if (!nickname) {
+      wx.showToast({ title: '请先填写昵称', icon: 'none' });
+      return;
+    }
+    if (this.data.savingProfile) return;
+    this.setData({ savingProfile: true });
+
+    try {
+      let avatarUrl = this.data.editAvatar || '';
+      // 临时头像路径需要上传为云存储 fileID 才能跨端显示
+      if (avatarUrl && avatarUrl.indexOf('cloud://') !== 0) {
+        const app = getApp() as any;
+        const openid = app.globalData.openid || 'anon';
+        const ext = avatarUrl.indexOf('.png') > -1 ? 'png' : 'jpg';
+        const upload = await wx.cloud.uploadFile({
+          cloudPath: `avatar/${openid}_${Date.now()}.${ext}`,
+          filePath: avatarUrl
+        });
+        avatarUrl = upload.fileID;
+      }
+
+      const profile = await updateUserProfile(nickname, avatarUrl);
+      if (profile) {
+        this.setData({
+          showProfileEdit: false,
+          nickname: profile.nickname,
+          avatarUrl: profile.avatarUrl,
+          hasProfile: true
+        });
+        wx.showToast({ title: '已登录成功', icon: 'success' });
+      } else {
+        wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+      }
+    } catch (err) {
+      console.error('保存资料失败', err);
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    } finally {
+      this.setData({ savingProfile: false });
+    }
   },
 
   // 打卡
@@ -183,7 +225,7 @@ Page({
     doCheckIn();
     this.loadStats();
     // 同步到云端
-    this.uploadToCloud();
+    syncStatsToCloud(getStats());
     wx.showToast({ title: '打卡成功 🎉', icon: 'success' });
   },
 

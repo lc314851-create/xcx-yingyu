@@ -590,3 +590,117 @@
   color: #B0B6C0;
   margin-top: 50rpx;
 }
+
+/* ─── 登录/资料编辑弹窗 ─── */
+.profile-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 38, 32, 0.45);
+  z-index: 30;
+}
+
+.profile-panel {
+  position: fixed;
+  left: 60rpx;
+  right: 60rpx;
+  top: 24%;
+  z-index: 31;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
+  border-radius: 20rpx;
+  padding: 48rpx 40rpx 36rpx;
+  box-shadow: var(--shadow-lg);
+  animation: popIn 0.25s var(--ease-spring);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.profile-panel-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 2rpx;
+  text-align: center;
+}
+
+.profile-panel-sub {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 10rpx;
+  text-align: center;
+}
+
+.profile-avatar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 36rpx;
+}
+
+.avatar-btn {
+  padding: 0;
+  background: transparent;
+  border: none;
+  line-height: 1;
+}
+
+.avatar-btn::after {
+  border: none;
+}
+
+.profile-avatar {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+  border: 3rpx dashed var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+  color: var(--text-tertiary);
+  background: var(--bg-muted);
+}
+
+.profile-avatar-empty {
+  border-style: dashed;
+  background: var(--bg-muted);
+}
+
+.avatar-btn-tip {
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: var(--text-quaternary);
+}
+
+.profile-nick-row {
+  margin-top: 32rpx;
+}
+
+.profile-nick-input {
+  background: var(--bg-muted);
+  border: 2rpx solid var(--border-default);
+  border-radius: 12rpx;
+  padding: 20rpx 26rpx;
+  font-size: 30rpx;
+  text-align: center;
+}
+
+.profile-nick-placeholder {
+  color: var(--text-quaternary);
+}
+
+.profile-save {
+  margin-top: 36rpx;
+}
+
+.profile-cancel {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+  padding: 8rpx 0;
+}

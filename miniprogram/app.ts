@@ -38,6 +38,12 @@ App({
           // 缓存到本地
           wx.setStorageSync('bc_openid', openid);
         }
+        // 缓存用户资料（昵称/头像）
+        const profile = (res.result && res.result.profile) || {};
+        if (profile.nickname || profile.avatarUrl) {
+          this.globalData.userInfo = profile;
+          wx.setStorageSync('bc_profile', profile);
+        }
         return openid;
       })
       .catch((err: any) => {
