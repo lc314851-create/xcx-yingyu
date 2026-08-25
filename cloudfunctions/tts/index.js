@@ -48,6 +48,11 @@ exports.main = async (event) => {
   const hash = crypto.createHash('md5').update(text.toLowerCase()).digest('hex');
   const cloudPath = `tts/${hash.slice(0, 2)}/${hash}.mp3`;
   const db = cloud.database();
+
+  // 确保索引集合存在（微信云数据库集合需先创建，否则写入会失败）
+  try {
+    await db.createCollection('tts_cache');
+  } catch (e) { /* 已存在则忽略 */ }
   const col = db.collection('tts_cache');
 
   // 1) 查缓存索引（云数据库，快速命中，避免重复调用百度）
@@ -56,7 +61,7 @@ exports.main = async (event) => {
     if (hit.data && hit.data.fileID) {
       return { fileID: hit.data.fileID, cached: true };
     }
-  } catch (e) { /* 文档不存在或集合未创建，继续生成 */ }
+  } catch (e) { /* 文档不存在，继续生成 */ }
 
   // 2) 生成音频并上传云存储
   let audio;

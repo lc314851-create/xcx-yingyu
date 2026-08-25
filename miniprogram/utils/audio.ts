@@ -235,14 +235,29 @@ function ensureSentenceCacheDir() {
   }
 }
 
-// 文本 → 本地稳定文件名
-function sentenceFileName(text: string): string {
+// 文本 → 稳定短哈希（本地持久文件名 / 云 fileID 映射的 key）
+function sentenceHash(text: string): string {
   let h = 0;
   const s = text.toLowerCase();
   for (let i = 0; i < s.length; i++) {
     h = (h * 31 + s.charCodeAt(i)) >>> 0;
   }
-  return `${h.toString(36)}.mp3`;
+  return h.toString(36);
+}
+
+function sentenceFileName(text: string): string {
+  return `${sentenceHash(text)}.mp3`;
+}
+
+// 文本 → 云存储 fileID 的本地持久映射（重进页面也能直接读云文件，免调云函数）
+const SENTENCE_FILEID_KEY = 'bc_sentence_fileid';
+function getFileIDMap(): Record<string, string> {
+  return wx.getStorageSync(SENTENCE_FILEID_KEY) || {};
+}
+function saveFileID(text: string, fileID: string): void {
+  const m = getFileIDMap();
+  m[sentenceHash(text)] = fileID;
+  wx.setStorageSync(SENTENCE_FILEID_KEY, m);
 }
 
 // 保存临时音频为本地持久文件，返回可稳定重播的路径
@@ -280,11 +295,19 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
     return;
   }
 
-  // 2) 本地持久缓存（上次下载过的音频，避免再调云函数/外网）
+  // 2) 本地持久 mp3（上次直连下载的音频）
   const localPath = localSentencePath(text);
   if (localPath) {
     sentenceFileCache.set(text, localPath);
     playSentenceFile(localPath, myId, () => onSentenceFail(myId, text, opts), opts);
+    return;
+  }
+
+  // 3) 本地持久化的云 fileID 映射：直接读云存储链接，不依赖云函数
+  const savedFileID = getFileIDMap()[sentenceHash(text)];
+  if (savedFileID) {
+    sentenceFileCache.set(text, savedFileID);
+    playSentenceFile(savedFileID, myId, () => onSentenceFail(myId, text, opts), opts);
     return;
   }
 
@@ -297,6 +320,7 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
           return;
         }
         sentenceFileCache.set(text, fileID);
+        saveFileID(text, fileID);
         playSentenceFile(fileID, myId, () => onSentenceFail(myId, text, opts), opts);
       })
       .catch(() => {
