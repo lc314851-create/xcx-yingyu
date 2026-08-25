@@ -217,58 +217,69 @@ export interface SentencePlayOptions {
 let sentenceCtx: any = null;
 let sentenceSeq = 0;
 
-// 句子 TTS 候选源（实测可用性降级：百度可用，有道整句500，Google国内不可达）
-// 一律先下载到本地临时文件再播放（内网可直接播，也能校验是否为真实音频）
-function sentenceSources(text: string): string[] {
-  return [
-    `https://fanyi.baidu.com/gettts?lan=en&text=${encodeURIComponent(text)}&spd=3&source=web`,
-    `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`
-  ];
-}
+// 会话内内存缓存：同一句只调一次云函数/下载
+const sentenceFileCache = new Map<string, string>();
 
 /**
  * 播放整句英文（逐句跟读/听力用）
- * 下载式：百度 → Google，下载失败/非音频/起播超时 逐级降级
+ * 主链路：调 tts 云函数生成/取缓存音频（云存储 fileID 直接播放，无域名白名单问题）
+ * 兜庇：云函数不可用时，本地直接下载百度 TTS 播放
  */
 export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   if (!text) return;
   stopSentence();
   const myId = ++sentenceSeq;
-  tryDownloadSentence(sentenceSources(text), 0, myId, opts);
-}
 
-function tryDownloadSentence(
-  sources: string[],
-  idx: number,
-  myId: number,
-  opts: SentencePlayOptions
-) {
-  if (idx >= sources.length) {
-    if (myId === sentenceSeq) opts.onError && opts.onError();
+  const cached = sentenceFileCache.get(text);
+  if (cached) {
+    playSentenceFile(cached, myId, () => onSentenceFail(myId, text, opts), opts);
     return;
   }
-  if (myId !== sentenceSeq) return;
 
+  if (wx.cloud) {
+    wx.cloud.callFunction({ name: 'tts', data: { text } })
+      .then((res: any) => {
+        const fileID = res && res.result && res.result.fileID;
+        if (!fileID || myId !== sentenceSeq) {
+          if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
+          return;
+        }
+        sentenceFileCache.set(text, fileID);
+        playSentenceFile(fileID, myId, () => onSentenceFail(myId, text, opts), opts);
+      })
+      .catch(() => {
+        if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
+      });
+  } else {
+    onSentenceFail(myId, text, opts);
+  }
+}
+
+// 云函数不可用/失败时的本地兜庇：直接下载百度 TTS
+function onSentenceFail(myId: number, text: string, opts: SentencePlayOptions) {
+  if (myId !== sentenceSeq) return;
+  const baidu = `https://fanyi.baidu.com/gettts?lan=en&text=${encodeURIComponent(text)}&spd=3&source=web`;
   wx.downloadFile({
-    url: sources[idx],
+    url: baidu,
     timeout: 8000,
     success: (res: any) => {
       if (myId !== sentenceSeq) return;
       const ct = (res.header && (res.header['content-type'] || res.header['Content-Type'])) || '';
       if (res.statusCode === 200 && res.tempFilePath && ct.indexOf('audio') > -1) {
+        sentenceFileCache.set(text, res.tempFilePath);
         playSentenceFile(res.tempFilePath, myId, () => {
-          if (myId === sentenceSeq) tryDownloadSentence(sources, idx + 1, myId, opts);
+          if (myId === sentenceSeq) opts.onError && opts.onError();
         }, opts);
       } else {
-        // 返回了非音频内容（可能是登录页/限流页），换下一个源
-        if (myId === sentenceSeq) tryDownloadSentence(sources, idx + 1, myId, opts);
+        if (myId === sentenceSeq) opts.onError && opts.onError();
       }
     },
     fail: () => {
-      if (myId === sentenceSeq) tryDownloadSentence(sources, idx + 1, myId, opts);
+      if (myId === sentenceSeq) opts.onError && opts.onError();
     }
   });
 }
+
 
 function playSentenceFile(
   filePath: string,

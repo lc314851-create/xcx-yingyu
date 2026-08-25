@@ -1,0 +1,9 @@
+{
+  "name": "tts",
+  "version": "1.0.0",
+  "description": "句子TTS生成与云存储缓存",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
