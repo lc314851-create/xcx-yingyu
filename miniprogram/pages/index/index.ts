@@ -1,5 +1,5 @@
 // pages/index/index.ts
-import { getStats, getCurrentBookId, hasSelectedBook, setCurrentBookId, getBookProgressStats } from '../../utils/store';
+import { getStats, getCurrentBookId, hasSelectedBook, setCurrentBookId, getBookProgressStats, restoreStatsFromCloud } from '../../utils/store';
 import { getBookById, clearWordCache } from '../../utils/wordService';
 
 // 本地种子词库（兑底）
@@ -59,6 +59,11 @@ Page({
     this.setData({ currentBookId: getCurrentBookId() });
     this.loadStats();
     this.loadQuote();
+
+    // 本地统计为空（如刚清缓存）：静默从云端恢复历史，避免首页出现 0 的假象
+    if (!getStats().totalWords) {
+      restoreStatsFromCloud().then(() => this.loadStats());
+    }
   },
 
   // 根据时间更新问候语

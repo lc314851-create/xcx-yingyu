@@ -8,6 +8,8 @@ import {
   recordStudy,
   getBookProgressStats,
   getStats,
+  mergeStats,
+  saveStats,
   hasSelectedBook,
   getStudyMode,
   setStudyMode,
@@ -563,27 +565,34 @@ Page({
     });
   },
 
-  // 同步学习统计到云端
+  // 同步学习统计到云端（先与云端合并再回写，防止本地清缓存后把历史备份冲小）
   syncToCloud() {
     const app = getApp() as any;
     const openid = app.globalData.openid;
     if (!openid || !wx.cloud) return;
 
     const db = wx.cloud.database();
-    const stats = getStats();
+    const local = getStats();
     db.collection('users')
       .where({ _openid: openid })
       .get()
       .then((res: any) => {
+        let toSave = local;
         if (res.data && res.data.length > 0) {
+          // 云端已有备份：先合并（累计取较大值），再回写，并把合并结果同步写回本地
+          const cloud = res.data[0].stats;
+          if (cloud) {
+            toSave = mergeStats(local, cloud);
+            saveStats(toSave);
+          }
           db.collection('users')
             .doc(res.data[0]._id)
             .update({
-              data: { stats, updateTime: db.serverDate() }
+              data: { stats: toSave, updateTime: db.serverDate() }
             });
         } else {
           db.collection('users').add({
-            data: { stats, createTime: db.serverDate() }
+            data: { stats: toSave, createTime: db.serverDate() }
           });
         }
       })

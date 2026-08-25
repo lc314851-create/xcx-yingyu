@@ -1,5 +1,5 @@
 // pages/mine/mine.ts
-import { getStats, doCheckIn, saveStats, getHeatmapData, isReminderSubscribed, requestReminderSubscribe, todayStr } from '../../utils/store';
+import { getStats, doCheckIn, saveStats, mergeStats, getHeatmapData, isReminderSubscribed, requestReminderSubscribe, todayStr } from '../../utils/store';
 
 interface Badge {
   name: string;
@@ -123,33 +123,8 @@ Page({
 
           if (cloudData.stats) {
             const cloud = cloudData.stats;
-            // 策略：累计值取较大值（防丢失），当日/本周值以本地为准（防覆盖）
-            const today = todayStr();
-
-            // 如果本地的 lastStudyDate 是今天，说明今天已经学了，本地数据是最新
-            // 如果本地 lastStudyDate 不是今天，且云端也不是今天，看谁的 totalWords 更大
-            const merged = {
-              ...localStats,
-              // 累计值取较大值
-              totalWords: Math.max(localStats.totalWords || 0, cloud.totalWords || 0),
-              streakDays: Math.max(localStats.streakDays || 0, cloud.streakDays || 0),
-              // 今日/本周：如果本地的 lastStudyDate 是今天，用本地；否则用云端
-              learnedToday: localStats.lastStudyDate === today
-                ? localStats.learnedToday
-                : (cloud.lastStudyDate === today ? (cloud.learnedToday || 0) : 0),
-              weeklyLearned: localStats.lastStudyDate === today
-                ? localStats.weeklyLearned
-                : Math.max(localStats.weeklyLearned || 0, cloud.weeklyLearned || 0),
-              checkedIn: localStats.lastStudyDate === today
-                ? localStats.checkedIn
-                : (cloud.lastStudyDate === today ? cloud.checkedIn : false),
-              // 日期字段取较新的
-              lastStudyDate: localStats.lastStudyDate >= (cloud.lastStudyDate || '')
-                ? localStats.lastStudyDate
-                : cloud.lastStudyDate,
-              weeklyStart: localStats.weeklyStart || cloud.weeklyStart || ''
-            };
-            saveStats(merged);
+            // 统一合并策略（累计取较大值、今日以本地为准，绝不相加）
+            saveStats(mergeStats(localStats, cloud));
             this.loadStats();
             // 同步合并后的数据回云端
             this.uploadToCloud();

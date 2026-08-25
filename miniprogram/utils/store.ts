@@ -165,6 +165,52 @@ export function recordStudy(count: number = 1): StudyStats {
   return stats;
 }
 
+// 合并本地与云端的统计（防丢失）：
+//   - 累计值（totalWords/streakDays）取较大值，避免清缓存后把历史冲小
+//   - 今日/本周以本地为准（本地今天学过就是最新），防覆盖
+//   - 日期字段取较新的
+// 绝不相加，杜绝重复累计。
+export function mergeStats(local: StudyStats, cloud: StudyStats): StudyStats {
+  const today = todayStr();
+  return {
+    ...defaultStats(),
+    ...local,
+    totalWords: Math.max(local.totalWords || 0, cloud.totalWords || 0),
+    streakDays: Math.max(local.streakDays || 0, cloud.streakDays || 0),
+    learnedToday: local.lastStudyDate === today
+      ? local.learnedToday
+      : (cloud.lastStudyDate === today ? (cloud.learnedToday || 0) : 0),
+    weeklyLearned: local.lastStudyDate === today
+      ? local.weeklyLearned
+      : Math.max(local.weeklyLearned || 0, cloud.weeklyLearned || 0),
+    checkedIn: local.lastStudyDate === today
+      ? local.checkedIn
+      : (cloud.lastStudyDate === today ? cloud.checkedIn : false),
+    lastStudyDate: (local.lastStudyDate || '') >= (cloud.lastStudyDate || '')
+      ? local.lastStudyDate
+      : cloud.lastStudyDate,
+    weeklyStart: local.weeklyStart || cloud.weeklyStart || ''
+  };
+}
+
+// 从云端拉取用户统计并合并回本地（静默，失败不打扰）
+export function restoreStatsFromCloud(): Promise<void> {
+  const app = getApp() as any;
+  const openid = app && app.globalData ? app.globalData.openid : '';
+  if (!openid || !wx.cloud) return Promise.resolve();
+  const db = wx.cloud.database();
+  return db.collection('users')
+    .where({ _openid: openid })
+    .get()
+    .then((res: any) => {
+      if (!res.data || res.data.length === 0) return;
+      const cloud = res.data[0].stats;
+      if (!cloud) return;
+      saveStats(mergeStats(getStats(), cloud));
+    })
+    .catch(() => {});
+}
+
 // ─── 打卡 ──────────────────────────────────────────────────────
 export function doCheckIn(): StudyStats {
   const stats = getStats();
