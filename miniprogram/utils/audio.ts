@@ -308,7 +308,7 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   const savedFileID = getFileIDMap()[sentenceHash(text)];
   if (savedFileID) {
     sentenceFileCache.set(text, savedFileID);
-    downloadCloudToLocal(savedFileID, myId, text, opts);
+    playFromCloudFile(savedFileID, myId, text, opts);
     return;
   }
 
@@ -323,7 +323,7 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
         }
         sentenceFileCache.set(text, fileID);
         saveFileID(text, fileID);
-        downloadCloudToLocal(fileID, myId, text, opts);
+        playFromCloudFile(fileID, myId, text, opts);
       })
       .catch(() => {
         if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
@@ -333,8 +333,15 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   }
 }
 
-// 从云存储下载音频 → 持久化到本地 → 播放（下载不走域名白名单，稳定）
-function downloadCloudToLocal(fileID: string, myId: number, text: string, opts: SentencePlayOptions) {
+// 从云存储取音频并播放，多级降级：
+//   ① wx.cloud.downloadFile 下载到本地持久文件 → 播本地（最稳）
+//   ② 下载失败时直接以 fileID 作 src 播放（部分环境支持）
+//   ③ 都失败 → 百度直连兜庇
+function playFromCloudFile(fileID: string, myId: number, text: string, opts: SentencePlayOptions) {
+  if (!wx.cloud) {
+    if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
+    return;
+  }
   wx.cloud.downloadFile({ fileID })
     .then((res: any) => {
       if (myId !== sentenceSeq) return;
@@ -342,15 +349,27 @@ function downloadCloudToLocal(fileID: string, myId: number, text: string, opts: 
         const path = persistSentenceFile(res.tempFilePath, text);
         sentenceFileCache.set(text, path);
         playSentenceFile(path, myId, () => {
-          if (myId === sentenceSeq) opts.onError && opts.onError();
+          // 本地文件播放失败（极少见）：降级为 fileID 直播
+          console.error('[tts] 本地文件播放失败，尝试 fileID 直播', fileID);
+          playFileIDDirect(fileID, myId, text, opts);
         }, opts);
       } else {
-        if (myId === sentenceSeq) opts.onError && opts.onError();
+        console.error('[tts] 云文件下载无 tempFilePath', JSON.stringify(res));
+        if (myId === sentenceSeq) playFileIDDirect(fileID, myId, text, opts);
       }
     })
-    .catch(() => {
-      if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
+    .catch((err: any) => {
+      console.error('[tts] 云文件下载失败，转 fileID 直播', fileID, err && err.errMsg || err);
+      if (myId === sentenceSeq) playFileIDDirect(fileID, myId, text, opts);
     });
+}
+
+// 直接以云 fileID 作为 src 播放（备份方案，devtools 部分版本可用）
+function playFileIDDirect(fileID: string, myId: number, text: string, opts: SentencePlayOptions) {
+  playSentenceFile(fileID, myId, () => {
+    console.error('[tts] fileID 直播也失败，转百度直连', fileID);
+    if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
+  }, opts);
 }
 
 // 检查本地持久缓存中是否已有该句音频
@@ -369,6 +388,7 @@ function localSentencePath(text: string): string {
 // 云函数不可用/失败时的本地兜庇：直接下载百度 TTS 并持久化
 function onSentenceFail(myId: number, text: string, opts: SentencePlayOptions) {
   if (myId !== sentenceSeq) return;
+  console.error('[tts] 云链路失败，转百度直连', text.slice(0, 30));
   const baidu = `https://fanyi.baidu.com/gettts?lan=en&text=${encodeURIComponent(text)}&spd=3&source=web`;
   wx.downloadFile({
     url: baidu,
@@ -380,13 +400,16 @@ function onSentenceFail(myId: number, text: string, opts: SentencePlayOptions) {
         const path = persistSentenceFile(res.tempFilePath, text);
         sentenceFileCache.set(text, path);
         playSentenceFile(path, myId, () => {
+          console.error('[tts] 百度音频本地播放失败');
           if (myId === sentenceSeq) opts.onError && opts.onError();
         }, opts);
       } else {
+        console.error('[tts] 百度直连非音频响应', res.statusCode, ct);
         if (myId === sentenceSeq) opts.onError && opts.onError();
       }
     },
-    fail: () => {
+    fail: (err: any) => {
+      console.error('[tts] 百度直连下载失败', err && err.errMsg || err);
       if (myId === sentenceSeq) opts.onError && opts.onError();
     }
   });
