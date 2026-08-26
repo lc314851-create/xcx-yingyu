@@ -280,22 +280,23 @@ function persistSentenceFile(tempPath: string, text: string): string {
 
 /**
  * 播放整句英文（逐句跟读/听力用）
- * 主链路：调 tts 云函数生成/取缓存音频（云存储 fileID 直接播放，无域名白名单问题）
- * 兜庇：云函数不可用时，本地直接下载百度 TTS 播放
+ * 主链路：拿到云存储 fileID（映射/云函数）→ 统一下载成本地文件 → 播放
+ * 播放一律走本地文件，规避 fileID 直播在部分环境起播不稳的问题；
+ * 本地文件按句持久化，重播/暂停恢复均秒开。
  */
 export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   if (!text) return;
   stopSentence();
   const myId = ++sentenceSeq;
 
-  // 1) 会话内内存缓存
+  // 1) 会话内内存缓存（已是本地路径）
   const cached = sentenceFileCache.get(text);
   if (cached) {
     playSentenceFile(cached, myId, () => onSentenceFail(myId, text, opts), opts);
     return;
   }
 
-  // 2) 本地持久 mp3（上次直连下载的音频）
+  // 2) 本地持久 mp3（上次下载过的音频）
   const localPath = localSentencePath(text);
   if (localPath) {
     sentenceFileCache.set(text, localPath);
@@ -303,14 +304,15 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
     return;
   }
 
-  // 3) 本地持久化的云 fileID 映射：直接读云存储链接，不依赖云函数
+  // 3) 本地持久化的云 fileID 映射：下载云文件到本地再播
   const savedFileID = getFileIDMap()[sentenceHash(text)];
   if (savedFileID) {
     sentenceFileCache.set(text, savedFileID);
-    playSentenceFile(savedFileID, myId, () => onSentenceFail(myId, text, opts), opts);
+    downloadCloudToLocal(savedFileID, myId, text, opts);
     return;
   }
 
+  // 4) tts 云函数：生成/取缓存音频，拿到 fileID 后下载到本地播
   if (wx.cloud) {
     wx.cloud.callFunction({ name: 'tts', data: { text } })
       .then((res: any) => {
@@ -321,7 +323,7 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
         }
         sentenceFileCache.set(text, fileID);
         saveFileID(text, fileID);
-        playSentenceFile(fileID, myId, () => onSentenceFail(myId, text, opts), opts);
+        downloadCloudToLocal(fileID, myId, text, opts);
       })
       .catch(() => {
         if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
@@ -329,6 +331,26 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   } else {
     onSentenceFail(myId, text, opts);
   }
+}
+
+// 从云存储下载音频 → 持久化到本地 → 播放（下载不走域名白名单，稳定）
+function downloadCloudToLocal(fileID: string, myId: number, text: string, opts: SentencePlayOptions) {
+  wx.cloud.downloadFile({ fileID })
+    .then((res: any) => {
+      if (myId !== sentenceSeq) return;
+      if (res && res.tempFilePath) {
+        const path = persistSentenceFile(res.tempFilePath, text);
+        sentenceFileCache.set(text, path);
+        playSentenceFile(path, myId, () => {
+          if (myId === sentenceSeq) opts.onError && opts.onError();
+        }, opts);
+      } else {
+        if (myId === sentenceSeq) opts.onError && opts.onError();
+      }
+    })
+    .catch(() => {
+      if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
+    });
 }
 
 // 检查本地持久缓存中是否已有该句音频
@@ -411,13 +433,15 @@ function playSentenceFile(
     if (myId === sentenceSeq) onFail();
   });
 
-  // 起播超时判定
+  // 起播超时判定（本地文件一般即时起播；放宽到 6s 避免误判）
   setTimeout(() => {
+    // 已被 stopSentence 停止（暂停/切句/卸载）则不再判定失败
+    if (sentenceCtx !== ctx) return;
     if (!started && !done) {
       cleanup();
       if (myId === sentenceSeq) onFail();
     }
-  }, 3000);
+  }, 6000);
 }
 
 /**
