@@ -1,4 +1,12 @@
 // app.ts - 全局入口
+import {
+  restoreProgressFromCloud,
+  syncProgressToCloud,
+  restoreWrongBookFromCloud,
+  syncWrongBookToCloud,
+  getCurrentBookId
+} from './utils/store';
+
 App({
   globalData: {
     // 云开发环境 ID（创建云环境后填入）
@@ -19,6 +27,22 @@ App({
 
     // 自动登录获取 openid
     this.login();
+
+    // 登录失败时也尝试用缓存的 openid 恢复进度（尽力而为）
+    const cachedOpenid = wx.getStorageSync('bc_openid');
+    if (cachedOpenid && wx.cloud) {
+      setTimeout(() => {
+        restoreProgressFromCloud(getCurrentBookId());
+        restoreWrongBookFromCloud(); // 拉取云端生词本并集到本地
+      }, 3000);
+    }
+  },
+
+  // 退后台：把去抖队列里的进度同步立即落云，避免杀进程丢失最后几分钟的学习
+  onHide() {
+    const bookId = getCurrentBookId();
+    syncProgressToCloud(bookId).catch(() => {});
+    syncWrongBookToCloud().catch(() => {}); // 生词本去抖队列立即落云，防杀进程丢失
   },
 
   // 云开发登录
@@ -37,6 +61,9 @@ App({
           this.globalData.openid = openid;
           // 缓存到本地
           wx.setStorageSync('bc_openid', openid);
+          // 登录成功后：静默拉取云端单词进度与生词本并合并到本地（换机/清缓存不丢）
+          restoreProgressFromCloud(getCurrentBookId());
+          restoreWrongBookFromCloud();
         }
         // 缓存用户资料（昵称/头像）
         const profile = (res.result && res.result.profile) || {};

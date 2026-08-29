@@ -32,7 +32,7 @@
   width: 540rpx;
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8rpx 32rpx rgba(88, 70, 42, 0.12);
 }
 
 .poster-img {
@@ -62,7 +62,7 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
 }
 
 /* 数据概览 */
@@ -87,7 +87,7 @@
 
 .data-lbl {
   font-size: 22rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-top: 6rpx;
 }
 
@@ -117,7 +117,7 @@
 /* 提示 */
 .tip-text {
   font-size: 24rpx;
-  color: #B0B6C0;
+  color: var(--text-quaternary);
   margin-top: 30rpx;
   text-align: center;
 }

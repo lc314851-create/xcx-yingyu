@@ -14,11 +14,11 @@
   flex: 1;
   display: flex;
   align-items: center;
-  background: #FFFFFF;
+  background: var(--bg-card);
   border-radius: 40rpx;
   padding: 0 24rpx;
   height: 80rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(88, 70, 42, 0.04);
   border: 2rpx solid transparent;
   transition: border-color 0.2s var(--ease-out);
 }
@@ -30,7 +30,7 @@
 .search-icon {
   width: 28rpx;
   height: 28rpx;
-  border: 4rpx solid #8A8F99;
+  border: 4rpx solid var(--text-tertiary);
   border-radius: 50%;
   margin-right: 12rpx;
   position: relative;
@@ -44,7 +44,7 @@
   left: 18rpx;
   width: 10rpx;
   height: 4rpx;
-  background: #8A8F99;
+  background: var(--text-tertiary);
   border-radius: 2rpx;
   transform: rotate(45deg);
 }
@@ -52,7 +52,7 @@
 .search-input {
   flex: 1;
   font-size: 30rpx;
-  color: #1F2430;
+  color: var(--text-primary);
   height: 80rpx;
 }
 
@@ -60,12 +60,12 @@
   width: 32rpx;
   height: 32rpx;
   border-radius: 50%;
-  background: #E3E9F2;
+  background: var(--border-light);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -75,7 +75,7 @@
 
 .search-btn {
   background: #2F5746;
-  color: #FFFFFF;
+  color: var(--bg-card);
   border-radius: 40rpx;
   font-size: 28rpx;
   font-weight: 600;
@@ -96,7 +96,7 @@
   text-align: center;
   padding: 80rpx 0;
   font-size: 28rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
 }
 
 /* 无结果 */
@@ -112,23 +112,23 @@
 
 .no-result-text {
   font-size: 30rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
 }
 
 /* 结果列表 */
 .result-count {
   font-size: 24rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-bottom: 16rpx;
   padding-left: 8rpx;
 }
 
 .result-item {
-  background: #FFFFFF;
+  background: var(--bg-card);
   border-radius: 20rpx;
   padding: 28rpx 24rpx;
   margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(88, 70, 42, 0.04);
   transition: transform 0.15s var(--ease-out);
 }
 
@@ -145,12 +145,12 @@
 .result-word {
   font-size: 36rpx;
   font-weight: 800;
-  color: #1F2430;
+  color: var(--text-primary);
 }
 
 .result-phonetic {
   font-size: 26rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
 }
 
 .result-play {
@@ -170,14 +170,14 @@
 
 .result-meaning {
   font-size: 28rpx;
-  color: #5A6072;
+  color: var(--text-secondary);
   margin-top: 12rpx;
   line-height: 1.5;
 }
 
 .result-example {
   font-size: 24rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-top: 8rpx;
   line-height: 1.5;
   font-style: italic;
@@ -187,7 +187,7 @@
 .result-extra {
   margin-top: 12rpx;
   padding-top: 12rpx;
-  border-top: 1rpx solid #F0F2F5;
+  border-top: 1rpx solid var(--border-light);
 }
 
 .extra-row {
@@ -200,8 +200,8 @@
 }
 
 .extra-key {
-  color: #8A8F99;
-  background: #F0F2F5;
+  color: var(--text-tertiary);
+  background: var(--border-light);
   border-radius: 6rpx;
   padding: 2rpx 10rpx;
   flex-shrink: 0;
@@ -209,7 +209,7 @@
 }
 
 .extra-val {
-  color: #5A6072;
+  color: var(--text-secondary);
   flex: 1;
   word-break: break-all;
 }
@@ -234,8 +234,8 @@
 }
 
 .result-tag.learned-false {
-  background: #EEF1F6;
-  color: #8A8F99;
+  background: var(--border-light);
+  color: var(--text-tertiary);
 }
 
 .result-book {
@@ -284,12 +284,12 @@
 
 .hint-text {
   font-size: 30rpx;
-  color: #5A6072;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
 .hint-sub {
   font-size: 26rpx;
-  color: #B0B6C0;
+  color: var(--text-quaternary);
   margin-top: 12rpx;
 }

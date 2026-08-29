@@ -1,0 +1,63 @@
+<!-- pages/quotes/quotes.wxml -->
+<view class="container">
+  <view class="page-head">
+    <view class="page-head-title serif">金句集</view>
+    <view class="page-head-sub">已收录 {{total}} 句 · 每天也别忘了首页那一句</view>
+  </view>
+
+  <view class="quote-arch" wx:for="{{list}}" wx:key="en">
+    <view class="qa-top">
+      <view class="qa-today" wx:if="{{item.isToday}}">今日</view>
+      <view class="qa-ops">
+        <view
+          class="qa-op"
+          data-en="{{item.en}}"
+          data-author="{{item.author}}"
+          catchtap="onCopy"
+        >复制</view>
+        <view
+          class="qa-op qa-op-primary"
+          data-en="{{item.en}}"
+          data-zh="{{item.zh}}"
+          data-author="{{item.author}}"
+          catchtap="onPoster"
+        >海报</view>
+      </view>
+    </view>
+    <view class="qa-en serif">“{{item.en}}”</view>
+    <view class="qa-zh">{{item.zh}}</view>
+    <view class="qa-author" wx:if="{{item.author}}">— {{item.author}}</view>
+    <view class="qa-words" wx:if="{{item.words.length}}">
+      <text class="qa-word-item" wx:for="{{item.words}}" wx:for-item="w" wx:key="*this">{{w}}</text>
+    </view>
+  </view>
+
+  <!-- 金句海报弹层 -->
+  <view class="poster-mask" wx:if="{{showPoster}}" bindtap="onClosePoster"></view>
+  <view class="poster-panel" wx:if="{{showPoster}}">
+    <view class="poster-head">
+      <view class="poster-title">金句海报</view>
+      <view class="poster-close" bindtap="onClosePoster">✕</view>
+    </view>
+    <image
+      class="poster-img"
+      wx:if="{{posterPath}}"
+      src="{{posterPath}}"
+      mode="widthFix"
+      show-menu-by-longpress
+    />
+    <view class="poster-loading" wx:else>海报生成中...</view>
+    <view class="poster-actions">
+      <view class="btn-secondary poster-btn" catchtap="onSavePoster">保存相册</view>
+      <view class="btn-primary poster-btn" catchtap="onSharePoster">分享图片</view>
+    </view>
+    <view class="poster-tip">分享到朋友圈 / 发给好友，让你的金句被看见</view>
+  </view>
+
+  <!-- 海报绘制画布（视口外隐藏，type=2d 需要真实渲染才能取到节点） -->
+  <canvas
+    type="2d"
+    id="quoteCanvas"
+    style="position: fixed; left: -9999rpx; top: 0; width: 300px; height: 400px;"
+  ></canvas>
+</view>

@@ -21,13 +21,46 @@ const BOOK_META = [
   { id: 'postgrad', name: '考研词汇', level: '考研', tag: 'ky' },
   { id: 'ielts', name: '雅思词汇', level: '雅思', tag: 'ielts' },
   { id: 'toefl', name: '托福词汇', level: '托福', tag: 'toefl' },
-  { id: 'gre', name: 'GRE词汇', level: 'GRE', tag: 'gre' }
+  { id: 'gre', name: 'GRE词汇', level: 'GRE', tag: 'gre' },
+  // 人教版教材同步分册
+  { id: 'pepj7_1', name: '人教版七年级上册', level: '初一', tag: 'pep' },
+  { id: 'pepj7_2', name: '人教版七年级下册', level: '初一', tag: 'pep' },
+  { id: 'pepj8_1', name: '人教版八年级上册', level: '初二', tag: 'pep' },
+  { id: 'pepj8_2', name: '人教版八年级下册', level: '初二', tag: 'pep' },
+  { id: 'pepj9', name: 'PEP经典版九年级', level: '初三', tag: 'pep' },
+  { id: 'pepgz1', name: '人教版必修第一册', level: '高一', tag: 'pep' },
+  { id: 'pepgz2', name: '人教版必修第二册', level: '高一', tag: 'pep' },
+  { id: 'pepgz3', name: '人教版必修第三册', level: '高二', tag: 'pep' },
+  { id: 'pepgzx1', name: '人教版选择性必修一', level: '高二', tag: 'pep' },
+  { id: 'pepgzx2', name: '人教版选择性必修二', level: '高二', tag: 'pep' },
+  { id: 'pepgzx3', name: '人教版选择性必修三', level: '高三', tag: 'pep' },
+  { id: 'pep3_1', name: 'PEP经典版三年级上', level: '小学', tag: 'pep' },
+  { id: 'pep3_2', name: 'PEP经典版三年级下', level: '小学', tag: 'pep' },
+  { id: 'pep4_1', name: 'PEP经典版四年级上', level: '小学', tag: 'pep' },
+  { id: 'pep4_2', name: 'PEP经典版四年级下', level: '小学', tag: 'pep' },
+  { id: 'pep5_1', name: 'PEP经典版五年级上', level: '小学', tag: 'pep' },
+  { id: 'pep5_2', name: 'PEP经典版五年级下', level: '小学', tag: 'pep' },
+  { id: 'pep6_1', name: 'PEP经典版六年级上', level: '小学', tag: 'pep' },
+  { id: 'pep6_2', name: 'PEP经典版六年级下', level: '小学', tag: 'pep' }
 ];
 
 exports.main = async (event, context) => {
   const { action, bookId, words } = event;
 
   try {
+    // 0. 服务端换取临时下载链接（不受客户端存储权限限制，绕过 empty download url）
+    if (action === 'getBookFileUrl' && bookId) {
+      const bucket = '636c-cloudbase-d0g1vselq28a99d40-147023080';
+      const envId = cloud.DYNAMIC_CURRENT_ENV || 'cloudbase-d0g1vselq28a99d40';
+      const fileID = `cloud://${envId}.${bucket}/wordbooks/${bookId}.json`;
+      const res = await cloud.getTempFileURL({ fileList: [fileID] });
+      const f = res.fileList && res.fileList[0];
+      if (!f || !f.tempFileURL || f.status !== 0) {
+        return { ok: false, errMsg: (f && (f.errMsg || f.status)) || 'no url' };
+      }
+      return { ok: true, url: f.tempFileURL };
+    }
+
     // 1. 检查词库是否已初始化
     if (action === 'check') {
       const countResult = await db.collection('wordbooks').count();
@@ -40,20 +73,22 @@ exports.main = async (event, context) => {
 
     // 2. 获取词书元数据（含高频词数量）
     if (action === 'getMeta') {
-      const result = {};
-      for (const meta of BOOK_META) {
+      // 并行统计所有词书，避免串行查询超时（词书数量已增至 27 本）
+      const stats = await Promise.all(BOOK_META.map(async (meta) => {
         const totalRes = await db.collection('wordbooks')
           .where({ bookId: meta.id })
           .count();
         const hfRes = await db.collection('wordbooks')
           .where({ bookId: meta.id, isHighFreq: true })
           .count();
-        result[meta.id] = {
+        return [meta.id, {
           ...meta,
           wordCount: totalRes.total,
           highFreqCount: hfRes.total
-        };
-      }
+        }];
+      }));
+      const result = {};
+      stats.forEach(([id, info]) => { result[id] = info; });
       return { books: result };
     }
 

@@ -8,20 +8,17 @@
     "pages/wrongbook/wrongbook",
     "pages/poster/poster",
     "pages/search/search",
-    "pages/fillblank/fillblank",
-    "pages/spelling/spelling",
-    "pages/challenge/challenge",
-    "pages/leaderboard/leaderboard",
     "pages/galaxy/galaxy",
-    "pages/scene/scene",
     "pages/memory/memory",
-    "pages/story/story"
+    "pages/plan/plan",
+    "pages/vocabtest/vocabtest",
+    "pages/quotes/quotes"
   ],
   "window": {
     "backgroundColor": "#F7F3EA",
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#2F5746",
-    "navigationBarTitleText": "拾词手账",
+    "navigationBarTitleText": "英语补词达人",
     "navigationBarTextStyle": "white"
   },
   "tabBar": {

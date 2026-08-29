@@ -68,11 +68,49 @@ const SUFFIXES = [
   'ity', 'ety', 'ty', 'al', 'en', 'ish', 'es', 's', 'ic', 'ical'
 ].sort((a, b) => b.length - a.length);
 
+// ─── 学段域：词根网络跨词书存在，教材分册的漫游池放宽到整个学段 ───
+// 考试词书本身是聚合层（senior⊇junior、cet4⊇senior），直接用自身；
+// PEP 教材分册并入对应学段域，否则一册几百词的池子让星系功能失去意义
+const DOMAIN_MAP: Record<string, string[]> = {
+  // 初中域：2024 新版 4 册 + 经典版九年级 + 中考大纲
+  pepj7_1: ['pepj7_1', 'pepj7_2', 'pepj8_1', 'pepj8_2', 'pepj9', 'junior'],
+  pepj7_2: ['pepj7_1', 'pepj7_2', 'pepj8_1', 'pepj8_2', 'pepj9', 'junior'],
+  pepj8_1: ['pepj7_1', 'pepj7_2', 'pepj8_1', 'pepj8_2', 'pepj9', 'junior'],
+  pepj8_2: ['pepj7_1', 'pepj7_2', 'pepj8_1', 'pepj8_2', 'pepj9', 'junior'],
+  pepj9:   ['pepj7_1', 'pepj7_2', 'pepj8_1', 'pepj8_2', 'pepj9', 'junior'],
+  // 高中域：现行必修 + 选择性必修 6 册 + 高考大纲
+  pepgz1:   ['pepgz1', 'pepgz2', 'pepgz3', 'pepgzx1', 'pepgzx2', 'pepgzx3', 'senior'],
+  pepgz2:   ['pepgz1', 'pepgz2', 'pepgz3', 'pepgzx1', 'pepgzx2', 'pepgzx3', 'senior'],
+  pepgz3:   ['pepgz1', 'pepgz2', 'pepgz3', 'pepgzx1', 'pepgzx2', 'pepgzx3', 'senior'],
+  pepgzx1:  ['pepgz1', 'pepgz2', 'pepgz3', 'pepgzx1', 'pepgzx2', 'pepgzx3', 'senior'],
+  pepgzx2:  ['pepgz1', 'pepgz2', 'pepgz3', 'pepgzx1', 'pepgzx2', 'pepgzx3', 'senior'],
+  pepgzx3:  ['pepgz1', 'pepgz2', 'pepgz3', 'pepgzx1', 'pepgzx2', 'pepgzx3', 'senior'],
+  // 小学域：经典版 8 册
+  pep3_1: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2'],
+  pep3_2: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2'],
+  pep4_1: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2'],
+  pep4_2: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2'],
+  pep5_1: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2'],
+  pep5_2: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2'],
+  pep6_1: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2'],
+  pep6_2: ['pep3_1', 'pep3_2', 'pep4_1', 'pep4_2', 'pep5_1', 'pep5_2', 'pep6_1', 'pep6_2']
+};
+
+// 词书 → 漫游域（考试词书用自身）
+function resolveDomain(bookId: string): string[] {
+  return DOMAIN_MAP[bookId] || [bookId];
+}
+
+// 词 → 收录词书（域内），用于标注"跨册漫游"的扩展词
+type WordToBooks = Map<string, string[]>;
+
 interface BookIndex {
   wordMap: Map<string, WordItem>;
   rootMap: Map<string, WordItem[]>;
+  wordToBooks: WordToBooks;
 }
 
+// 缓存键 = 域（同域词书共享索引）
 const indexCache: Record<string, BookIndex> = {};
 
 // ─── 运行时词根计算（enrich 管线的 JS 移植） ────────────────────
@@ -161,88 +199,119 @@ function editDistLe1(a: string, b: string): boolean {
 }
 
 // 词库缺字段时，现场补齐 root / rootGloss / relatedWords
+// 注意：域聚合后不同词书字段覆盖率不同，必须逐词补齐（不能因个别词有字段而跳过整批）
 function runtimeEnrich(words: WordItem[], wordMap: Map<string, WordItem>): void {
   const bookSet = new Set(words.map(w => w.word.toLowerCase()));
-  const hasRootField = words.some(w => !!w.root);
 
-  if (!hasRootField) {
-    for (const w of words) {
-      const lower = w.word.toLowerCase();
-      if (lower !== w.word) continue; // 只处理小写基础词
-      const stem = stripAffixes(lower, bookSet, 0);
-      if (stem !== lower && stem.length >= 3) {
-        w.root = stem;
-        if (ROOT_GLOSS[stem]) {
-          w.rootGloss = ROOT_GLOSS[stem];
-        } else {
-          const stemWord = wordMap.get(stem) || words.find(x => x.word.toLowerCase() === stem);
-          if (stemWord) w.rootGloss = firstSense(stemWord.meaning || '');
-        }
+  // root：只补缺 root 的词
+  for (const w of words) {
+    if (w.root) continue;
+    const lower = w.word.toLowerCase();
+    if (lower !== w.word) continue; // 只处理小写基础词
+    const stem = stripAffixes(lower, bookSet, 0);
+    if (stem !== lower && stem.length >= 3) {
+      w.root = stem;
+      if (ROOT_GLOSS[stem]) {
+        w.rootGloss = ROOT_GLOSS[stem];
+      } else {
+        const stemWord = wordMap.get(stem) || words.find(x => x.word.toLowerCase() === stem);
+        if (stemWord) w.rootGloss = firstSense(stemWord.meaning || '');
       }
     }
   }
 
-  const hasSimilarField = words.some(w => !!w.relatedWords);
-  if (!hasSimilarField) {
-    // 按首字母分桶算形近词（每词最多4个，避免列表过长）
-    const buckets: Record<string, string[]> = {};
-    for (const w of words) {
-      const k = w.word[0].toLowerCase();
-      if (!buckets[k]) buckets[k] = [];
-      buckets[k].push(w.word);
-    }
-    for (const k of Object.keys(buckets)) {
-      const group = [...new Set(buckets[k])].sort();
-      for (const a of group) {
-        const la = a.toLowerCase();
-        const cands: string[] = [];
-        for (const b of group) {
-          if (a === b || a.length < 3) continue;
-          if (editDistLe1(la, b.toLowerCase())) {
-            cands.push(b);
-            if (cands.length >= 4) break;
-          }
+  // relatedWords：按首字母分桶算形近词（每词最多4个，避免列表过长），只补缺失的
+  const buckets: Record<string, string[]> = {};
+  for (const w of words) {
+    const k = w.word[0].toLowerCase();
+    if (!buckets[k]) buckets[k] = [];
+    buckets[k].push(w.word);
+  }
+  for (const k of Object.keys(buckets)) {
+    const group = [...new Set(buckets[k])].sort();
+    for (const a of group) {
+      const wi = wordMap.get(a);
+      if (!wi || wi.relatedWords || a.length < 3) continue;
+      const la = a.toLowerCase();
+      const cands: string[] = [];
+      for (const b of group) {
+        if (a === b) continue;
+        if (editDistLe1(la, b.toLowerCase())) {
+          cands.push(b);
+          if (cands.length >= 4) break;
         }
-        if (cands.length) {
-          const wi = wordMap.get(a);
-          if (wi) wi.relatedWords = cands.join(',');
-        }
+      }
+      if (cands.length) {
+        wi.relatedWords = cands.join(',');
       }
     }
   }
 }
 
 async function ensureIndex(bookId: string): Promise<BookIndex> {
-  if (indexCache[bookId]) return indexCache[bookId];
+  const ids = resolveDomain(bookId);
+  const key = ids.join(',');
+  if (indexCache[key]) return indexCache[key];
 
-  const words = await getBookWords(bookId);
+  // 逐本加载，单本失败不影响整个域
+  const books = await Promise.all(
+    ids.map(id => getBookWords(id).catch(() => [] as WordItem[]))
+  );
+
+  // 合并：同词保留根字段更全的版本，并记录词 → 收录词书
   const wordMap = new Map<string, WordItem>();
-  for (const w of words) wordMap.set(w.word, w);
-
-  // 关键：数据缺增强字段时，先用主包内置种子包补齐
-  if (!words.some(w => !!w.root || !!w.relatedWords) && familySeeds[bookId]) {
-    for (const [w, root, gloss, similar] of familySeeds[bookId]) {
-      const item = wordMap.get(w);
-      if (!item) continue;
-      if (root && !item.root) item.root = root;
-      if (gloss && !item.rootGloss) item.rootGloss = gloss;
-      if (similar && !item.relatedWords) item.relatedWords = similar;
+  const wordToBooks: WordToBooks = new Map();
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    for (const w of books[i]) {
+      const exist = wordMap.get(w.word);
+      if (!exist) {
+        wordMap.set(w.word, w);
+      } else if (!exist.root && w.root) {
+        wordMap.set(w.word, {
+          ...exist,
+          root: w.root,
+          rootGloss: w.rootGloss || exist.rootGloss,
+          relatedWords: w.relatedWords || exist.relatedWords
+        });
+      }
+      let list = wordToBooks.get(w.word);
+      if (!list) {
+        list = [];
+        wordToBooks.set(w.word, list);
+      }
+      if (!list.includes(id)) list.push(id);
     }
   }
 
-  // 种子包仍未覆盖的，客户端现场计算
-  runtimeEnrich(words, wordMap);
+  // 种子包补齐：逐词应用（域内每本书的种子都补，不因某本有字段而跳过）
+  for (const id of ids) {
+    const seeds = familySeeds[id];
+    if (!seeds) continue;
+    for (const seed of seeds) {
+      const item = wordMap.get(seed[0]);
+      if (!item) continue;
+      if (seed[1] && !item.root) item.root = seed[1];
+      if (seed[2] && !item.rootGloss) item.rootGloss = seed[2];
+      if (seed[3] && !item.relatedWords) item.relatedWords = seed[3];
+    }
+  }
+
+  const wordsAll = [...wordMap.values()];
+
+  // 仍缺字段的现场计算
+  runtimeEnrich(wordsAll, wordMap);
 
   const rootMap = new Map<string, WordItem[]>();
-  for (const w of words) {
+  for (const w of wordsAll) {
     if (!w.root) continue;
     const list = rootMap.get(w.root) || [];
     list.push(w);
     rootMap.set(w.root, list);
   }
 
-  const idx: BookIndex = { wordMap, rootMap };
-  indexCache[bookId] = idx;
+  const idx: BookIndex = { wordMap, rootMap, wordToBooks };
+  indexCache[key] = idx;
   return idx;
 }
 
@@ -253,16 +322,17 @@ export interface FamilyResult {
   rootGloss: string;
   family: WordItem[];
   similar: WordItem[];
+  inMainBook: boolean; // 中心词是否收录于用户主词书（域漫游可能跨册，需标注）
 }
 
-// 查询某词的词族信息（词书 = 用户当前词书）
+// 查询某词的词族信息（词书 = 用户当前词书的漫游域）
 export async function getFamily(word: string, bookId?: string): Promise<FamilyResult> {
   const bid = bookId || getCurrentBookId();
   const idx = await ensureIndex(bid);
   const center = idx.wordMap.get(word) || null;
 
   if (!center) {
-    return { center: null, root: '', rootGloss: '', family: [], similar: [] };
+    return { center: null, root: '', rootGloss: '', family: [], similar: [], inMainBook: false };
   }
 
   const root = center.root || '';
@@ -287,27 +357,48 @@ export async function getFamily(word: string, bookId?: string): Promise<FamilyRe
       .slice(0, 12);
   }
 
-  return { center, root, rootGloss, family, similar };
+  const wordBooks = idx.wordToBooks.get(word) || [];
+  const inMainBook = wordBooks.includes(bid);
+
+  return { center, root, rootGloss, family, similar, inMainBook };
 }
 
 // 随机挑一个「有词族」的高频词（星系首页漫游入口）
+// 注意候选池过小会导致连续漫游重复：优先「词族≥3 且高频」，
+// 若不足 20 个则放宽到「词族≥2」补齐，保证随机性
 export async function randomFamilyWord(bookId?: string): Promise<string | null> {
   const bid = bookId || getCurrentBookId();
   const idx = await ensureIndex(bid);
 
-  const candidates: string[] = [];
+  const pool: string[] = [];
+  const seen = new Set<string>();
+
+  // 第一优先：词族 ≥3 且高频（观赏性好：环绕节点多）
   for (const [, members] of idx.rootMap) {
     if (members.length >= 3) {
       for (const m of members) {
-        if (m.isHighFreq) candidates.push(m.word);
+        if (m.isHighFreq && !seen.has(m.word)) {
+          seen.add(m.word);
+          pool.push(m.word);
+        }
       }
     }
   }
-  if (!candidates.length) {
+
+  // 池子太小：放宽到全部「词族 ≥2」的词
+  if (pool.length < 20) {
     for (const [, members] of idx.rootMap) {
-      if (members.length >= 2) candidates.push(members[0].word);
+      if (members.length >= 2) {
+        for (const m of members) {
+          if (!seen.has(m.word)) {
+            seen.add(m.word);
+            pool.push(m.word);
+          }
+        }
+      }
     }
   }
-  if (!candidates.length) return null;
-  return candidates[Math.floor(Math.random() * candidates.length)];
+
+  if (!pool.length) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
 }

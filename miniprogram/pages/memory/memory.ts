@@ -1,6 +1,9 @@
 // pages/memory/memory.ts
-// 记忆体检：基于 Leitner 进度数据，为每个用户拟合「自己的」记忆保持曲线
-// R = e^(-Δt/S)：R=当前可检索概率，Δt=距离上次学习的天数，S=稳定度（随 box 等级增长）
+// 记忆体检：基于每个词的真实排程（SM-2 变体）拟合「自己的」记忆保持曲线
+// R = e^(-Δt/S)：R=当前可检索概率，Δt=距离上次学习的天数，S=稳定度
+// S 由真实复习间隔推导：词在「间隔到期日」的保持率理论值为 0.9，
+// 即 e^(-interval/S) = 0.9 → S = interval / ln(1/0.9) ≈ interval × 9.49
+// 旧 Leitner 数据（无 interval 字段）按 box 回填间隔后同模型计算
 
 import { getAllProgress, getStats, getCurrentBookId, WordProgress } from '../../utils/store';
 import { getBookWords } from '../../utils/wordService';
@@ -8,13 +11,24 @@ import { playAudio } from '../../utils/audio';
 
 const DAY = 24 * 60 * 60 * 1000;
 
-// box → 稳定度天数（记忆能保持多久的估计）
-const STABILITY_DAYS: Record<number, number> = {
-  1: 0.5, 2: 1, 3: 2, 4: 4, 5: 7, 6: 15, 7: 30
+// 旧 Leitner box → 间隔天数（老数据回填；新数据直接用 p.interval）
+const BOX_INTERVAL_DAYS: Record<number, number> = {
+  1: 0, 2: 1, 3: 2, 4: 4, 5: 7, 6: 15, 7: 30
 };
 
+// ln(1/0.9)，即「到期日保持率 0.9」的幂次常数
+const LN_INV_09 = -Math.log(0.9); // ≈ 0.1054
+
+// 稳定度（天）：由排程间隔推导；间隔为 0（刚答错）给最小稳定度 0.5 天
+function stabilityDays(p: WordProgress): number {
+  const interval = p.interval && p.interval > 0
+    ? p.interval
+    : (BOX_INTERVAL_DAYS[p.box] || 0);
+  return Math.max(interval / LN_INV_09, 0.5);
+}
+
 function retrievability(p: WordProgress, now: number): number {
-  const s = STABILITY_DAYS[p.box] || 1;
+  const s = stabilityDays(p);
   const dt = Math.max(0, (now - p.lastSeen) / DAY);
   return Math.exp(-dt / s);
 }
@@ -24,6 +38,7 @@ interface RiskWord {
   meaning: string;
   r: number;       // 0~100 保持率
   days: number;    // 几天没见
+  wrong?: boolean; // 是否答错过（box1，最危险）
 }
 
 interface ConfusePair {
@@ -87,7 +102,7 @@ Page({
     for (let d = 0; d <= 7; d++) {
       let s = 0;
       for (const p of learned) {
-        const stable = STABILITY_DAYS[p.box] || 1;
+        const stable = stabilityDays(p);
         const dt = Math.max(0, (now - p.lastSeen) / DAY) + d;
         s += Math.exp(-dt / stable);
       }
@@ -97,14 +112,25 @@ Page({
       });
     }
 
-    // ─── 高危遗忘词：保持率最低的前10个 ───
-    const riskWords: RiskWord[] = learned
-      .map(p => ({
-        word: p.word,
-        meaning: meaningMap.get(p.word) || '',
-        r: Math.round(retrievability(p, now) * 100),
-        days: Math.floor((now - p.lastSeen) / DAY)
-      }))
+
+
+
+        // ─── 高危遗忘词：保持率最低的前10个 ───
+    // 除已学词（box≥2）外，额外并入学过但当前处于 box1 的词（答错过的）：
+    // 它们是真正最危险的词，赋予固定低保持率，确保置顶展示
+    const WRONG_R = 5; // 答错词的固定保持率（%），低于任何未答错词
+    const learnedArr = Object.values(progress).filter(p => (p.box || 1) >= 1 && p.lastSeen > 0);
+    const riskWords: RiskWord[] = learnedArr
+      .map(p => {
+        const wrong = (p.box || 1) <= 1;
+        return {
+          word: p.word,
+          meaning: meaningMap.get(p.word) || '',
+          r: wrong ? WRONG_R : Math.round(retrievability(p, now) * 100),
+          days: Math.floor((now - p.lastSeen) / DAY),
+          wrong
+        };
+      })
       .filter(x => x.meaning)
       .sort((a, b) => a.r - b.r)
       .slice(0, 10);
@@ -160,8 +186,15 @@ Page({
     playAudio(e.currentTarget.dataset.word as string);
   },
 
-  // 去复习
+  // 去复习：把高危词清单带给背单词页，一键复习这一轮（一次性标志，words 页 onShow 消费）
   goReview() {
+    const riskWords = this.data.riskWords.map((w: RiskWord) => w.word);
+    if (riskWords.length > 0) {
+      wx.setStorageSync('bc_memory_words', {
+        bookId: getCurrentBookId(),
+        words: riskWords
+      });
+    }
     wx.switchTab({ url: '/pages/words/words' });
   },
 
@@ -169,5 +202,20 @@ Page({
   onPairTap(e: any) {
     const word = e.currentTarget.dataset.word as string;
     wx.navigateTo({ url: `/pages/galaxy/galaxy?word=${encodeURIComponent(word)}` });
-  }
+  },
+
+  // 转发给好友
+  onShareAppMessage() {
+    return {
+      title: '记忆体检 · 算准复习日不忘词',
+      path: '/pages/memory/memory'
+    };
+  },
+
+  // 分享到朋友圈（单页模式）
+  onShareTimeline() {
+    return {
+      title: '记忆体检 · 算准复习日不忘词'
+    };
+  },
 });

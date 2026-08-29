@@ -186,6 +186,18 @@
   color: var(--text-primary);
 }
 
+.wrong-badge {
+  display: inline-block;
+  margin-left: 10rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+  color: #fff;
+  background: #b84a3e;
+  vertical-align: middle;
+}
+
 .risk-meaning {
   font-size: 24rpx;
   color: var(--text-tertiary);

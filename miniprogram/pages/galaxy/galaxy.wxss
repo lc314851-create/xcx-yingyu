@@ -65,6 +65,33 @@
   color: var(--text-quaternary);
 }
 
+/* ─── 漫游加载条：覆盖在旧星空上，不影响页面布局 ─── */
+.loading-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  margin: 16rpx 40rpx 0;
+  padding: 14rpx 0;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
+  border-radius: 999rpx;
+}
+
+.loading-bar-dot {
+  width: 14rpx;
+  height: 14rpx;
+  background: var(--color-primary-light);
+  border-radius: 50%;
+  animation: dotWave 1.2s ease-in-out infinite;
+}
+
+.loading-bar-text {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  letter-spacing: 2rpx;
+}
+
 /* ─── 星系轨道 ─── */
 .orbit-scene {
   position: relative;
@@ -144,6 +171,17 @@
 .center-root-gloss {
   color: var(--text-secondary);
   margin-left: 8rpx;
+}
+
+/* 跨册漫游标注：词来自词根网络的其他词书 */
+.center-source {
+  margin-top: 12rpx;
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+  background: rgba(242, 201, 76, 0.18);
+  border-radius: 999rpx;
+  padding: 4rpx 16rpx;
+  display: inline-block;
 }
 
 /* 环绕词节点：纸条钉在轨道上 */

@@ -13,7 +13,7 @@
         <view class="mode-chip {{practiceMode === 'choice' ? 'active' : ''}}" data-mode="choice" bindtap="onPracticeModeChange">选择</view>
         <view class="mode-chip {{practiceMode === 'spell' ? 'active' : ''}}" data-mode="spell" bindtap="onPracticeModeChange">拼写</view>
       </view>
-      <view class="book-bar-switch" bindtap="changeBook">切换</view>
+      <view class="book-bar-switch" bindtap="onChangeBatchSize">{{batchSize}} 个/轮</view>
     </view>
   </view>
 
@@ -29,7 +29,7 @@
 
   <!-- 进度条 -->
   <view class="progress-row" wx:if="{{!loading && totalCount > 0 && !showResult}}">
-    <view class="status-tag {{statusLabel === '复习' ? 'review' : (statusLabel === '巩固' ? 'solidify' : '')}}">{{statusLabel}}</view>
+    <view class="status-tag {{statusLabel === '复习' ? 'review' : (statusLabel === '巩固' ? 'solidify' : (statusLabel === '高危词' ? 'danger' : ''))}}">{{statusLabel}}</view>
     <view class="progress-text">{{currentIndex + 1}} / {{totalCount}}</view>
     <view class="progress-bar">
       <view class="progress-fill" style="width: {{totalCount > 0 ? (currentIndex + 1) / totalCount * 100 : 0}}%"></view>
@@ -56,22 +56,27 @@
           <view class="word-phonetic-front" wx:if="{{queue[currentIndex].phonetic}}">{{queue[currentIndex].phonetic}}</view>
           <view class="flip-hint">点击卡片翻面查看释义</view>
         </view>
-        <!-- 背面：释义 + 例句 -->
+        <!-- 背面：释义 + 例句（内容超长时内部滚动，不盖住下方按钮） -->
         <view class="card-face card-back">
-          <view class="word-main back-word">{{queue[currentIndex].word}}</view>
-          <view class="word-phonetic">{{queue[currentIndex].phonetic}}</view>
-          <view class="word-meaning">{{queue[currentIndex].meaning}}</view>
-          <view class="word-example" wx:if="{{queue[currentIndex].example}}">{{queue[currentIndex].example}}</view>
-          <!-- ECDICT 扩展字段 -->
-          <view class="word-extra" wx:if="{{queue[currentIndex].root || queue[currentIndex].synonyms || queue[currentIndex].antonyms || queue[currentIndex].relatedWords || queue[currentIndex].star}}">
-            <view class="word-extra-row" wx:if="{{queue[currentIndex].root}}"><text class="extra-label">词根：</text><text class="extra-text">{{queue[currentIndex].root}}{{queue[currentIndex].rootGloss ? ' · ' + queue[currentIndex].rootGloss : ''}}</text></view>
-            <view class="word-extra-row" wx:if="{{queue[currentIndex].synonyms}}"><text class="extra-label">同义：</text><text class="extra-text">{{queue[currentIndex].synonyms}}</text></view>
-            <view class="word-extra-row" wx:if="{{queue[currentIndex].antonyms}}"><text class="extra-label">反义：</text><text class="extra-text">{{queue[currentIndex].antonyms}}</text></view>
-            <view class="word-extra-row" wx:if="{{queue[currentIndex].relatedWords}}"><text class="extra-label">形近：</text><text class="extra-text">{{queue[currentIndex].relatedWords}}</text></view>
-            <view class="word-extra-row" wx:if="{{queue[currentIndex].star > 0}}"><text class="extra-label">词频：</text><text class="extra-text">{{['','★','★★','★★★','★★★★','★★★★★'][queue[currentIndex].star] || ''}}</text></view>
-          </view>
-          <view class="word-galaxy-link" wx:if="{{queue[currentIndex].root || queue[currentIndex].relatedWords}}" catchtap="goGalaxy">漫游词族 ›</view>
-          <view class="flip-hint">点击返回正面</view>
+          <scroll-view scroll-y class="card-back-scroll">
+            <view class="card-back-inner">
+              <view class="word-main back-word">{{queue[currentIndex].word}}</view>
+              <view class="word-phonetic">{{queue[currentIndex].phonetic}}</view>
+              <view class="word-meaning">{{queue[currentIndex].meaning}}</view>
+              <view class="word-example" wx:if="{{queue[currentIndex].example}}">{{queue[currentIndex].example}}</view>
+              <!-- ECDICT 扩展字段 -->
+              <view class="word-extra" wx:if="{{queue[currentIndex].root || queue[currentIndex].synonyms || queue[currentIndex].antonyms || queue[currentIndex].relatedWords || queue[currentIndex].star}}">
+                <view class="word-extra-row" wx:if="{{queue[currentIndex].root}}"><text class="extra-label">词根：</text><text class="extra-text">{{queue[currentIndex].root}}{{queue[currentIndex].rootGloss ? ' · ' + queue[currentIndex].rootGloss : ''}}</text></view>
+                <view class="word-extra-row" wx:if="{{queue[currentIndex].synonyms}}"><text class="extra-label">同义：</text><text class="extra-text">{{queue[currentIndex].synonyms}}</text></view>
+                <view class="word-extra-row" wx:if="{{queue[currentIndex].antonyms}}"><text class="extra-label">反义：</text><text class="extra-text">{{queue[currentIndex].antonyms}}</text></view>
+                <view class="word-extra-row" wx:if="{{queue[currentIndex].relatedWords}}"><text class="extra-label">形近：</text><text class="extra-text">{{queue[currentIndex].relatedWords}}</text></view>
+                <view class="word-extra-row" wx:if="{{queue[currentIndex].star > 0}}"><text class="extra-label">词频：</text><text class="extra-text">{{['','★','★★','★★★','★★★★','★★★★★'][queue[currentIndex].star] || ''}}</text></view>
+              </view>
+              <view class="word-galaxy-link" wx:if="{{queue[currentIndex].root || queue[currentIndex].relatedWords}}" catchtap="goGalaxy">漫游词族 ›</view>
+              <view class="word-report-link {{reportedMap[queue[currentIndex].word] ? 'done' : ''}}" catchtap="openReport">{{reportedMap[queue[currentIndex].word] ? '已上报纠错 ✓' : '词条有误？报告一下'}}</view>
+              <view class="flip-hint">点击返回正面</view>
+            </view>
+          </scroll-view>
         </view>
       </view>
     </view>
@@ -152,7 +157,7 @@
       <view class="result-title">本轮完成</view>
       <!-- 进度环 -->
       <view class="result-ring-wrap">
-        <view class="result-ring" style="background: conic-gradient(#4A90D9 {{resultRate}}%, #E3E9F2 {{resultRate}}%);">
+        <view class="result-ring" style="background: conic-gradient(var(--color-primary) {{resultRate}}%, var(--border-light) {{resultRate}}%);">
           <view class="result-ring-inner">
             <view class="result-rate">{{resultRate}}%</view>
             <view class="result-rate-label">正确率</view>
@@ -180,28 +185,55 @@
         <view class="btn-secondary result-btn share-btn" bindtap="onSharePoster">分享打卡</view>
         <view class="btn-primary result-btn" bindtap="onResultRestart">再来一轮</view>
       </view>
+      <!-- 学习提醒入口已下线（2026-08-31：一次性订阅需重复授权，体验繁琐）
+      <view class="result-reminder" wx:if="{{!reminderSubscribed}}" bindtap="onSubscribeReminder">
+        <text class="result-reminder-text">点此开启学习提醒</text>
+        <text class="result-reminder-sub">次日早上提醒 · 一次授权一条，学完可再次开启</text>
+      </view>
+      -->
     </view>
   </view>
 
-  <!-- 自定义词书选择弹窗 -->
-  <view class="picker-mask" wx:if="{{showBookPicker}}" bindtap="closeBookPicker"></view>
-  <view class="picker-panel" wx:if="{{showBookPicker}}">
-    <view class="picker-header">
-      <view class="picker-title">选择词书</view>
-      <view class="picker-close" bindtap="closeBookPicker">✕</view>
+  <!-- 纠错上报弹窗 -->
+  <view class="report-mask" wx:if="{{showReport}}" bindtap="closeReport"></view>
+  <view class="report-panel" wx:if="{{showReport}}">
+    <view class="report-head">
+      <view class="report-title">报告词条问题</view>
+      <view class="report-word serif">{{queue[currentIndex].word}}</view>
     </view>
-    <scroll-view scroll-y class="picker-list">
+    <view class="report-types">
       <view
-        class="picker-item {{currentBookId === item.id ? 'active' : ''}}"
-        wx:for="{{pickerBooks}}"
-        wx:key="id"
-        data-id="{{item.id}}"
-        data-name="{{item.name}}"
-        bindtap="onSelectBook"
-      >
-        <view class="picker-item-name">{{item.name}}</view>
-        <view class="picker-item-check" wx:if="{{currentBookId === item.id}}">✓</view>
-      </view>
-    </scroll-view>
+        class="report-type {{reportType === 'meaning' ? 'active' : ''}}"
+        data-type="meaning"
+        bindtap="onReportType"
+      >释义有误</view>
+      <view
+        class="report-type {{reportType === 'phonetic' ? 'active' : ''}}"
+        data-type="phonetic"
+        bindtap="onReportType"
+      >音标有误</view>
+      <view
+        class="report-type {{reportType === 'example' ? 'active' : ''}}"
+        data-type="example"
+        bindtap="onReportType"
+      >例句/翻译有误</view>
+      <view
+        class="report-type {{reportType === 'other' ? 'active' : ''}}"
+        data-type="other"
+        bindtap="onReportType"
+      >其他问题</view>
+    </view>
+    <textarea
+      class="report-desc"
+      placeholder="补充说明（选填，限 200 字）"
+      value="{{reportDesc}}"
+      maxlength="200"
+      bindinput="onReportDesc"
+    ></textarea>
+    <view class="report-actions">
+      <view class="btn-secondary report-btn" bindtap="closeReport">取消</view>
+      <view class="btn-primary report-btn" bindtap="submitReport">提交反馈</view>
+    </view>
+    <view class="report-tip">你的反馈会帮助所有学习者——词库共建人</view>
   </view>
 </view>

@@ -1,211 +1,136 @@
 // utils/audio.ts
-// 单词发音服务
-// 策略：缓存 tempFilePath + 超时检测重试 + 手动 play() 兜底
-// 如果缓存文件播放超时（微信回收了临时文件），自动重新下载
+// 单词发音：直接走有道接口，本地内存缓存；无网络时播放失败即静默
+// 整句 TTS 部分保持原有实现不变
 
 import { getAccent } from './store';
+import { synthesizeSentence } from './wechatTts';
 
 let audioCtx: any = null;
-let audioId = 0;
 
-// 下载缓存：word_accent → tempFilePath
+// 会话内内存缓存：word_accent -> tempFilePath
 const audioCache: Record<string, string> = {};
-// 正在下载中的词，避免重复并发下载
-const downloading: Record<string, boolean> = {};
 
 /**
- * 播放单词发音
+ * 播放单词发音（有道直连，无云端兜底）
  */
-export function playAudio(word: string, accent?: 'uk' | 'us') {
+export function playAudio(word: string, accent?: 'uk' | 'us', isRetry = false) {
   if (!word) return;
-
   const acc = accent || getAccent();
-  const type = acc === 'uk' ? 1 : 2;
-  const cacheKey = `${word}_${acc}`;
+  const cacheKey = word + '_' + acc;
 
   console.log('[audio] playAudio:', word, acc);
 
-  // 销毁旧实例
+  // 销毁旧实例，防止多个声音重叠
   destroyCurrent();
 
-  const myId = ++audioId;
-
-  // 尝试缓存
   const cached = audioCache[cacheKey];
-  if (cached) {
-    console.log('[audio] 命中缓存:', cacheKey);
-    playWithTimeoutCheck(cached, myId, () => {
-      // 超时：缓存失效，重新下载
-      console.log('[audio] 缓存失效，重新下载');
-      delete audioCache[cacheKey];
-      downloadAndPlay(word, type, cacheKey, myId);
-    });
+  if (cached && !isRetry) {
+    // 内存里的临时文件可能已被系统回收：带上下文播放，失败则清缓存重试
+    playLocal(cached, { word, accent: acc, cacheKey });
     return;
   }
 
-  downloadAndPlay(word, type, cacheKey, myId);
-}
-
-/**
- * 下载并播放
- */
-function downloadAndPlay(word: string, type: number, cacheKey: string, myId: number) {
-  const url = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(word)}&type=${type}`;
-
-  // 防止同一词并发下载
-  if (downloading[cacheKey]) {
-    console.log('[audio] 正在下载中，跳过');
-    return;
-  }
-  downloading[cacheKey] = true;
-
-  console.log('[audio] 开始下载:', url);
+  const type = acc === 'uk' ? 1 : 2;
+  const url = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(word) + '&type=' + type;
 
   wx.downloadFile({
     url,
-    success: (res) => {
-      downloading[cacheKey] = false;
-      if (myId !== audioId) return; // 已过期
-
-      console.log('[audio] 下载成功:', res.statusCode, 'id:', myId);
-      if (res.statusCode === 200) {
-        audioCache[cacheKey] = res.tempFilePath;
-        playWithTimeoutCheck(res.tempFilePath, myId, null);
-      }
+    success: (res: any) => {
+      if (res.statusCode !== 200 || !res.tempFilePath) return;
+      audioCache[cacheKey] = res.tempFilePath;
+      // 下载期间用户可能已切换到别的词触发了新播放（destroyCurrent 已被调用），
+      // 此时 audioCtx 为空才算仍然是当前请求，避免旧词音频延迟抢播
+      if (audioCtx) return;
+      playLocal(res.tempFilePath, isRetry ? undefined : { word, accent: acc, cacheKey });
     },
-    fail: (err) => {
-      downloading[cacheKey] = false;
-      if (myId !== audioId) return;
-
-      console.error('[audio] 下载失败:', err);
-      // 降级：直接网络 URL
-      playRemote(url, myId);
+    fail: (err: any) => {
+      console.error('[audio] 单词音频获取失败(可能无网络):', err);
     }
   });
 }
 
-/**
- * 播放本地文件，带超时检测
- * @param filePath 本地路径
- * @param myId 实例 id
- * @param onTimeout 超时回调（缓存失效时重新下载）
- */
-function playWithTimeoutCheck(filePath: string, myId: number, onTimeout: (() => void) | null) {
-  audioCtx = wx.createInnerAudioContext();
-  audioCtx.src = filePath;
-  audioCtx.autoplay = true;
+// 用同一个全局实例顺序播放（autoplay），天然保证同一时刻只有一个声音
+// 失败时若携带词信息：删除可能失效的缓存路径并重新下载重试一次
+function playLocal(
+  filePath: string,
+  retryCtx?: { word: string; accent: 'uk' | 'us'; cacheKey: string }
+) {
+  const ctx = wx.createInnerAudioContext();
+  audioCtx = ctx;
+  ctx.src = filePath;
+  ctx.autoplay = true;
 
-  let hasPlayed = false;
+  let played = false;   // 已主动触发过 play
+  let started = false;  // 已真正开始出声
 
-  audioCtx.onCanplay(() => {
-    console.log('[audio] canplay, id:', myId);
-    try { audioCtx.play(); } catch (e) {}
-  });
-
-  audioCtx.onPlay(() => {
-    hasPlayed = true;
-    console.log('[audio] 开始播放, id:', myId);
-  });
-
-  audioCtx.onError((err: any) => {
-    console.error('[audio] 播放失败:', err, 'id:', myId);
-    if (myId === audioId && onTimeout) {
-      onTimeout();
+  // 部分机型上仅靠 autoplay 不起播，资源就绪后显式 play()
+  ctx.onCanplay(() => {
+    if (!played) {
+      played = true;
+      try { ctx.play(); } catch (e) {}
     }
   });
 
-  audioCtx.onEnded(() => {
-    console.log('[audio] 播放结束, id:', myId);
-    if (myId === audioId) {
-      destroyCurrent();
+  // 双保险：onCanplay 迟迟不回调的环境（安卓常见），稍后直接补一次 play()
+  setTimeout(() => {
+    if (audioCtx === ctx && !started) {
+      try { ctx.play(); } catch (e) {}
+    }
+  }, 500);
+
+  ctx.onError((err: any) => {
+    console.error('[audio] 播放失败:', err);
+    if (retryCtx && audioCtx === ctx) {
+      delete audioCache[retryCtx.cacheKey];
+      playAudio(retryCtx.word, retryCtx.accent, true); // 重试一次，不再套娃
     }
   });
 
-  // 超时检测：800ms 内没有 onPlay 就认为缓存文件失效
-  if (onTimeout) {
-    setTimeout(() => {
-      if (myId === audioId && !hasPlayed) {
-        console.log('[audio] 超时未播放，触发重试, id:', myId);
-        onTimeout();
-      }
-    }, 800);
-  }
-}
+  ctx.onPlay(() => { started = true; });
 
-/**
- * 降级：直接网络 URL 播放
- */
-function playRemote(url: string, myId: number) {
-  console.log('[audio] 降级网络URL:', url);
-  audioCtx = wx.createInnerAudioContext();
-  audioCtx.src = url;
-  audioCtx.autoplay = true;
-
-  audioCtx.onPlay(() => {
-    console.log('[audio] 降级播放开始, id:', myId);
-  });
-
-  audioCtx.onError((err: any) => {
-    console.error('[audio] 降级播放失败:', err, 'id:', myId);
-  });
-
-  audioCtx.onEnded(() => {
-    if (myId === audioId) {
-      destroyCurrent();
-    }
+  ctx.onEnded(() => {
+    if (audioCtx === ctx) destroyCurrent();
   });
 }
 
 /**
- * 销毁当前音频上下文
- */
-function destroyCurrent() {
-  if (audioCtx) {
-    try { audioCtx.destroy(); } catch (e) {}
-    audioCtx = null;
-  }
-  audioId++;
-}
-
-/**
- * 预加载单词发音
+ * 预加载下一词发音（仅下载缓存，不出声）
  */
 export function preloadAudio(word: string, accent?: 'uk' | 'us') {
   if (!word) return;
   const acc = accent || getAccent();
+  const cacheKey = word + '_' + acc;
+  if (audioCache[cacheKey]) return;
+
   const type = acc === 'uk' ? 1 : 2;
-  const cacheKey = `${word}_${acc}`;
-
-  if (audioCache[cacheKey] || downloading[cacheKey]) return;
-
-  const url = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(word)}&type=${type}`;
-  downloading[cacheKey] = true;
-
   wx.downloadFile({
-    url,
-    success: (res) => {
-      downloading[cacheKey] = false;
-      if (res.statusCode === 200) {
+    url: 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(word) + '&type=' + type,
+    success: (res: any) => {
+      if (res.statusCode === 200 && res.tempFilePath) {
         audioCache[cacheKey] = res.tempFilePath;
-        console.log('[audio] 预加载完成:', cacheKey);
       }
-    },
-    fail: () => {
-      downloading[cacheKey] = false;
     }
   });
 }
 
 /**
- * 销毁音频上下文（页面卸载时调用）
+ * 页面卸载时调用
  */
 export function destroyAudio() {
   destroyCurrent();
   stopSentence();
 }
 
+function destroyCurrent() {
+  if (audioCtx) {
+    try { audioCtx.stop(); } catch (e) {}
+    try { audioCtx.destroy(); } catch (e) {}
+    audioCtx = null;
+  }
+}
+
 /* ═════════════════════════════════════════ */
-/* 整句 TTS：多源降级播放                      */
+/* 整句 TTS：多源降级播放 + 暂停/恢复           */
 /* ═════════════════════════════════════════ */
 
 export interface SentencePlayOptions {
@@ -216,6 +141,17 @@ export interface SentencePlayOptions {
 
 let sentenceCtx: any = null;
 let sentenceSeq = 0;
+
+// 句子播放状态机：
+//   idle    无音频 / 已播完
+//   loading 音频加载中（云函数/下载中，尚无声音）
+//   playing 播放中
+//   paused  暂停（含“加载中被暂停”，可从暂停处恢复）
+let sentenceState: 'idle' | 'loading' | 'playing' | 'paused' = 'idle';
+// loading 完成后是否立即自动出声（加载过程中被暂停则置 false，等恢复再播）
+let playOnReady = true;
+// 当前 ctx 的 src 是否已就绪（可直接 play()）
+let sentenceReady = false;
 
 // 会话内内存缓存：同一句只调一次云函数/下载
 const sentenceFileCache = new Map<string, string>();
@@ -288,11 +224,17 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
   if (!text) return;
   stopSentence();
   const myId = ++sentenceSeq;
+  sentenceState = 'loading';
+  playOnReady = true;
 
-  // 1) 会话内内存缓存（已是本地路径）
+  // 1) 会话内内存缓存（本地路径或云 fileID）
   const cached = sentenceFileCache.get(text);
   if (cached) {
-    playSentenceFile(cached, myId, () => onSentenceFail(myId, text, opts), opts);
+    if (cached.indexOf('cloud://') === 0) {
+      playFromCloudFile(cached, myId, text, opts);
+    } else {
+      playSentenceFile(cached, myId, () => onSentenceFail(myId, text, opts), opts);
+    }
     return;
   }
 
@@ -312,31 +254,57 @@ export function playSentence(text: string, opts: SentencePlayOptions = {}) {
     return;
   }
 
-  // 4) tts 云函数：生成/取缓存音频，拿到 fileID 后下载到本地播
-  if (wx.cloud) {
-    wx.cloud.callFunction({ name: 'tts', data: { text } })
-      .then((res: any) => {
-        const fileID = res && res.result && res.result.fileID;
-        if (!fileID || myId !== sentenceSeq) {
-          if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
-          return;
-        }
-        sentenceFileCache.set(text, fileID);
-        saveFileID(text, fileID);
-        playFromCloudFile(fileID, myId, text, opts);
-      })
-      .catch(() => {
-        if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
-      });
-  } else {
-    onSentenceFail(myId, text, opts);
+  // 4) 官方同声传译插件（合规主链路）：合成后立即下载持久化再播
+  const pluginLaunched = synthesizeSentence(
+    text,
+    (tempPath: string) => {
+      if (myId !== sentenceSeq) return;
+      const path = persistSentenceFile(tempPath, text);
+      sentenceFileCache.set(text, path);
+      playSentenceFile(path, myId, () => {
+        console.error('[tts] 插件音频播放失败，转云函数', text.slice(0, 30));
+        playViaCloudFunction(text, myId, opts);
+      }, opts);
+    },
+    () => {
+      // 插件不可用/合成失败：转云端降级
+      if (myId !== sentenceSeq) return;
+      console.warn('[tts] 插件链路失败，转 tts 云函数', text.slice(0, 30));
+      playViaCloudFunction(text, myId, opts);
+    }
+  );
+
+  if (!pluginLaunched) {
+    playViaCloudFunction(text, myId, opts);
   }
+}
+
+// 云函数降级链路：生成/取缓存音频，拿到 fileID 后下载到本地播
+function playViaCloudFunction(text: string, myId: number, opts: SentencePlayOptions) {
+  if (!wx.cloud || myId !== sentenceSeq) {
+    if (myId === sentenceSeq) opts.onError && opts.onError();
+    return;
+  }
+  wx.cloud.callFunction({ name: 'tts', data: { text } })
+    .then((res: any) => {
+      const fileID = res && res.result && res.result.fileID;
+      if (!fileID || myId !== sentenceSeq) {
+        if (myId === sentenceSeq) opts.onError && opts.onError();
+        return;
+      }
+      sentenceFileCache.set(text, fileID);
+      saveFileID(text, fileID);
+      playFromCloudFile(fileID, myId, text, opts);
+    })
+    .catch(() => {
+      if (myId === sentenceSeq) opts.onError && opts.onError();
+    });
 }
 
 // 从云存储取音频并播放，多级降级：
 //   ① wx.cloud.downloadFile 下载到本地持久文件 → 播本地（最稳）
 //   ② 下载失败时直接以 fileID 作 src 播放（部分环境支持）
-//   ③ 都失败 → 百度直连兜庇
+//   ③ 都失败 → 错误回调（不再直连非官方接口）
 function playFromCloudFile(fileID: string, myId: number, text: string, opts: SentencePlayOptions) {
   if (!wx.cloud) {
     if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
@@ -367,7 +335,7 @@ function playFromCloudFile(fileID: string, myId: number, text: string, opts: Sen
 // 直接以云 fileID 作为 src 播放（备份方案，devtools 部分版本可用）
 function playFileIDDirect(fileID: string, myId: number, text: string, opts: SentencePlayOptions) {
   playSentenceFile(fileID, myId, () => {
-    console.error('[tts] fileID 直播也失败，转百度直连', fileID);
+    console.error('[tts] fileID 直播也失败', fileID);
     if (myId === sentenceSeq) onSentenceFail(myId, text, opts);
   }, opts);
 }
@@ -385,34 +353,79 @@ function localSentencePath(text: string): string {
   }
 }
 
-// 云函数不可用/失败时的本地兜庇：直接下载百度 TTS 并持久化
-function onSentenceFail(myId: number, text: string, opts: SentencePlayOptions) {
-  if (myId !== sentenceSeq) return;
-  console.error('[tts] 云链路失败，转百度直连', text.slice(0, 30));
-  const baidu = `https://fanyi.baidu.com/gettts?lan=en&text=${encodeURIComponent(text)}&spd=3&source=web`;
-  wx.downloadFile({
-    url: baidu,
-    timeout: 8000,
-    success: (res: any) => {
-      if (myId !== sentenceSeq) return;
-      const ct = (res.header && (res.header['content-type'] || res.header['Content-Type'])) || '';
-      if (res.statusCode === 200 && res.tempFilePath && ct.indexOf('audio') > -1) {
-        const path = persistSentenceFile(res.tempFilePath, text);
-        sentenceFileCache.set(text, path);
-        playSentenceFile(path, myId, () => {
-          console.error('[tts] 百度音频本地播放失败');
-          if (myId === sentenceSeq) opts.onError && opts.onError();
-        }, opts);
-      } else {
-        console.error('[tts] 百度直连非音频响应', res.statusCode, ct);
-        if (myId === sentenceSeq) opts.onError && opts.onError();
-      }
+// 预取下一句音频：只准备不出声（后台调云函数+下载+落盘），
+// 当前句 onEnded 时下一句已是本地文件，消除句间网络停顿
+const preloadSet = new Set<string>();
+export function preloadSentence(text: string) {
+  if (!text || preloadSet.has(text)) return;
+
+  const cached = sentenceFileCache.get(text);
+  if (cached) {
+    if (cached.indexOf('cloud://') !== 0) return; // 已是本地文件，无需预取
+    // 缓存的是 fileID：提前下载落盘，播放时直接命中本地路径
+    preloadSet.add(text);
+    wx.cloud.downloadFile({ fileID: cached })
+      .then((res: any) => {
+        if (res && res.tempFilePath) {
+          sentenceFileCache.set(text, persistSentenceFile(res.tempFilePath, text));
+        }
+      })
+      .catch(() => {})
+      .then(() => { preloadSet.delete(text); });
+    return;
+  }
+
+  const local = localSentencePath(text);
+  if (local) {
+    sentenceFileCache.set(text, local);
+    return;
+  }
+
+  const savedFileID = getFileIDMap()[sentenceHash(text)];
+  if (savedFileID) {
+    sentenceFileCache.set(text, savedFileID);
+    preloadSentence(text); // 走上面的 fileID 下载分支
+    return;
+  }
+
+  // 都没有：优先官方插件预取；不可用再调 tts 云函数生成，落盘后下载缓存
+  if (synthesizeSentence(
+    text,
+    (tempPath: string) => {
+      sentenceFileCache.set(text, persistSentenceFile(tempPath, text));
     },
-    fail: (err: any) => {
-      console.error('[tts] 百度直连下载失败', err && err.errMsg || err);
-      if (myId === sentenceSeq) opts.onError && opts.onError();
-    }
-  });
+    () => {}
+  )) {
+    preloadSet.add(text);
+    setTimeout(() => preloadSet.delete(text), 1500);
+    return;
+  }
+
+  if (!wx.cloud) return;
+  preloadSet.add(text);
+  wx.cloud.callFunction({ name: 'tts', data: { text } })
+    .then((res: any) => {
+      const fileID = res && res.result && res.result.fileID;
+      if (!fileID) return;
+      saveFileID(text, fileID);
+      sentenceFileCache.set(text, fileID);
+      return wx.cloud.downloadFile({ fileID });
+    })
+    .then((res: any) => {
+      if (res && res.tempFilePath) {
+        sentenceFileCache.set(text, persistSentenceFile(res.tempFilePath, text));
+      }
+    })
+    .catch(() => {})
+    .then(() => { preloadSet.delete(text); });
+}
+
+// 全部链路（插件 + 云函数）失败的最终兕底：仅触发错误回调，不再直连非官方接口
+// （原有百度 gettts 直连已移除：非授权抓取接口，随时失效且有合规风险）
+function onSentenceFail(myId: number, _text: string, opts: SentencePlayOptions) {
+  if (myId !== sentenceSeq) return;
+  console.error('[tts] 所有语音链路均失败', _text.slice(0, 30));
+  opts.onError && opts.onError();
 }
 
 
@@ -425,26 +438,38 @@ function playSentenceFile(
   const ctx = wx.createInnerAudioContext();
   sentenceCtx = ctx;
   ctx.src = filePath;
-  ctx.autoplay = true;
+  // 加载过程中被暂停过：资源就绪但不自动出声，等 resumeSentence() 再播
+  ctx.autoplay = playOnReady;
+  sentenceReady = true;
+  if (!playOnReady) sentenceState = 'paused';
 
   let started = false;
   let done = false;
 
   const cleanup = () => {
     done = true;
+    sentenceReady = false;
     try { ctx.destroy(); } catch (e) {}
-    sentenceCtx = null;
+    if (sentenceCtx === ctx) sentenceCtx = null;
   };
 
   ctx.onPlay(() => {
     started = true;
-    if (myId === sentenceSeq) opts.onStart && opts.onStart();
+    if (myId === sentenceSeq) {
+      sentenceState = 'playing';
+      opts.onStart && opts.onStart();
+    }
+  });
+
+  ctx.onPause(() => {
+    if (myId === sentenceSeq && !done) sentenceState = 'paused';
   });
 
   ctx.onEnded(() => {
     if (done) return;
     cleanup();
     if (myId === sentenceSeq) {
+      sentenceState = 'idle';
       sentenceSeq++;
       opts.onEnded && opts.onEnded();
     }
@@ -453,22 +478,62 @@ function playSentenceFile(
   ctx.onError(() => {
     if (done) return;
     cleanup();
-    if (myId === sentenceSeq) onFail();
+    if (myId === sentenceSeq) {
+      sentenceState = 'idle';
+      onFail();
+    }
   });
 
   // 起播超时判定（本地文件一般即时起播；放宽到 6s 避免误判）
   setTimeout(() => {
-    // 已被 stopSentence 停止（暂停/切句/卸载）则不再判定失败
-    if (sentenceCtx !== ctx) return;
+    // 已被停止（切句/卸载）、或处于暂停态，都不判定失败
+    if (sentenceCtx !== ctx || sentenceState === 'paused') return;
     if (!started && !done) {
       cleanup();
-      if (myId === sentenceSeq) onFail();
+      if (myId === sentenceSeq) {
+        sentenceState = 'idle';
+        onFail();
+      }
     }
   }, 6000);
 }
 
 /**
- * 停止整句播放（换句/切页/页面卸载时调用）
+ * 暂停整句播放（保留进度，可从暂停处继续）
+ * - 播放中：音频原地暂停
+ * - 加载中：资源到达后不出声，等恢复
+ */
+export function pauseSentence() {
+  if (sentenceState === 'loading') {
+    playOnReady = false;
+    sentenceState = 'paused';
+    return;
+  }
+  if (sentenceState === 'playing' && sentenceCtx) {
+    try { sentenceCtx.pause(); } catch (e) {}
+    sentenceState = 'paused';
+  }
+}
+
+/**
+ * 从暂停处继续播放
+ * @returns 是否成功恢复（false = 当前没有可恢复的暂停音频）
+ */
+export function resumeSentence(): boolean {
+  if (sentenceState !== 'paused') return false;
+  if (sentenceCtx && sentenceReady) {
+    sentenceState = 'playing';
+    try { sentenceCtx.play(); } catch (e) {}
+    return true;
+  }
+  // 音频仍在加载：恢复“就绪即播”
+  playOnReady = true;
+  sentenceState = 'loading';
+  return true;
+}
+
+/**
+ * 停止整句播放并销毁（换句/切页/页面卸载时调用，不可恢复）
  */
 export function stopSentence() {
   if (sentenceCtx) {
@@ -476,4 +541,7 @@ export function stopSentence() {
     sentenceCtx = null;
   }
   sentenceSeq++;
+  sentenceState = 'idle';
+  playOnReady = true;
+  sentenceReady = false;
 }

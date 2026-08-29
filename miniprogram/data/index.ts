@@ -14,35 +14,35 @@ export const wordBooks: WordBook[] = [
   {
     id: 'junior',
     name: '初中词汇',
-    desc: '初中大纲词汇，适合初中阶段',
+    desc: '中考大纲词汇',
     level: '初中',
     words: juniorWords
   },
   {
     id: 'senior',
     name: '高中词汇',
-    desc: '高中大纲词汇，包含初中全部 + 高中扩展',
+    desc: '高考大纲词汇',
     level: '高中',
     words: [...juniorWords, ...seniorWords]
   },
   {
     id: 'cet4',
     name: '四级词汇',
-    desc: '大学四级词汇，包含高中全部 + 四级扩展',
+    desc: '大学英语四级考试词汇',
     level: '四级',
     words: [...juniorWords, ...seniorWords, ...cet4Words]
   },
   {
     id: 'cet6',
     name: '六级词汇',
-    desc: '大学六级词汇，包含四级全部 + 六级扩展',
+    desc: '大学英语六级考试词汇',
     level: '六级',
     words: [...juniorWords, ...seniorWords, ...cet4Words, ...cet6Words]
   },
   {
     id: 'postgrad',
     name: '考研词汇',
-    desc: '考研大纲词汇，包含六级全部 + 考研扩展',
+    desc: '考研大纲词汇',
     level: '考研',
     words: [...juniorWords, ...seniorWords, ...cet4Words, ...cet6Words, ...postgradWords]
   }

@@ -29,21 +29,33 @@ Page({
     similarTotal: 0,
     nodes: [] as OrbitNode[],
     bookLevel: '',
-    hasResult: true
+    hasResult: true,
+    inMainBook: true // 中心词是否在当前词书（跨册漫游时标注）
   },
 
   allFamily: [] as WordItem[],
   allSimilar: [] as WordItem[],
+  // 最近漫游过的中心词（避免随机漫游连续撞同一个词）
+  _recent: [] as string[],
 
   onLoad(options: { word?: string }) {
     this.init(options.word || '');
+  },
+
+  // 随机挑一个词，避开最近看过的（最多重试 15 次，全看过则退化为纯随机）
+  async pickRandomWord(): Promise<string | null> {
+    for (let i = 0; i < 15; i++) {
+      const rand = await randomFamilyWord();
+      if (rand && !this._recent.includes(rand)) return rand;
+    }
+    return randomFamilyWord();
   },
 
   async init(startWord: string) {
     this.setData({ loading: true });
     let w = startWord;
     if (!w) {
-      const rand = await randomFamilyWord();
+      const rand = await this.pickRandomWord();
       if (!rand) {
         this.setData({ loading: false, hasResult: false });
         return;
@@ -58,7 +70,7 @@ Page({
     if (!res.center) {
       // 当前词书不含该词：引导随机漫游
       wx.showToast({ title: '当前词书未收录该词', icon: 'none' });
-      const rand = await randomFamilyWord();
+      const rand = await this.pickRandomWord();
       if (rand) {
         await this.showWord(rand);
       } else {
@@ -69,6 +81,10 @@ Page({
 
     this.allFamily = res.family;
     this.allSimilar = res.similar;
+
+    // 记录最近漫游的中心词（防随机漫游连撞）
+    this._recent.push(res.center.word);
+    if (this._recent.length > 8) this._recent.shift();
 
     this.setData({
       loading: false,
@@ -81,7 +97,8 @@ Page({
       familyTotal: res.family.length,
       similarTotal: res.similar.length,
       tab: res.family.length > 0 ? 'family' : (res.similar.length > 0 ? 'similar' : 'family'),
-      bookLevel: getCurrentBookId().toUpperCase()
+      bookLevel: getCurrentBookId().toUpperCase(),
+      inMainBook: res.inMainBook
     });
     this.layoutNodes();
   },
@@ -132,6 +149,8 @@ Page({
   },
 
   onRandomTap() {
+    // 防抖：漫游进行中忽略连点，避免多次请求竞态
+    if (this.data.loading) return;
     this.setData({ loading: true });
     this.init('');
   },
@@ -146,5 +165,20 @@ Page({
       showCancel: false,
       confirmText: '知道了'
     });
-  }
+  },
+
+  // 转发给好友
+  onShareAppMessage() {
+    return {
+      title: '词根星系 · 一次记住一串词',
+      path: '/pages/galaxy/galaxy'
+    };
+  },
+
+  // 分享到朋友圈（单页模式）
+  onShareTimeline() {
+    return {
+      title: '词根星系 · 一次记住一串词'
+    };
+  },
 });

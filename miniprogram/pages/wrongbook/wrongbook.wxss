@@ -13,12 +13,12 @@
 .header-title {
   font-size: 40rpx;
   font-weight: 600;
-  color: #1F2430;
+  color: var(--text-primary);
 }
 
 .header-count {
   font-size: 26rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-top: 6rpx;
 }
 
@@ -58,20 +58,20 @@
 
 .empty-text {
   font-size: 32rpx;
-  color: #5A6072;
+  color: var(--text-secondary);
   font-weight: 700;
 }
 
 .empty-sub {
   font-size: 26rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-top: 12rpx;
 }
 
 .empty-btn {
   margin-top: 50rpx;
   background: #2F5746;
-  color: #FFFFFF;
+  color: var(--bg-card);
   border-radius: 44rpx;
   font-size: 30rpx;
   padding: 20rpx 80rpx;
@@ -92,11 +92,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #FFFFFF;
+  background: var(--bg-card);
   border-radius: 16rpx;
   padding: 28rpx 24rpx;
   margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4rpx 12rpx rgba(88, 70, 42, 0.03);
 }
 
 .word-main {
@@ -106,12 +106,12 @@
 .word-text {
   font-size: 34rpx;
   font-weight: 600;
-  color: #1F2430;
+  color: var(--text-primary);
 }
 
 .word-meaning {
   font-size: 26rpx;
-  color: #5A6072;
+  color: var(--text-secondary);
   margin-top: 8rpx;
 }
 
@@ -149,5 +149,5 @@
 
 .footer-text {
   font-size: 24rpx;
-  color: #B0B6C0;
+  color: var(--text-quaternary);
 }

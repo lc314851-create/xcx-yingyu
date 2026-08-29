@@ -88,7 +88,7 @@
 .nickname {
   font-size: 36rpx;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--bg-card);
 }
 
 .sub-text {
@@ -105,11 +105,11 @@
 /* ═══ 统计卡片 ═══ */
 .stats-card {
   display: flex;
-  background: #FFFFFF;
+  background: var(--bg-card);
   border-radius: 20rpx;
   margin: -20rpx 24rpx 0;
   padding: 28rpx 0;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8rpx 24rpx rgba(88, 70, 42, 0.06);
   position: relative;
   z-index: 2;
 }
@@ -121,14 +121,14 @@
 
 .stat-divider {
   width: 1rpx;
-  background: #EEF1F6;
+  background: var(--border-light);
   margin: 8rpx 0;
 }
 
 .stat-value {
   font-size: 40rpx;
   font-weight: 800;
-  color: #1F2430;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -139,7 +139,7 @@
 
 .stat-label {
   font-size: 22rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-top: 10rpx;
   font-weight: 500;
 }
@@ -147,7 +147,7 @@
 /* ═══ 打卡按钮 ═══ */
 .checkin-btn {
   background: #2F5746;
-  color: #FFFFFF;
+  color: var(--bg-card);
   border-radius: 44rpx;
   font-size: 32rpx;
   font-weight: 600;
@@ -175,8 +175,8 @@
 .checkin-icon {
   width: 24rpx;
   height: 24rpx;
-  border-right: 4rpx solid #FFFFFF;
-  border-bottom: 4rpx solid #FFFFFF;
+  border-right: 4rpx solid var(--bg-card);
+  border-bottom: 4rpx solid var(--bg-card);
   transform: rotate(45deg);
   margin-top: -4rpx;
 }
@@ -191,19 +191,19 @@
 .section-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1F2430;
+  color: var(--text-primary);
 }
 
 .section-title-sm {
   font-size: 28rpx;
   font-weight: 600;
-  color: #5A6072;
+  color: var(--text-secondary);
   padding: 24rpx 10rpx 16rpx;
 }
 
 .badge-count {
   font-size: 24rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -212,14 +212,14 @@
 .heatmap-section {
   margin: 20rpx 24rpx;
   padding: 28rpx 24rpx;
-  background: #FFFFFF;
+  background: var(--bg-card);
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(88, 70, 42, 0.04);
 }
 
 .heatmap-sub {
   font-size: 24rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   font-weight: 400;
 }
 
@@ -243,7 +243,7 @@
   transform: scale(1.2);
 }
 
-.heatmap-cell.level-0 { background: #EEF1F6; }
+.heatmap-cell.level-0 { background: var(--border-light); }
 .heatmap-cell.level-1 { background: #C8DEF5; }
 .heatmap-cell.level-2 { background: #79AEE8; }
 .heatmap-cell.level-3 { background: #2F5746; }
@@ -254,8 +254,8 @@
   bottom: 130%;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: #FFFFFF;
+  background: rgba(88, 70, 42, 0.8);
+  color: var(--bg-card);
   font-size: 20rpx;
   padding: 8rpx 14rpx;
   border-radius: 8rpx;
@@ -287,7 +287,7 @@
 
 .legend-label {
   font-size: 22rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin: 0 4rpx;
 }
 
@@ -303,12 +303,12 @@
 }
 
 .badge-item {
-  background: #FFFFFF;
+  background: var(--bg-card);
   border-radius: 20rpx;
   padding: 28rpx 16rpx;
   width: calc(50% - 8rpx);
   text-align: center;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(88, 70, 42, 0.04);
   transition: transform 0.15s var(--ease-out);
 }
 
@@ -317,8 +317,34 @@
 }
 
 .badge-item.locked {
-  opacity: 0.4;
-  filter: grayscale(1);
+  opacity: 0.75;
+  filter: grayscale(0.6);
+}
+
+.badge-progress-bar {
+  margin: 12rpx auto 0;
+  width: 80%;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: #EDF1EC;
+  overflow: hidden;
+}
+
+.badge-progress-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #7FB88A, #3E8E5E);
+  transition: width 0.3s var(--ease-out);
+}
+
+.badge-progress-fill.full {
+  background: linear-gradient(90deg, #F2C94C, #E8A13C);
+}
+
+.badge-progress-text {
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: var(--text-tertiary);
 }
 
 .badge-icon-wrap {
@@ -340,13 +366,13 @@
 .badge-name {
   font-size: 26rpx;
   font-weight: 700;
-  color: #1F2430;
+  color: var(--text-primary);
   margin-top: 14rpx;
 }
 
 .badge-desc {
   font-size: 22rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-top: 6rpx;
 }
 
@@ -356,17 +382,17 @@
 }
 
 .other-group {
-  background: #FFFFFF;
+  background: var(--bg-card);
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(88, 70, 42, 0.04);
 }
 
 .other-item {
   display: flex;
   align-items: center;
   padding: 24rpx 28rpx;
-  border-bottom: 1rpx solid #F0F2F5;
+  border-bottom: 1rpx solid var(--border-light);
   transition: background 0.15s ease;
 }
 
@@ -375,7 +401,7 @@
 }
 
 .other-item:active {
-  background: #F8FAFF;
+  background: var(--bg-hover);
 }
 
 .other-icon-wrap {
@@ -397,6 +423,15 @@
 .other-icon-wrap-cyan { background: linear-gradient(135deg, #E0F7FA, #B2EBF2); }
 .other-icon-wrap-orange { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); }
 .other-icon-wrap-gray { background: linear-gradient(135deg, #F5F5F5, #E0E0E0); }
+
+/* 周报图标：绿底「周」字印 */
+.other-icon-weekly {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #2F5746;
+  line-height: 1;
+  letter-spacing: 1rpx;
+}
 
 /* 图标 - 纯 CSS 绘制 */
 .other-icon-search {
@@ -551,13 +586,13 @@
 
 .other-item-name {
   font-size: 30rpx;
-  color: #1F2430;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 .other-item-desc {
   font-size: 22rpx;
-  color: #8A8F99;
+  color: var(--text-tertiary);
   margin-top: 4rpx;
 }
 
@@ -574,20 +609,31 @@
 }
 
 .reminder-off {
-  color: #8A8F99;
-  background: #F0F2F5;
+  color: var(--text-tertiary);
+  background: var(--border-light);
 }
 
 .arrow {
   font-size: 36rpx;
-  color: #C0C6D0;
+  color: var(--text-quaternary);
   font-weight: 300;
+}
+
+.footer-builder {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-primary);
+  margin: 40rpx 48rpx 0;
+  padding: 12rpx 32rpx;
+  background: var(--color-primary-bg);
+  border: 2rpx solid var(--border-default);
+  border-radius: var(--radius-pill);
 }
 
 .footer-text {
   text-align: center;
   font-size: 24rpx;
-  color: #B0B6C0;
+  color: var(--text-quaternary);
   margin-top: 50rpx;
 }
 
@@ -725,4 +771,23 @@
   background: #2F5746;
   border-radius: 2rpx;
   opacity: 0.4;
+}
+
+/* 今日复习计划入口 */
+.plan-entry {
+  margin-top: 24rpx;
+  background: #FFF7E2;
+  border: 2rpx solid #F0E3BE;
+  border-radius: 20rpx;
+  padding: 28rpx 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.plan-entry-title { font-size: 30rpx; font-weight: 600; color: #6B5A22; }
+.plan-entry-sub { font-size: 23rpx; color: #A08C4E; margin-top: 6rpx; }
+.plan-entry-arrow {
+  font-size: 48rpx;
+  color: #D4BC72;
+  font-weight: 300;
 }

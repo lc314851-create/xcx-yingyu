@@ -1,18 +1,24 @@
 // utils/store.ts
-// 本地存储管理：学习进度 / 间隔记忆 / 打卡 / 词书选择
+// 本地存储管理：学习进度 / 间隔记忆（SM-2 变体）/ 打卡 / 词书选择
 // 统一 key 命名空间前缀 "bc_"（补词），避免与其他小程序数据冲突
 
 // ─── 类型 ─────────────────────────────────────────────────────
-// 单个单词的掌握状态（Leitner 盒子间隔记忆系统）
-// box 1~6 对应复习间隔：0(立即) / 1天 / 2天 / 4天 / 7天 / 15天 / 30天(mastered)
+// 单个单词的掌握状态（SM-2 变体间隔记忆）
+// rep=连续答对次数、ease=个人难度系数、interval=当前间隔天数 → 三者驱动下次复习时间
+// box 是 rep 的展示映射（1~7，box>=5 ⇔ 连续答对>=4 次 ⇔ 已掌握），
+// 保留该字段让统计/排行榜/搜索等既有消费者零改动兼容
 export interface WordProgress {
   word: string;        // 单词
   status: 'new' | 'learning' | 'review' | 'mastered'; // 状态（用于统计展示）
-  box: number;          // Leitner 盒子等级 1~6（6=mastered）
+  box: number;          // 展示用盒子等级 1~7（7=长期记忆），由 rep 推导
   knownCount: number;  // 累计认识次数
   unknownCount: number;// 累计不认识次数
   nextReview: number;  // 下次复习时间戳（ms）
   lastSeen: number;    // 上次学习时间戳
+  // ─── SM-2 调度字段（可选；旧 Leitner 数据缺失时按 box 回填） ───
+  ease?: number;       // 个人难度系数 1.3~2.5：答对 +0.05 / 答错 -0.2
+  rep?: number;        // 连续答对次数（答错归零）
+  interval?: number;   // 当前复习间隔（天）
 }
 
 // 学习统计
@@ -141,7 +147,9 @@ export function saveStats(s: StudyStats): void {
 }
 
 // 当用户学习一个词时，更新统计
-export function recordStudy(count: number = 1): StudyStats {
+// isNewWord：是否首次学的新词。仅新词计入“累计单词 totalWords”；
+// 复习/巩固/挑战/练习等重复学习只计入今日/本周学习量与打卡，不计累计单词。
+export function recordStudy(count: number = 1, isNewWord: boolean = true): StudyStats {
   const stats = getStats();
   const today = todayStr();
   const monday = mondayStr();
@@ -172,7 +180,9 @@ export function recordStudy(count: number = 1): StudyStats {
 
   stats.learnedToday += count;
   stats.weeklyLearned += count;
-  stats.totalWords += count;
+  if (isNewWord) {
+    stats.totalWords += count;
+  }
   saveStats(stats);
   recordDailyHistory(count);
   return stats;
@@ -226,6 +236,8 @@ export interface SyncUserResult {
   profile?: UserProfile;
   stats?: StudyStats;
   history?: Record<string, number>;
+  progress?: Record<string, WordProgress>;
+  wrongBook?: WrongBookItem[];
   isNew?: boolean;
 }
 
@@ -329,6 +341,14 @@ export function setCurrentBookId(id: string): void {
 }
 
 // ─── 学习模式（高频词 / 完整） ─────────────────────────────────
+const BATCH_SIZE_KEY = 'bc_batch_size';
+export function getBatchSize(): number {
+  return wx.getStorageSync(BATCH_SIZE_KEY) || 10;
+}
+export function setBatchSize(n: number): void {
+  wx.setStorageSync(BATCH_SIZE_KEY, n);
+}
+
 const STUDY_MODE_KEY = 'bc_study_mode';
 
 export function getStudyMode(): 'highFreq' | 'all' {
@@ -381,8 +401,59 @@ export function saveAllProgress(bookId: string, data: Record<string, WordProgres
   wx.setStorageSync(getProgressKey(bookId), data);
 }
 
-// 记录单词学习状态，更新间隔记忆
+// 记录单词学习状态，更新间隔记忆（SM-2 变体）
 // known: true=认识, false=不认识
+//
+// SM-2 调度规则：
+//   - 前 4 次连续答对：间隔 1天 → 2天 → 4天 → 7天（与「连续答对4次=已掌握」宣传一致）
+//   - 第 5 次起：间隔 = round(上间隔 × 个人难度系数 ease)，随掌握度逐步拉长
+//   - ease 个人化：答对 +0.05（上限 2.5，词越容易间隔拉得越长），答错 -0.2（下限 1.3）
+//   - 答错：rep 归零、间隔归零、立即可复习（今天内再出现）
+//   - 展示用 box = rep + 1（1~7），box>=5 ⇔ rep>=4 ⇔ 已掌握，兼容旧统计逻辑
+export const SM2_DEFAULT_EASE = 2.5;
+export const SM2_MIN_EASE = 1.3;
+export const SM2_MAX_EASE = 2.5;
+
+export const DAY_MS = 24 * 60 * 60 * 1000;
+
+// 旧 Leitner 盒子 → 复习间隔（天），老数据回填与新排程共用
+export const BOX_INTERVAL_DAYS: Record<number, number> = {
+  1: 0,
+  2: 1,
+  3: 2,
+  4: 4,
+  5: 7,
+  6: 15,
+  7: 30
+};
+
+// 前 4 次连续答对的固定间隔（天）
+const SM2_INITIAL_INTERVALS = [1, 2, 4, 7];
+
+// 连续答对次数 → 展示用盒子（1~7）
+export function boxFromRep(rep: number): number {
+  return Math.max(1, Math.min(7, rep + 1));
+}
+
+// 根据连续答对次数与个人难度系数计算下一次复习间隔（天）
+// rep=1..4 走固定间隔；rep>=5 起按 ease 乘算拉长（至少比上次多 1 天）
+export function sm2NextInterval(rep: number, ease: number, prevInterval: number): number {
+  if (rep >= 1 && rep <= SM2_INITIAL_INTERVALS.length) {
+    return SM2_INITIAL_INTERVALS[rep - 1];
+  }
+  return Math.max(prevInterval + 1, Math.round(prevInterval * ease));
+}
+
+// 旧数据兼容：只有 box 的 Leitner 记录补齐 SM-2 字段（不改动已有调度时间）
+function normalizeLegacy(p: WordProgress): void {
+  if (p.rep === undefined || p.interval === undefined || p.ease === undefined) {
+    const legacyRep = p.box && p.box >= 2 ? Math.min(p.box - 1, 6) : 0;
+    p.rep = legacyRep;
+    p.interval = BOX_INTERVAL_DAYS[p.box] || 0;
+    p.ease = SM2_DEFAULT_EASE;
+  }
+}
+
 export function recordWordProgress(
   bookId: string,
   word: string,
@@ -400,8 +471,13 @@ export function recordWordProgress(
       knownCount: 0,
       unknownCount: 0,
       nextReview: 0,
-      lastSeen: 0
+      lastSeen: 0,
+      ease: SM2_DEFAULT_EASE,
+      rep: 0,
+      interval: 0
     };
+  } else {
+    normalizeLegacy(p);
   }
 
   if (known) {
@@ -411,35 +487,22 @@ export function recordWordProgress(
   }
   p.lastSeen = now;
 
-  // ─── Leitner 盒子系统 ──────────────────────────────────
-  // 盒子 → 复习间隔（ms）
-  //   1 → 0（立即/今天内再出现）
-  //   2 → 1天
-  //   3 → 2天
-  //   4 → 4天
-  //   5 → 7天  ← box >= 5 即算 mastered（连续答对 4 次跨度 7 天）
-  //   6 → 15天（mastered 巩固期）
-  //   7 → 30天（长期巩固）
-  const DAY = 24 * 60 * 60 * 1000;
-  const BOX_INTERVALS: Record<number, number> = {
-    1: 0,
-    2: 1 * DAY,
-    3: 2 * DAY,
-    4: 4 * DAY,
-    5: 7 * DAY,
-    6: 15 * DAY,
-    7: 30 * DAY
-  };
-
   if (!known) {
-    // 不认识：退回盒子1，立即可复习
+    // ─── 不认识：全面重置，立即可复习 ───
+    p.rep = 0;
+    p.interval = 0;
+    p.ease = Math.max(SM2_MIN_EASE, (p.ease || SM2_DEFAULT_EASE) - 0.2);
     p.box = 1;
     p.status = 'learning';
-    p.nextReview = now; // 立即可复习
+    p.nextReview = now;
   } else {
-    // 认识：升一级盒子
-    if (!p.box || p.box < 1) p.box = 1;
-    p.box = Math.min(p.box + 1, 7);
+    // ─── 认识：SM-2 排程 ───
+    const ease = p.ease || SM2_DEFAULT_EASE;
+    p.rep = (p.rep || 0) + 1;
+    const interval = sm2NextInterval(p.rep, ease, p.interval || 0);
+    p.interval = interval;
+    p.ease = Math.min(SM2_MAX_EASE, ease + 0.05);
+    p.box = boxFromRep(p.rep);
 
     // 更新展示状态（box >= 5 即算 mastered）
     if (p.box >= 5) {
@@ -450,12 +513,12 @@ export function recordWordProgress(
       p.status = 'learning';
     }
 
-    const interval = BOX_INTERVALS[p.box] || 0;
-    p.nextReview = interval > 0 ? now + interval : now;
+    p.nextReview = now + interval * DAY_MS;
   }
 
   all[word] = p;
   saveAllProgress(bookId, all);
+  queueProgressSync(bookId); // 静默排队上云，换机/清缓存不丢进度
   return p;
 }
 
@@ -499,6 +562,92 @@ export function getBookProgressStats(bookId: string) {
   };
 }
 
+// ─── 进度云端同步 ─────────────────────────────────────────────
+// 合并两份单词进度（按词取更优记录，SM-2 变体）：
+//   - 学习深度更大者胜：连续答对次数 rep 优先，其次复习间隔 interval（天）
+//   - 深度相同则取 lastSeen 较新者；旧 Leitner 记录按 box 回填后同规则比较
+//   - known/unknown 累计取较大值，防止清缓存后回退
+//   - 合并结果归一化：box/status 由 rep 推导，保证展示一致
+// 注意：cloudfunctions/syncUser/index.js 的 mergeWordProgress 必须与这里保持同一策略
+export function mergeProgress(
+  local: Record<string, WordProgress>,
+  cloud: Record<string, WordProgress>
+): Record<string, WordProgress> {
+  const out: Record<string, WordProgress> = {};
+  const keys = new Set([...Object.keys(local || {}), ...Object.keys(cloud || {})]);
+  for (const k of keys) {
+    const l = local && local[k];
+    const c = cloud && cloud[k];
+    if (!l) { out[k] = c!; continue; }
+    if (!c) { out[k] = l; continue; }
+    normalizeLegacy(l);
+    normalizeLegacy(c);
+    const lScore = (l.rep || 0) * 1000 + (l.interval || 0);
+    const cScore = (c.rep || 0) * 1000 + (c.interval || 0);
+    let better: WordProgress;
+    if (lScore !== cScore) {
+      better = cScore > lScore ? c : l;
+    } else {
+      better = (c.lastSeen || 0) >= (l.lastSeen || 0) ? c : l;
+    }
+    // 归一化展示字段：box/status 由 rep 推导
+    better.box = boxFromRep(better.rep || 0);
+    better.status = better.box >= 5 ? 'mastered' : (better.box >= 3 ? 'review' : 'learning');
+    out[k] = {
+      ...better,
+      knownCount: Math.max(l.knownCount || 0, c.knownCount || 0),
+      unknownCount: Math.max(l.unknownCount || 0, c.unknownCount || 0)
+    };
+  }
+  return out;
+}
+
+// 上传某词书进度到云端（服务端按同规则合并，返回合并结果后写回本地）
+// 失败静默：本地永远是最可用的数据源，同步只是增强
+export function syncProgressToCloud(bookId: string): Promise<void> {
+  const data = getAllProgress(bookId);
+  // 没有任何进度就不上传（新用户防误写）
+  if (!Object.keys(data).length) return Promise.resolve();
+  return callSyncUser({
+    today: todayStr(),
+    progressBookId: bookId,
+    progress: data
+  }).then(res => {
+    if (res && res.progress && Object.keys(res.progress).length) {
+      saveAllProgress(bookId, mergeProgress(getAllProgress(bookId), res.progress));
+    }
+  });
+}
+
+// 从云端拉取某词书进度并合并到本地（静默，失败不打扰）
+let restoreProgressPending: Promise<void> | null = null;
+export function restoreProgressFromCloud(bookId: string): Promise<void> {
+  if (restoreProgressPending) return restoreProgressPending;
+  if (!wx.cloud) return Promise.resolve();
+
+  restoreProgressPending = callSyncUser({
+    today: todayStr(),
+    progressRequestBookId: bookId
+  }).then(res => {
+    if (res && res.progress && Object.keys(res.progress).length) {
+      saveAllProgress(bookId, mergeProgress(getAllProgress(bookId), res.progress));
+    }
+  }).then(() => { restoreProgressPending = null; });
+
+  return restoreProgressPending;
+}
+
+// 学习过程中自动排队同步：8 秒去抖，避免每答一题就调一次云函数
+let progressSyncTimer: any = null;
+export function queueProgressSync(bookId: string): void {
+  if (!wx.cloud) return;
+  if (progressSyncTimer) clearTimeout(progressSyncTimer);
+  progressSyncTimer = setTimeout(() => {
+    progressSyncTimer = null;
+    syncProgressToCloud(bookId).catch(() => {});
+  }, 8000);
+}
+
 // ─── 生词本 ──────────────────────────────────────────────────
 const WRONG_BOOK_KEY = 'bc_wrong_book';
 
@@ -521,285 +670,291 @@ export function addToWrongBook(word: string, meaning: string, bookId: string): v
   if (list.some(item => item.word === word)) return;
   list.push({ word, meaning, bookId, addedAt: Date.now() });
   wx.setStorageSync(WRONG_BOOK_KEY, list);
+  queueWrongBookSync();
 }
 
 // 从生词本移除
 export function removeFromWrongBook(word: string): void {
   const list = getWrongBook().filter(item => item.word !== word);
   wx.setStorageSync(WRONG_BOOK_KEY, list);
+  queueWrongBookSync();
 }
 
 // 清空生词本
 export function clearWrongBook(): void {
   wx.setStorageSync(WRONG_BOOK_KEY, []);
+  queueWrongBookSync(); // 空列表也会上传，云端同步清空
 }
 
-// ─── 订阅消息提醒 ─────────────────────────────────────────────
-const SUBSCRIBE_KEY = 'bc_reminder_subscribed';
-
-// ⚠️ 替换为你自己在微信公众平台创建的订阅消息模板 ID
-export const REMINDER_TEMPLATE_ID = 'your_template_id_here';
-
-// 用户是否已授权订阅学习提醒
-export function isReminderSubscribed(): boolean {
-  return wx.getStorageSync(SUBSCRIBE_KEY) === true;
+// ─── 生词本云端同步（与进度同步同模式）───────────────────────────
+// 合并策略：按 word 取并集，同一词取 addedAt 较新的一条
+export function mergeWrongBook(
+  local: WrongBookItem[],
+  cloud: WrongBookItem[]
+): WrongBookItem[] {
+  const out = new Map<string, WrongBookItem>();
+  for (const it of [...(local || []), ...(cloud || [])]) {
+    const prev = out.get(it.word);
+    if (!prev || (it.addedAt || 0) >= (prev.addedAt || 0)) out.set(it.word, it);
+  }
+  return Array.from(out.values());
 }
 
-// 标记用户已授权订阅
-export function setReminderSubscribed(val: boolean): void {
-  wx.setStorageSync(SUBSCRIBE_KEY, val);
-}
-
-// 请求用户授权订阅学习提醒
-export function requestReminderSubscribe(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (!wx.requestSubscribeMessage) {
-      // 低版本不支持
-      resolve(false);
-      return;
+// 上传整份生词本到云端，返回云端已有内容供本地并集合并
+// 采用整表覆盖式写回：移除/清空才能正确同步到云端
+export function syncWrongBookToCloud(): Promise<void> {
+  if (!wx.cloud) return Promise.resolve();
+  return callSyncUser({
+    today: todayStr(),
+    wrongBook: getWrongBook()
+  }).then(res => {
+    if (res && Array.isArray(res.wrongBook)) {
+      const merged = mergeWrongBook(getWrongBook(), res.wrongBook);
+      wx.setStorageSync(WRONG_BOOK_KEY, merged);
     }
-    wx.requestSubscribeMessage({
-      tmplIds: [REMINDER_TEMPLATE_ID],
-      success: (res: any) => {
-        const accepted = res[REMINDER_TEMPLATE_ID] === 'accept';
-        setReminderSubscribed(accepted);
-        resolve(accepted);
-      },
-      fail: () => {
-        resolve(false);
-      }
-    });
   });
 }
 
-// ─── 挑战模式 · 关卡系统 ──────────────────────────────────────
-// 每个词书对应一个「区域」，每区域 10 关，难度递增
-const CHALLENGE_KEY = 'bc_challenge_progress';
-const CHALLENGE_BADGES_KEY = 'bc_challenge_badges';
+// 学习中静默排队同步：去抖，避免频繁调云函数
+let wrongBookSyncTimer: any = null;
+function queueWrongBookSync(): void {
+  if (!wx.cloud) return;
+  if (wrongBookSyncTimer) clearTimeout(wrongBookSyncTimer);
+  wrongBookSyncTimer = setTimeout(() => {
+    wrongBookSyncTimer = null;
+    syncWrongBookToCloud().catch(() => {});
+  }, 8000);
+}
 
-// 关卡总数（每个词书区域 10 关）
-export const LEVELS_PER_AREA = 10;
-// 每关题目数
-export const QUESTIONS_PER_LEVEL = 10;
-// 通关正确率阈值（%）
-export const PASS_THRESHOLD = 60;
+// 从云端拉取生词本并合并到本地（启动时调用；失败静默）
+let restoreWrongBookPending: Promise<void> | null = null;
+export function restoreWrongBookFromCloud(): Promise<void> {
+  if (restoreWrongBookPending) return restoreWrongBookPending;
+  if (!wx.cloud) return Promise.resolve();
 
-// 区域元数据（词书 → 区域名称 + 难度标签）
-const AREA_META: Record<string, { name: string; icon: string }> = {
-  junior:   { name: '基础营地', icon: '🏕️' },
-  senior:   { name: '进阶山岭', icon: '⛰️' },
-  cet4:     { name: '四级平原', icon: '🌄' },
-  cet6:     { name: '六级高原', icon: '🏔️' },
-  postgrad:  { name: '考研巅峰', icon: '🌋' },
-  ielts:    { name: '雅思海湾', icon: '🌊' },
-  toefl:    { name: '托福密林', icon: '🌳' },
-  gre:      { name: 'GRE 深渊', icon: '🌌' }
+  restoreWrongBookPending = callSyncUser({
+    today: todayStr(),
+    wrongBookRequest: true
+  }).then(res => {
+    if (res && Array.isArray(res.wrongBook) && res.wrongBook.length) {
+      const merged = mergeWrongBook(getWrongBook(), res.wrongBook);
+      wx.setStorageSync(WRONG_BOOK_KEY, merged);
+    }
+  }).then(() => { restoreWrongBookPending = null; });
+
+  return restoreWrongBookPending;
+}
+
+// ─── 学习提醒已下线（2026-08-31：微信一次性订阅机制，需每次学完重复授权，体验繁琐；代码注释保留，随时可恢复） ───
+// const SUBSCRIBE_KEY = 'bc_reminder_subscribed';
+//
+// // ⚠️ 替换为你自己在微信公众平台创建的订阅消息模板 ID
+// export const REMINDER_TEMPLATE_ID = '_NbJeeBuWsnMnvNDljQ7fS4WZSepxC9THCQx4zeo3-A';
+//
+// // 用户是否已授权订阅学习提醒
+// export function isReminderSubscribed(): boolean {
+//   return wx.getStorageSync(SUBSCRIBE_KEY) === true;
+// }
+//
+// // 标记用户已授权订阅
+// export function setReminderSubscribed(val: boolean): void {
+//   wx.setStorageSync(SUBSCRIBE_KEY, val);
+// }
+//
+// // 请求用户授权订阅学习提醒
+// export function requestReminderSubscribe(): Promise<boolean> {
+//   return new Promise((resolve) => {
+//     if (!wx.requestSubscribeMessage) {
+//       // 低版本不支持
+//       resolve(false);
+//       return;
+//     }
+//     wx.requestSubscribeMessage({
+//       tmplIds: [REMINDER_TEMPLATE_ID],
+//       success: (res: any) => {
+//         const accepted = res[REMINDER_TEMPLATE_ID] === 'accept';
+//         setReminderSubscribed(accepted);
+//         // 同步云端（sendReminder 每日扫描依据），静默失败
+//         setReminderSubscribedCloud(accepted);
+//         resolve(accepted);
+//       },
+//       fail: () => {
+//         resolve(false);
+//       }
+//     });
+//   });
+// }
+//
+// // 云端记录每日提醒订阅状态（经 syncUser 写入 users 文档，sendReminder 每日扫描用）
+// export function setReminderSubscribedCloud(val: boolean): void {
+//   if (!wx.cloud) return;
+//   callSyncUser({ reminderSubscribed: val, today: todayStr() }).catch(() => {});
+// }
+
+// ⚠️ 每周学习周报模板 ID（微信公众平台「订阅消息」单独申请）
+//    个人主体可选「学习/教育」相关模板；字段名以你申请到的模板为准
+export const WEEKLY_TEMPLATE_ID = 'HKofr7-lr1w8swoa-p7M-pyNRPMRXxbSuSSWrIjKl-I';
+
+// ─── 每周学习周报已下线（2026-08-31：模板体验不佳；代码注释保留，模板可用后恢复） ───
+// const WEEKLY_SUBSCRIBE_KEY = 'bc_weekly_subscribed';
+//
+// export function isWeeklySubscribed(): boolean {
+//   return wx.getStorageSync(WEEKLY_SUBSCRIBE_KEY) === true;
+// }
+//
+// export function setWeeklySubscribed(val: boolean): void {
+//   wx.setStorageSync(WEEKLY_SUBSCRIBE_KEY, val);
+// }
+//
+// // 请求授权每周周报；授权成功后云端记录（sendReminder 周报扫描用）
+// export function requestWeeklySubscribe(): Promise<boolean> {
+//   return new Promise((resolve) => {
+//     if (!wx.requestSubscribeMessage) {
+//       resolve(false);
+//       return;
+//     }
+//     wx.requestSubscribeMessage({
+//       tmplIds: [WEEKLY_TEMPLATE_ID],
+//       success: (res: any) => {
+//         const accepted = res[WEEKLY_TEMPLATE_ID] === 'accept';
+//         setWeeklySubscribed(accepted);
+//         if (accepted) setWeeklySubscribedCloud(true);
+//         resolve(accepted);
+//       },
+//       fail: () => {
+//         resolve(false);
+//       }
+//     });
+//   });
+// }
+//
+// // 云端记录订阅状态（经 syncUser 写入 users 文档，静默失败）
+// export function setWeeklySubscribedCloud(val: boolean): void {
+//   if (!wx.cloud) return;
+//   callSyncUser({ weeklySubscribed: val, today: todayStr() }).catch(() => {});
+// }
+
+// ─── 今日复习计划（SM-2 排程可视化） ──────────────────────
+// 把间隔记忆算法变成用户可感知的「为什么今天复习这些词」
+// 复习理由直接引用每个词的真实排程间隔（interval），而非固定盒子映射
+
+export interface ReviewPlanItem {
+  word: string;
+  box: number;
+  lastSeen: number;
+  overdueDays: number; // 已逾期天数（0=未逾期，今天到期）
+  interval: number;    // 当前复习间隔（天）
+  reason: string;      // 为什么今天复习它
+}
+
+export interface BoxStat {
+  box: number;
+  label: string;        // 盒子名称（起步盒/巩固中...）
+  intervalDesc: string; // 该盒对应复习间隔说明
+  count: number;
+  mastered: boolean;    // 该盒是否算已掌握区（box>=5）
+}
+
+export interface ReviewPlan {
+  totalLearned: number;   // 该词书已学词数（box>=2 或有记录）
+  dueToday: number;       // 今天到期需复习数
+  masteredCount: number;  // 已掌握数（box>=5）
+  boxDist: BoxStat[];     // 各盒子分布
+  dueList: ReviewPlanItem[]; // 今日到期词（最多50个，逾期多的优先）
+  forecast: { label: string; count: number }[]; // 未来7天每日预计到期数
+}
+
+const PLAN_BOX_LABELS: Record<number, { label: string; intervalDesc: string }> = {
+  1: { label: '第1盒 · 起步', intervalDesc: '当天内再次出现' },
+  2: { label: '第2盒', intervalDesc: '隔1天复习' },
+  3: { label: '第3盒', intervalDesc: '隔2天复习' },
+  4: { label: '第4盒', intervalDesc: '隔4天复习' },
+  5: { label: '第5盒 · 巩固', intervalDesc: '隔7天复习' },
+  6: { label: '第6盒', intervalDesc: '隔15天以上（按个人节奏）' },
+  7: { label: '第7盒 · 长期', intervalDesc: '隔30天以上 · 长期记忆' }
 };
 
-export function getAreaMeta(bookId: string): { name: string; icon: string } {
-  return AREA_META[bookId] || { name: '未知区域', icon: '❓' };
+const DAY_MS2 = 24 * 60 * 60 * 1000;
+
+function daysBetween(from: number, to: number): number {
+  return Math.floor((to - from) / DAY_MS2);
 }
 
-export function getAllAreas(): { bookId: string; name: string; icon: string }[] {
-  return Object.entries(AREA_META).map(([bookId, meta]) => ({
-    bookId,
-    name: meta.name,
-    icon: meta.icon
-  }));
-}
+export function getReviewPlan(bookId: string): ReviewPlan {
+  const all = getAllProgress(bookId);
+  const now = Date.now();
 
-// 挑战进度结构
-export interface ChallengeProgress {
-  // key: bookId, value: { cleared: number, stars: Record<level, stars> }
-  [bookId: string]: {
-    cleared: number;  // 已通关数（0~10）
-    stars: Record<number, number>; // { 1: 3, 2: 2, ... } 每关星数
-  };
-}
+  const boxCounts: Record<number, number> = {};
+  const dueList: ReviewPlanItem[] = [];
+  const forecast = Array.from({ length: 8 }, () => 0); // [0]=今日, [1..7]=未来7天
+  let masteredCount = 0;
+  let totalLearned = 0;
 
-export function getChallengeProgress(): ChallengeProgress {
-  return wx.getStorageSync(CHALLENGE_KEY) || {};
-}
+  for (const p of Object.values(all)) {
+    const box = p.box || 1;
+    boxCounts[box] = (boxCounts[box] || 0) + 1;
+    if (box >= 2) totalLearned++;
+    if (box >= 5) { masteredCount++; }
 
-export function saveChallengeProgress(data: ChallengeProgress): void {
-  wx.setStorageSync(CHALLENGE_KEY, data);
-}
+    const meta = PLAN_BOX_LABELS[box] || PLAN_BOX_LABELS[1];
+    const isMasteredZone = box >= 5;
 
-// 获取某区域已通关数
-export function getClearedLevels(bookId: string): number {
-  const all = getChallengeProgress();
-  return all[bookId]?.cleared || 0;
-}
-
-// 获取某关星数（0~3）
-export function getLevelStars(bookId: string, level: number): number {
-  const all = getChallengeProgress();
-  return all[bookId]?.stars?.[level] || 0;
-}
-
-// 记录某关通关结果，返回是否解锁了新关卡
-export function recordLevelResult(
-  bookId: string,
-  level: number,
-  correctCount: number,
-  totalQuestions: number
-): { stars: number; newUnlock: boolean; isNewBadge: boolean } {
-  const all = getChallengeProgress();
-  if (!all[bookId]) {
-    all[bookId] = { cleared: 0, stars: {} };
-  }
-
-  // 计算星数：正确率 100%→3星, >=80%→2星, >=60%→1星, <60%→0星（不通关）
-  const rate = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
-  let stars = 0;
-  if (rate >= 100) stars = 3;
-  else if (rate >= 80) stars = 2;
-  else if (rate >= PASS_THRESHOLD) stars = 1;
-
-  const prevStars = all[bookId].stars[level] || 0;
-  all[bookId].stars[level] = Math.max(prevStars, stars);
-
-  let newUnlock = false;
-  if (stars > 0 && level > all[bookId].cleared) {
-    // 通关了新关卡
-    all[bookId].cleared = level;
-    newUnlock = true;
-  } else if (stars > 0 && level === all[bookId].cleared + 1 && level <= LEVELS_PER_AREA) {
-    all[bookId].cleared = level;
-    newUnlock = true;
-  }
-
-  // 确保 cleared 不超过 LEVELS_PER_AREA
-  if (all[bookId].cleared > LEVELS_PER_AREA) {
-    all[bookId].cleared = LEVELS_PER_AREA;
-  }
-
-  saveChallengeProgress(all);
-
-  // 检查是否解锁新徽章
-  const isNewBadge = checkAndUnlockBadges(all);
-
-  return { stars, newUnlock, isNewBadge };
-}
-
-// 获取某区域总星数
-export function getAreaStars(bookId: string): number {
-  const all = getChallengeProgress();
-  if (!all[bookId]?.stars) return 0;
-  return Object.values(all[bookId].stars).reduce((sum, s) => sum + s, 0);
-}
-
-// ─── 挑战模式 · 徽章系统 ───────────────────────────────────────
-export interface ChallengeBadge {
-  id: string;
-  name: string;
-  icon: string;
-  desc: string;
-  unlocked: boolean;
-}
-
-// 徽章定义
-const BADGE_DEFS: Omit<ChallengeBadge, 'unlocked'>[] = [
-  { id: 'first_clear',  name: '初露锋芒', icon: '🎖️', desc: '首次通关一个关卡' },
-  { id: 'area_clear',   name: '区域征服', icon: '🗺️', desc: '通关一个区域的全部 10 关' },
-  { id: 'triple_star',   name: '三星达人', icon: '⭐', desc: '获得 3 颗星（满分通关）' },
-  { id: 'star_15',       name: '群星闪耀', icon: '🌟', desc: '累计获得 15 颗星' },
-  { id: 'star_30',       name: '星光璀璨', icon: '🌠', desc: '累计获得 30 颗星' },
-  { id: 'multi_area',    name: '多面手',   icon: '🎯', desc: '通关 3 个不同区域的首关' },
-  { id: 'all_clear',     name: '全能学霸', icon: '👑', desc: '通关所有区域的全部关卡' }
-];
-
-export function getChallengeBadges(): ChallengeBadge[] {
-  const unlocked = wx.getStorageSync(CHALLENGE_BADGES_KEY) || {} as Record<string, boolean>;
-  return BADGE_DEFS.map(b => ({ ...b, unlocked: !!unlocked[b.id] }));
-}
-
-// 检查并解锁徽章，返回是否解锁了新徽章
-function checkAndUnlockBadges(progress: ChallengeProgress): boolean {
-  const unlocked = wx.getStorageSync(CHALLENGE_BADGES_KEY) || {} as Record<string, boolean>;
-  let changed = false;
-
-  // 计算统计数据
-  let totalStars = 0;
-  let clearedAreas = 0;
-  let firstClearAreas = 0;
-  let hasTripleStar = false;
-  let allCleared = true;
-
-  for (const bookId of Object.keys(AREA_META)) {
-    const area = progress[bookId];
-    if (!area) {
-      allCleared = false;
-      continue;
-    }
-    const areaStars = Object.values(area.stars || {}).reduce((sum, s) => sum + s, 0);
-    totalStars += areaStars;
-
-    if (area.cleared >= LEVELS_PER_AREA) clearedAreas++;
-    if (area.cleared >= 1) firstClearAreas++;
-
-    // 检查是否有三星
-    for (const s of Object.values(area.stars || {})) {
-      if (s >= 3) { hasTripleStar = true; break; }
-    }
-
-    if (area.cleared < LEVELS_PER_AREA) allCleared = false;
-  }
-
-  // 检查每个徽章
-  const checks: Record<string, boolean> = {
-    first_clear: firstClearAreas >= 1,
-    area_clear: clearedAreas >= 1,
-    triple_star: hasTripleStar,
-    star_15: totalStars >= 15,
-    star_30: totalStars >= 30,
-    multi_area: firstClearAreas >= 3,
-    all_clear: allCleared && clearedAreas >= Object.keys(AREA_META).length
-  };
-
-  for (const badge of BADGE_DEFS) {
-    if (checks[badge.id] && !unlocked[badge.id]) {
-      unlocked[badge.id] = true;
-      changed = true;
-    }
-  }
-
-  if (changed) {
-    wx.setStorageSync(CHALLENGE_BADGES_KEY, unlocked);
-  }
-  return changed;
-}
-
-// 获取最近解锁的新徽章（用于通关结算页展示）
-export function getNewlyUnlockedBadges(): ChallengeBadge[] {
-  return getChallengeBadges().filter(b => b.unlocked);
-}
-
-// 同步挑战进度到云端
-export function syncChallengeToCloud(): void {
-  const app = getApp() as any;
-  const openid = app.globalData.openid;
-  if (!openid || !wx.cloud) return;
-
-  const db = wx.cloud.database();
-  const progress = getChallengeProgress();
-  const badges = wx.getStorageSync(CHALLENGE_BADGES_KEY) || {};
-
-  db.collection('users')
-    .where({ _openid: openid })
-    .get()
-    .then((res: any) => {
-      if (res.data && res.data.length > 0) {
-        db.collection('users')
-          .doc(res.data[0]._id)
-          .update({
-            data: { challenge: { progress, badges }, updateTime: db.serverDate() }
-          });
+    if (p.nextReview > 0 && p.nextReview <= now && !isMasteredZone) {
+      // 到期：生成复习理由（引用真实排程间隔）
+      const overDays = daysBetween(p.nextReview, now);
+      const intervalDays = p.interval || BOX_INTERVAL_DAYS[box] || 0;
+      let reason: string;
+      if (box === 1 && p.unknownCount > 0 && p.knownCount === 0) {
+        reason = '上次没答对，已回到起步盒，今天就再认一次';
+      } else if (box === 1) {
+        reason = '在巩固盒里重新出发，今天再见面加深印象';
+      } else if (overDays > 0) {
+        reason = `已进入${meta.label}（本次间隔 ${intervalDays} 天），比计划晚了 ${overDays} 天，优先安排`;
       } else {
-        db.collection('users').add({
-          data: { challenge: { progress, badges }, createTime: db.serverDate() }
-        });
+        reason = `已进入${meta.label}（本次间隔 ${intervalDays} 天），今天正好到期`;
       }
-    })
-    .catch(() => {});
+      dueList.push({
+        word: p.word,
+        box,
+        lastSeen: p.lastSeen || 0,
+        overdueDays: Math.max(overDays, 0),
+        interval: intervalDays,
+        reason
+      });
+      forecast[0]++;
+    } else if (!isMasteredZone && p.nextReview > now) {
+      const d = daysBetween(now, p.nextReview);
+      if (d >= 1 && d <= 7) forecast[d]++;
+    }
+  }
+
+  // 排序：逾期多的在前，其次盒子高的（接近掌握的先巩固）
+  dueList.sort((a, b) =>
+    b.overdueDays - a.overdueDays || b.box - a.box ||
+    a.word.localeCompare(b.word)
+  );
+
+  const boxDist: BoxStat[] = [];
+  for (let b = 1; b <= 7; b++) {
+    const meta = PLAN_BOX_LABELS[b];
+    boxDist.push({
+      box: b,
+      ...meta,
+      count: boxCounts[b] || 0,
+      mastered: b >= 5
+    });
+  }
+
+  const dayLabels = ['今天', '明天', '后天'];
+  return {
+    totalLearned,
+    dueToday: forecast[0],
+    masteredCount,
+    boxDist,
+    dueList: dueList.slice(0, 50),
+    forecast: forecast.slice(1, 8).map((count, i) => ({
+      label: i < 2 ? dayLabels[i + 1] : `${i + 1}天后`,
+      count
+    }))
+  };
 }

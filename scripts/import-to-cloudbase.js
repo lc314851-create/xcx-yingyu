@@ -27,7 +27,27 @@ const bookFiles = [
   { id: 'postgrad', name: '考研词汇', file: 'postgrad.json' },
   { id: 'ielts', name: '雅思词汇', file: 'ielts.json' },
   { id: 'toefl', name: '托福词汇', file: 'toefl.json' },
-  { id: 'gre', name: 'GRE词汇', file: 'gre.json' }
+  { id: 'gre', name: 'GRE词汇', file: 'gre.json' },
+  // 人教版教材同步分册
+  { id: 'pepj7_1', name: 'pepj7_1', file: 'pepj7_1.json' },
+  { id: 'pepj7_2', name: 'pepj7_2', file: 'pepj7_2.json' },
+  { id: 'pepj8_1', name: 'pepj8_1', file: 'pepj8_1.json' },
+  { id: 'pepj8_2', name: 'pepj8_2', file: 'pepj8_2.json' },
+  { id: 'pepj9', name: 'pepj9', file: 'pepj9.json' },
+  { id: 'pepgz1', name: 'pepgz1', file: 'pepgz1.json' },
+  { id: 'pepgz2', name: 'pepgz2', file: 'pepgz2.json' },
+  { id: 'pepgz3', name: 'pepgz3', file: 'pepgz3.json' },
+  { id: 'pepgzx1', name: 'pepgzx1', file: 'pepgzx1.json' },
+  { id: 'pepgzx2', name: 'pepgzx2', file: 'pepgzx2.json' },
+  { id: 'pepgzx3', name: 'pepgzx3', file: 'pepgzx3.json' },
+  { id: 'pep3_1', name: 'pep3_1', file: 'pep3_1.json' },
+  { id: 'pep3_2', name: 'pep3_2', file: 'pep3_2.json' },
+  { id: 'pep4_1', name: 'pep4_1', file: 'pep4_1.json' },
+  { id: 'pep4_2', name: 'pep4_2', file: 'pep4_2.json' },
+  { id: 'pep5_1', name: 'pep5_1', file: 'pep5_1.json' },
+  { id: 'pep5_2', name: 'pep5_2', file: 'pep5_2.json' },
+  { id: 'pep6_1', name: 'pep6_1', file: 'pep6_1.json' },
+  { id: 'pep6_2', name: 'pep6_2', file: 'pep6_2.json' },
 ];
 
 console.log('=== 词库数据导入云开发数据库 ===');

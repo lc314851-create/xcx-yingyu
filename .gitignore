@@ -3,6 +3,7 @@ miniprogram_npm/
 .DS_Store
 *.log
 project.private.config.json
+scripts/smoke-test/out/
 
 # 大文件
 ecdict-sqlite.zip

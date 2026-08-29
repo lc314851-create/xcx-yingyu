@@ -1,0 +1,28 @@
+{
+  "name": "xcx-yingyu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "smoke": "tsc scripts/smoke-test/wx.d.ts miniprogram/utils/store.ts miniprogram/utils/vocabEstimate.ts --outDir scripts/smoke-test/out --module commonjs --target es2020 --skipLibCheck && node scripts/smoke-test/smoke_sm2.js && node scripts/smoke-test/smoke_vocab.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lc314851-create/xcx-yingyu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lc314851-create/xcx-yingyu/issues"
+  },
+  "homepage": "https://github.com/lc314851-create/xcx-yingyu#readme",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

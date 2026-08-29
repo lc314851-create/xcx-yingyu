@@ -64,5 +64,20 @@ Page({
   // 返回
   onBack() {
     wx.navigateBack();
-  }
+  },
+
+  // 转发给好友
+  onShareAppMessage() {
+    return {
+      title: '错题本 · 答错过的不再错',
+      path: '/pages/wrongbook/wrongbook'
+    };
+  },
+
+  // 分享到朋友圈（单页模式）
+  onShareTimeline() {
+    return {
+      title: '错题本 · 答错过的不再错'
+    };
+  },
 });

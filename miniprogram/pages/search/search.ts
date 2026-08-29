@@ -1,7 +1,6 @@
 // pages/search/search.ts
 import { wordBooks } from '../../data/index';
-import { WordItem } from '../../data/types';
-import { getAllProgress, getCurrentBookId } from '../../utils/store';
+import { getAllProgress } from '../../utils/store';
 import { playAudio } from '../../utils/audio';
 
 interface SearchResult {
@@ -99,5 +98,20 @@ Page({
   onPlayAudio(e: any) {
     const word = e.currentTarget.dataset.word as string;
     if (word) playAudio(word, 'us');
-  }
+  },
+
+  // 转发给好友
+  onShareAppMessage() {
+    return {
+      title: '查一个词，补一个词',
+      path: '/pages/search/search'
+    };
+  },
+
+  // 分享到朋友圈（单页模式）
+  onShareTimeline() {
+    return {
+      title: '查一个词，补一个词'
+    };
+  },
 });

@@ -1,43 +1,31 @@
 // pages/index/index.ts
-import { getStats, getCurrentBookId, hasSelectedBook, setCurrentBookId, getBookProgressStats, restoreStatsFromCloud } from '../../utils/store';
-import { getBookById, clearWordCache } from '../../utils/wordService';
+import { getStats, getCurrentBookId, hasSelectedBook, getBookProgressStats, getReviewPlan, restoreStatsFromCloud } from '../../utils/store';
+import { getBookById } from '../../utils/wordService';
 
 // 本地种子词库（兑底）
 import { wordBooks as localBooks } from '../../data/index';
 import { getDailyQuote, Quote } from '../../data/quotes';
-
-// 词书元数据（本地兜底，不依赖网络）
-const FALLBACK_BOOKS = [
-  { id: 'junior', name: '初中词汇' },
-  { id: 'senior', name: '高中词汇' },
-  { id: 'cet4', name: '四级词汇' },
-  { id: 'cet6', name: '六级词汇' },
-  { id: 'postgrad', name: '考研词汇' },
-  { id: 'ielts', name: '雅思词汇' },
-  { id: 'toefl', name: '托福词汇' },
-  { id: 'gre', name: 'GRE词汇' }
-];
 
 Page({
   data: {
     // Hero 问候
     greetingText: '',
     heroTitle: '今天也要加油学英语！',
-    heroSub: '九层之台，起于垒土',
+    heroSub: '与课本同步 · 词根记忆 × 个人遗忘曲线',
     learnedToday: 0,
     streakDays: 0,
     totalWords: 0,
-    weeklyLearned: 0,
     checkedIn: false,
     currentBookName: '初中词汇',
     currentBookTotal: 0,
     masteredCount: 0,
     knownCount: 0,
     dueCount: 0,
-    // 词书选择弹窗
-    showBookPicker: false,
-    pickerBooks: FALLBACK_BOOKS,
     currentBookId: 'junior',
+    // 今日复习计划卡片
+    showPlanCard: false,
+    planDueToday: 0,
+    planForecast: [] as { label: string; count: number }[],
     // 今日金句
     quote: null as Quote | null,
     quoteWords: [] as string[]
@@ -50,13 +38,9 @@ Page({
   },
 
   onShow() {
-    // 首次使用：跳转词书选择页
-    if (!hasSelectedBook()) {
-      wx.navigateTo({ url: '/pages/booklist/booklist' });
-      return;
-    }
+    // 首次使用不再强制跳选书页：先让用户浏览首页，点具体功能时再引导选书
     this.updateGreeting();
-    this.setData({ currentBookId: getCurrentBookId() });
+    this.setData({ currentBookId: getCurrentBookId(), showPlanCard: hasSelectedBook() });
     this.loadStats();
     this.loadQuote();
 
@@ -123,7 +107,6 @@ Page({
       learnedToday: stats.learnedToday,
       streakDays: stats.streakDays,
       totalWords: stats.totalWords,
-      weeklyLearned: stats.weeklyLearned,
       checkedIn: stats.checkedIn,
       currentBookName: bookName,
       currentBookTotal: bookTotal,
@@ -131,41 +114,67 @@ Page({
       knownCount: progressStats.knownCount,
       dueCount: progressStats.dueCount
     });
+
+    // 今日复习计划（SM-2 到期聚合，本地同步计算）
+    this.refreshPlan();
   },
 
-  // 弹出词书选择弹窗
-  showBookPicker() {
+  // 刷新首页「今日复习计划」卡片
+  refreshPlan() {
+    const bookId = getCurrentBookId();
+    const plan = getReviewPlan(bookId);
+    const forecast = [
+      { label: '今天', count: plan.dueToday },
+      ...plan.forecast.slice(0, 2) // 明天 / 后天
+    ];
     this.setData({
-      showBookPicker: true,
-      pickerBooks: FALLBACK_BOOKS,
-      currentBookId: getCurrentBookId()
+      planDueToday: plan.dueToday,
+      planForecast: forecast
     });
   },
 
-  // 关闭词书选择弹窗
-  closeBookPicker() {
-    this.setData({ showBookPicker: false });
+  // 计划卡点击：有到期词直接开复习轮，否则去学新词
+  onPlanTap() {
+    if (!hasSelectedBook()) {
+      wx.navigateTo({ url: '/pages/booklist/booklist' });
+      return;
+    }
+    if (this.data.planDueToday > 0) {
+      this.goReview();
+    } else {
+      this.goWords();
+    }
   },
 
-  // 选择词书
-  onSelectBook(e: any) {
-    const id = e.currentTarget.dataset.id as string;
-    const name = e.currentTarget.dataset.name as string;
-    setCurrentBookId(id);
-    clearWordCache();
-    this.setData({ showBookPicker: false, currentBookId: id, currentBookName: name });
-    this.loadStats();
-    wx.showToast({ title: `已切换到${name}`, icon: 'success' });
+  // 查看完整复习计划页
+  goPlan() {
+    wx.navigateTo({ url: '/pages/plan/plan' });
   },
 
-  // 切换词书（跳转到词书选择页）
+  // 切换词书：进入词书选择页（当前词书推荐卡 + 考试/教材分组列表）
   changeBook() {
-    wx.navigateTo({
-      url: '/pages/booklist/booklist'
-    });
+    wx.navigateTo({ url: '/pages/booklist/booklist' });
   },
 
   goWords() {
+    // 未选词书：先引导选书（延迟到用户实际需要时）
+    if (!hasSelectedBook()) {
+      wx.navigateTo({ url: '/pages/booklist/booklist' });
+      return;
+    }
+    wx.switchTab({
+      url: '/pages/words/words'
+    });
+  },
+
+  // 直达“待复习”：只复习到期待复习词
+  goReview() {
+    const due = this.data.dueCount;
+    if (!due || due <= 0) {
+      wx.showToast({ title: '暂无待复习词汇', icon: 'none' });
+      return;
+    }
+    wx.setStorageSync('bc_review_mode', 1);
     wx.switchTab({
       url: '/pages/words/words'
     });
@@ -184,45 +193,10 @@ Page({
     });
   },
 
-  // 跳转名言填空
-  goFillBlank() {
-    wx.navigateTo({
-      url: '/pages/fillblank/fillblank'
-    });
-  },
-
-  // 跳转拼词练习
-  goSpelling() {
-    wx.navigateTo({
-      url: '/pages/spelling/spelling'
-    });
-  },
-
-  // 跳转挑战模式
-  goChallenge() {
-    wx.navigateTo({
-      url: '/pages/challenge/challenge'
-    });
-  },
-
-  // 跳转学习排行榜
-  goLeaderboard() {
-    wx.navigateTo({
-      url: '/pages/leaderboard/leaderboard'
-    });
-  },
-
   // 跳转词根星系
   goGalaxy() {
     wx.navigateTo({
       url: '/pages/galaxy/galaxy'
-    });
-  },
-
-  // 跳转情景剧本
-  goScene() {
-    wx.navigateTo({
-      url: '/pages/scene/scene'
     });
   },
 
@@ -233,10 +207,32 @@ Page({
     });
   },
 
-  // 跳转双语阅读
-  goStory() {
+  // 更多玩法已撤销（2026-08-31 收敛后仅剩 2 项，直接放出到首页宫格）
+  // 跳转生词本
+  goWrongBook() {
     wx.navigateTo({
-      url: '/pages/story/story'
+      url: '/pages/wrongbook/wrongbook'
+    });
+  },
+
+  // 跳转词汇量测试
+  goVocabTest() {
+    wx.navigateTo({
+      url: '/pages/vocabtest/vocabtest'
+    });
+  },
+
+  // 跳转教材同步专区（直达词书页的教材 Tab）
+  goTextbook() {
+    wx.navigateTo({
+      url: '/pages/booklist/booklist?tab=textbook'
+    });
+  },
+
+  // 跳转金句集（更多金句）
+  goQuotes() {
+    wx.navigateTo({
+      url: '/pages/quotes/quotes'
     });
   },
 
@@ -247,5 +243,20 @@ Page({
       quote: q,
       quoteWords: q.words
     });
-  }
+  },
+
+  // 转发给好友
+  onShareAppMessage() {
+    return {
+      title: '英语补词达人 · 与课本同步的背单词神器',
+      path: '/pages/index/index'
+    };
+  },
+
+  // 分享到朋友圈（单页模式）
+  onShareTimeline() {
+    return {
+      title: '英语补词达人 · 与课本同步的背单词神器'
+    };
+  },
 });

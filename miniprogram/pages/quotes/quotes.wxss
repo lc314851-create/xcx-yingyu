@@ -1,0 +1,197 @@
+/* pages/quotes/quotes.wxss - 金句集 · 手账归档页 */
+.container {
+  padding: 30rpx 28rpx 80rpx;
+  min-height: 100vh;
+}
+
+.page-head {
+  padding: 10rpx 6rpx 26rpx;
+}
+
+.page-head-title {
+  font-family: Georgia, 'Times New Roman', 'Songti SC', serif;
+  font-size: 44rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 4rpx;
+}
+
+.page-head-sub {
+  font-size: 23rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+
+/* 金句卡片 */
+.quote-arch {
+  position: relative;
+  background: var(--bg-card);
+  border: 2rpx solid var(--border-default);
+  border-radius: 18rpx;
+  padding: 26rpx 28rpx 22rpx;
+  margin-bottom: 20rpx;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s var(--ease-out);
+}
+
+.quote-arch:active {
+  transform: scale(0.98);
+}
+
+.qa-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.qa-today {
+  background: var(--color-warning);
+  color: #5C4A12;
+  font-size: 19rpx;
+  font-weight: 800;
+  border-radius: 999rpx;
+  padding: 4rpx 16rpx;
+}
+
+.qa-ops {
+  display: flex;
+  gap: 10rpx;
+}
+
+.qa-op {
+  font-size: 21rpx;
+  color: var(--text-tertiary);
+  border: 2rpx solid var(--border-default);
+  border-radius: 999rpx;
+  padding: 4rpx 18rpx;
+  font-weight: 600;
+}
+
+.qa-op-primary {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+/* ─── 金句海报弹层 ─── */
+.poster-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(88, 70, 42, 0.5);
+  z-index: 100;
+}
+
+.poster-panel {
+  position: fixed;
+  left: 40rpx;
+  right: 40rpx;
+  top: 15%;
+  background: var(--bg-card);
+  border-radius: 24rpx;
+  padding: 30rpx;
+  z-index: 101;
+  box-shadow: 0 12rpx 40rpx rgba(88, 70, 42, 0.3);
+}
+
+.poster-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.poster-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.poster-close {
+  font-size: 34rpx;
+  color: var(--text-tertiary);
+  padding: 6rpx 12rpx;
+}
+
+.poster-img {
+  width: 100%;
+  border-radius: 14rpx;
+  display: block;
+}
+
+.poster-loading {
+  height: 440rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 25rpx;
+  background: var(--bg-muted);
+  border-radius: 14rpx;
+}
+
+.poster-actions {
+  display: flex;
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
+
+.poster-btn {
+  flex: 1;
+  font-size: 27rpx;
+  padding: 18rpx 0;
+}
+
+.poster-tip {
+  text-align: center;
+  font-size: 21rpx;
+  color: var(--text-quaternary);
+  margin-top: 16rpx;
+}
+
+.qa-en {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.qa-zh {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  margin-top: 12rpx;
+  line-height: 1.55;
+}
+
+.qa-author {
+  font-size: 21rpx;
+  color: var(--text-tertiary);
+  margin-top: 10rpx;
+}
+
+.qa-words {
+  margin-top: 14rpx;
+  border-top: 1rpx dashed var(--border-strong);
+  padding-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.qa-word-item {
+  font-size: 20rpx;
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  border-radius: 999rpx;
+  padding: 4rpx 14rpx;
+}
+
+.footnote {
+  font-size: 21rpx;
+  color: var(--text-quaternary);
+  text-align: center;
+  padding-top: 10rpx;
+}

@@ -89,7 +89,7 @@ Page({
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('拾词手账', w / 2, 55);
+    ctx.fillText('英语补词达人', w / 2, 55);
 
     ctx.font = '13px sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
@@ -153,7 +153,7 @@ Page({
     const ringR = 28;
     ctx.beginPath();
     ctx.arc(ringX, ringY, ringR, 0, Math.PI * 2);
-    ctx.strokeStyle = '#E3E9F2';
+    ctx.strokeStyle = '#EBE4D3';
     ctx.lineWidth = 6;
     ctx.stroke();
 
@@ -174,7 +174,7 @@ Page({
     ctx.fillStyle = '#B0B6C0';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('拾词手账 · 免费英语学习工具', w / 2, h - 18);
+    ctx.fillText('英语补词达人 · 免费英语学习工具', w / 2, h - 18);
 
     // ── 导出图片 ──
     wx.canvasToTempFilePath({
@@ -244,5 +244,20 @@ Page({
 
   onBack() {
     wx.navigateBack();
-  }
+  },
+
+  // 转发给好友
+  onShareAppMessage() {
+    return {
+      title: '英语补词达人 · 生词海报',
+      path: '/pages/poster/poster'
+    };
+  },
+
+  // 分享到朋友圈（单页模式）
+  onShareTimeline() {
+    return {
+      title: '英语补词达人 · 生词海报'
+    };
+  },
 });

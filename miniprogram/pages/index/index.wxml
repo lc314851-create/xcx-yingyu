@@ -49,46 +49,75 @@
       </view>
     </view>
     <view class="book-right">
-      <view class="book-due" wx:if="{{dueCount > 0}}">{{dueCount}} 待复习</view>
+      <view class="book-due" wx:if="{{dueCount > 0}}" catchtap="goReview">{{dueCount}} 待复习 ›</view>
       <view class="book-arrow">›</view>
     </view>
   </view>
 
-  <!-- 操作入口 -->
+  <!-- 今日复习计划（SM-2 到期聚合，首页主角卡） -->
+  <view class="card plan-card" wx:if="{{showPlanCard}}" bindtap="onPlanTap">
+    <view class="plan-head">
+      <view class="plan-tag stamp">今日复习计划</view>
+      <view class="plan-more" catchtap="goPlan">查看全部 ›</view>
+    </view>
+    <view class="plan-main" wx:if="{{planDueToday > 0}}">
+      <view class="plan-big">
+        <text class="plan-num serif">{{planDueToday}}</text>
+        <text class="plan-big-text">个词到期待复习</text>
+      </view>
+      <view class="plan-sub">按你的记忆曲线排期，今天背完遗忘率最低</view>
+    </view>
+    <view class="plan-main plan-main-ok" wx:else>
+      <view class="plan-big plan-big-ok">今天没有到期词</view>
+      <view class="plan-sub">间隔记忆的精髓是「到点再背」，去学点新词吧</view>
+    </view>
+    <view class="plan-forecast">
+      <view class="plan-f-item" wx:for="{{planForecast}}" wx:key="label">
+        <view class="plan-f-count serif">{{item.count}}</view>
+        <view class="plan-f-label">{{item.label}}</view>
+      </view>
+    </view>
+    <view class="btn-primary plan-go" wx:if="{{planDueToday > 0}}" catchtap="goReview">开始今日复习</view>
+    <view class="btn-secondary plan-go" wx:else catchtap="goWords">去学新词</view>
+  </view>
+
+  <!-- 操作区：招牌玩法（大字卡）+ 学习工具（小格） -->
   <view class="actions">
-    <view class="btn-primary action-btn" bindtap="goWords">开始学习</view>
-    <view class="actions-grid">
-      <view class="action-tile" bindtap="goChallenge">
-        <view class="action-tile-icon action-tile-icon-challenge"></view>
-        <view class="action-tile-label">挑战模式</view>
+    <view class="feature-row">
+      <view class="feature-card" bindtap="goGalaxy">
+        <view class="feature-flag">招牌</view>
+        <view class="feature-icon feature-icon-galaxy"></view>
+        <view class="feature-body">
+          <view class="feature-name">词根星系</view>
+          <view class="feature-desc">一次记住一串词</view>
+        </view>
       </view>
-      <view class="action-tile" bindtap="goFillBlank">
-        <view class="action-tile-icon action-tile-icon-fillblank"></view>
-        <view class="action-tile-label">名言填空</view>
+      <view class="feature-card" bindtap="goMemory">
+        <view class="feature-flag">招牌</view>
+        <view class="feature-icon feature-icon-memory"></view>
+        <view class="feature-body">
+          <view class="feature-name">记忆体检</view>
+          <view class="feature-desc">算准复习日不忘词</view>
+        </view>
       </view>
-      <view class="action-tile" bindtap="goSpelling">
-        <view class="action-tile-icon action-tile-icon-spelling"></view>
-        <view class="action-tile-label">拼词练习</view>
+    </view>
+
+    <view class="tool-row">
+      <view class="tool-item" bindtap="goWrongBook">
+        <view class="tool-icon tool-icon-wrongbook"></view>
+        <view class="tool-name">生词本</view>
       </view>
-      <view class="action-tile" bindtap="goLeaderboard">
-        <view class="action-tile-icon action-tile-icon-leaderboard"></view>
-        <view class="action-tile-label">学习排行</view>
+      <view class="tool-item" bindtap="goVocabTest">
+        <view class="tool-icon tool-icon-vocab"></view>
+        <view class="tool-name">词汇量测试</view>
       </view>
-      <view class="action-tile" bindtap="goGalaxy">
-        <view class="action-tile-icon action-tile-icon-galaxy"></view>
-        <view class="action-tile-label">词根星系</view>
+      <view class="tool-item" bindtap="goSearch">
+        <view class="tool-icon tool-icon-search"></view>
+        <view class="tool-name">搜单词</view>
       </view>
-      <view class="action-tile" bindtap="goScene">
-        <view class="action-tile-icon action-tile-icon-scene"></view>
-        <view class="action-tile-label">情景剧本</view>
-      </view>
-      <view class="action-tile" bindtap="goMemory">
-        <view class="action-tile-icon action-tile-icon-memory"></view>
-        <view class="action-tile-label">记忆体检</view>
-      </view>
-      <view class="action-tile" bindtap="goStory">
-        <view class="action-tile-icon action-tile-icon-story"></view>
-        <view class="action-tile-label">双语阅读</view>
+      <view class="tool-item" bindtap="goTextbook">
+        <view class="tool-icon tool-icon-textbook"></view>
+        <view class="tool-name">教材同步</view>
       </view>
     </view>
   </view>
@@ -97,7 +126,7 @@
   <view class="card quote-card" wx:if="{{quote}}">
     <view class="quote-tag-row">
       <view class="quote-tag">每日金句</view>
-      <view class="quote-fill-btn" bindtap="goFillBlank">名言填空 ›</view>
+      <view class="quote-more" bindtap="goQuotes">更多金句 ›</view>
     </view>
     <view class="quote-en">{{quote.en}}</view>
     <view class="quote-zh">{{quote.zh}}</view>
@@ -114,34 +143,7 @@
   <view class="card tip-card">
     <view class="tip-section">
       <view class="tip-title">记忆方法</view>
-      <view class="tip-text">每个单词会经过 5 级间隔记忆：答对 1 次后 1 天复习，再答对后 2 天、4 天、7 天后复习，连续答对 4 次即标记为「已掌握」。答错则重置重来。坚持复习，才能真正记住。</view>
+      <view class="tip-text">每个单词按你的记忆节奏自动排期：答对 1 次后 1 天复习，再答对后 2 天、4 天、7 天，之后每次复习的间隔会根据你的掌握情况逐步拉长；连续答对 4 次即标记为「已掌握」，答错则从头再来。坚持复习，才能真正记住。</view>
     </view>
-    <view class="tip-divider"></view>
-    <view class="tip-section">
-      <view class="tip-title">本周进度</view>
-      <view class="tip-text">本周已学 {{weeklyLearned}} 个单词，累计学习 {{totalWords}} 个，坚持就是胜利！</view>
-    </view>
-  </view>
-
-  <!-- 自定义词书选择弹窗 -->
-  <view class="picker-mask" wx:if="{{showBookPicker}}" bindtap="closeBookPicker"></view>
-  <view class="picker-panel" wx:if="{{showBookPicker}}">
-    <view class="picker-header">
-      <view class="picker-title">选择词书</view>
-      <view class="picker-close" bindtap="closeBookPicker">✕</view>
-    </view>
-    <scroll-view scroll-y class="picker-list">
-      <view 
-        class="picker-item {{currentBookId === item.id ? 'active' : ''}}" 
-        wx:for="{{pickerBooks}}" 
-        wx:key="id" 
-        data-id="{{item.id}}" 
-        data-name="{{item.name}}" 
-        bindtap="onSelectBook"
-      >
-        <view class="picker-item-name">{{item.name}}</view>
-        <view class="picker-item-check" wx:if="{{currentBookId === item.id}}">✓</view>
-      </view>
-    </scroll-view>
   </view>
 </view>

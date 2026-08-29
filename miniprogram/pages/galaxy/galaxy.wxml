@@ -6,8 +6,8 @@
     <view class="page-head-sub">点击任意单词，沿着词族漫游</view>
   </view>
 
-  <!-- 加载中 -->
-  <view class="loading-state" wx:if="{{loading}}">
+  <!-- 首次加载（页面无内容）：大块加载态 -->
+  <view class="loading-state" wx:if="{{loading && !word}}">
     <view class="loading-dots">
       <view class="loading-dot"></view>
       <view class="loading-dot"></view>
@@ -16,13 +16,19 @@
     <view class="loading-text">正在集结词族...</view>
   </view>
 
+  <!-- 漫游加载：薄加载条，保留旧星空，页面不跳动 -->
+  <view class="loading-bar" wx:if="{{loading && word}}">
+    <view class="loading-bar-dot"></view>
+    <text class="loading-bar-text">正在集结词族…</text>
+  </view>
+
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && !hasResult}}">
     <view class="empty-text">这本词书还没有可探索的词族</view>
     <view class="empty-sub">切换词书后再来试试</view>
   </view>
 
-  <block wx:if="{{!loading && hasResult}}">
+  <block wx:if="{{(!loading || word) && hasResult}}">
     <!-- 星系轨道区 -->
     <view class="orbit-scene">
       <!-- 轨道虚线 -->
@@ -37,6 +43,7 @@
           <text class="center-root-tag">{{root}}</text>
           <text class="center-root-gloss" wx:if="{{rootGloss}}">· {{rootGloss}}</text>
         </view>
+        <view class="center-source" wx:if="{{!inMainBook}}">跨册词 · 来自词根网络的扩展词</view>
       </view>
 
       <!-- 环绕词节点 -->

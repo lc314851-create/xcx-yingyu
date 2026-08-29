@@ -7,7 +7,7 @@
     <view class="section">
       <view class="section-title">一、引言</view>
       <view class="section-text">
-        「拾词手账」（以下简称"本小程序"）是一款免费的英语学习工具，致力于帮助用户背单词和记录学习进度。我们非常重视您的隐私保护。本声明旨在向您说明我们如何收集、使用和保护您的信息。
+        「英语补词达人」（以下简称"本小程序"）是一款免费的英语学习工具，致力于帮助用户背单词和记录学习进度。我们非常重视您的隐私保护。本声明旨在向您说明我们如何收集、使用和保护您的信息。
       </view>
     </view>
 
@@ -15,7 +15,7 @@
       <view class="section-title">二、我们收集的信息</view>
       <view class="section-text">为了提供基本服务，我们可能收集以下信息：</view>
       <view class="list-item">1. 微信授权信息：用于识别用户身份（openid），以便保存和同步您的学习进度。我们不获取您的微信号、密码等敏感信息。</view>
-      <view class="list-item">2. 学习数据：您在背单词、打卡、名言填空练习过程中产生的学习记录（如已学单词数、连续打卡天数、生词本等）。</view>
+      <view class="list-item">2. 学习数据：您在背单词、打卡、词汇量测试等过程中产生的学习记录（如已学单词数、连续打卡天数、生词本等）。</view>
       <view class="list-item">3. 相册写入权限：仅在您主动使用「打卡海报」功能并选择保存时，用于将生成的海报图片保存到您的手机相册。</view>
       <view class="list-item">4. 订阅消息授权：仅在您主动开启「学习提醒」时，用于发送学习提醒通知。您可以随时取消订阅。</view>
       <view class="list-item">5. 设备信息：为保证服务正常运行，微信平台会提供必要的设备环境信息。</view>
@@ -24,7 +24,7 @@
     <view class="section">
       <view class="section-title">三、信息的使用</view>
       <view class="section-text">我们收集的信息仅用于以下目的：</view>
-      <view class="list-item">• 提供背单词、名言填空、学习进度统计和打卡功能；</view>
+      <view class="list-item">• 提供背单词、词汇量测试、学习进度统计和打卡功能；</view>
       <view class="list-item">• 保存和恢复您的学习记录（含生词本），使您更换设备后仍可继续学习；</view>
       <view class="list-item">• 生成打卡海报并保存到您的相册（仅在您主动操作时）；</view>
       <view class="list-item">• 发送学习提醒订阅消息（仅在您授权后）；</view>

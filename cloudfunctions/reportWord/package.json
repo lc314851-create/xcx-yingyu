@@ -1,0 +1,9 @@
+{
+  "name": "reportWord",
+  "version": "1.0.0",
+  "description": "词条纠错上报云函数：写入 wordReports 并累计共建次数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

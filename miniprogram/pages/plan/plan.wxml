@@ -1,0 +1,78 @@
+<!-- pages/plan/plan.wxml -->
+<view class="container" wx:if="{{plan}}">
+  <!-- 概览 -->
+  <view class="hero card-taped">
+    <view class="hero-title">今日复习计划</view>
+    <view class="hero-book">{{bookName}}</view>
+    <view class="hero-stats">
+      <view class="hero-stat">
+        <view class="hero-num accent">{{plan.dueToday}}</view>
+        <view class="hero-label">今日待复习</view>
+      </view>
+      <view class="hero-divider"></view>
+      <view class="hero-stat">
+        <view class="hero-num">{{plan.totalLearned}}</view>
+        <view class="hero-label">学习中</view>
+      </view>
+      <view class="hero-divider"></view>
+      <view class="hero-stat">
+        <view class="hero-num good">{{plan.masteredCount}}</view>
+        <view class="hero-label">已掌握</view>
+      </view>
+    </view>
+    <view class="hero-tip" wx:if="{{plan.dueToday > 0}}">
+      这些词是按记忆曲线算出来的——今天不复习，明天忘掉的概率最大
+    </view>
+    <view class="hero-tip" wx:else>今天没有到期词。间隔记忆的精髓是「到点再背」，去学点新词吧</view>
+  </view>
+
+  <!-- 记忆盒子分布 -->
+  <view class="section">
+    <view class="section-title">你的记忆盒子</view>
+    <view class="section-sub">答对升一盒、间隔变长；答错退回第1盒。爬到第5盒以上就是长期记忆</view>
+    <view class="box-row" wx:for="{{plan.boxDist}}" wx:key="box" wx:for-item="b">
+      <view class="box-label {{b.mastered ? 'mastered' : ''}}">{{b.label}}</view>
+      <view class="box-bar-wrap">
+        <view class="box-bar {{b.mastered ? 'mastered' : ''}}" style="width: {{b.count / maxBoxCount * 100}}%"></view>
+        <text class="box-count" wx:if="{{b.count > 0}}">{{b.count}}</text>
+      </view>
+      <view class="box-interval">{{b.intervalDesc}}</view>
+    </view>
+  </view>
+
+  <!-- 今日到期词 -->
+  <view class="section" wx:if="{{duePreview.length > 0}}">
+    <view class="section-header">
+      <view class="section-title">今天该复习的词</view>
+      <view class="section-more" bindtap="startReview">开始复习 →</view>
+    </view>
+    <view class="word-card" wx:for="{{duePreview}}" wx:key="word" wx:for-item="w">
+      <view class="word-top">
+        <text class="word-text">{{w.word}}</text>
+        <text class="word-phonetic">{{w.phonetic}}</text>
+      </view>
+      <view class="word-meaning">{{w.meaning}}</view>
+      <view class="word-reason">{{w.reason}}</view>
+    </view>
+    <view class="more-hint" wx:if="{{plan.dueToday > duePreview.length}}">还有 {{plan.dueToday - duePreview.length}} 个，点「开始复习」继续</view>
+  </view>
+
+  <!-- 未来7天预测 -->
+  <view class="section">
+    <view class="section-title">未来7天预计到期</view>
+    <view class="forecast-row">
+      <view class="forecast-col" wx:for="{{plan.forecast}}" wx:key="label" wx:for-item="f">
+        <view class="forecast-count">{{f.count > 0 ? f.count : ''}}</view>
+        <view class="forecast-bar-wrap">
+          <view class="forecast-bar" style="height: {{f.count / maxForecast * 64}}rpx"></view>
+        </view>
+        <view class="forecast-label">{{f.label}}</view>
+      </view>
+    </view>
+    <view class="section-sub center">按你每个词当前所在的记忆盒子推算</view>
+  </view>
+
+  <!-- 底部操作 -->
+  <view class="action-btn" bindtap="startReview">开始今日复习（{{plan.dueToday}} 个）</view>
+  <view class="secondary-link" bindtap="goWordList">先学新词</view>
+</view>

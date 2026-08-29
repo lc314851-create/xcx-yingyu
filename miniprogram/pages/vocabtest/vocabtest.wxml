@@ -1,0 +1,114 @@
+<!-- pages/vocabtest/vocabtest.wxml -->
+<view class="page">
+
+  <!-- ═══ 介绍页 ═══ -->
+  <block wx:if="{{phase == 'intro'}}">
+    <view class="intro-head">
+      <view class="stamp intro-stamp">免费 · 约3分钟</view>
+      <view class="intro-title serif">你的词汇量有多大？</view>
+      <view class="intro-sub">分层抽样 · 科学估算 · 按结果推荐词书</view>
+    </view>
+
+    <view class="card card-taped intro-card">
+      <view class="intro-row">
+        <view class="intro-dot"></view>
+        <text class="intro-row-text">共 {{total}} 题：初中 / 高中 / 四级 / 六级 / 考研 各 6 题</text>
+      </view>
+      <view class="intro-row">
+        <view class="intro-dot"></view>
+        <text class="intro-row-text">看到单词选释义，不会就凭感觉选，别查词典</text>
+      </view>
+      <view class="intro-row">
+        <view class="intro-dot"></view>
+        <text class="intro-row-text">测完自动估算词汇量，并推荐最适合你的词书</text>
+      </view>
+    </view>
+
+    <view class="btn-primary start-btn" bindtap="startTest">开始测试</view>
+    <view class="intro-note">答案没有对错，只有你的词汇边界</view>
+  </block>
+
+  <!-- ═══ 答题页 ═══ -->
+  <block wx:if="{{phase == 'quiz'}}">
+    <view class="quiz-top">
+      <view class="quiz-progress-row">
+        <view class="quiz-progress-text serif">{{index + 1}} / {{total}}</view>
+        <view class="quiz-level-tag">{{bandLabel}}</view>
+      </view>
+      <view class="quiz-progress-bar">
+        <view class="quiz-progress-fill" style="width: {{(index + 1) * 100 / total}}%"></view>
+      </view>
+    </view>
+
+    <view class="card quiz-word-card lined-paper">
+      <view class="quiz-word serif">{{word}}</view>
+      <view class="quiz-phonetic">{{phonetic}}</view>
+      <view class="quiz-audio" bindtap="onPlayAudio">🔊 听发音</view>
+    </view>
+
+    <view class="quiz-options">
+      <view
+        class="quiz-option {{selected == oi ? (isCorrect ? 'right' : 'wrong') : ''}} {{answered && oi == correctIdx ? 'reveal' : ''}}"
+        wx:for="{{options}}"
+        wx:key="*this"
+        wx:for-index="oi"
+        data-idx="{{oi}}"
+        bindtap="onPick"
+      >
+        <view class="quiz-option-letter serif">{{['A','B','C','D'][oi]}}</view>
+        <view class="quiz-option-text">{{item}}</view>
+        <view class="quiz-option-mark" wx:if="{{selected == oi && isCorrect}}">✓</view>
+        <view class="quiz-option-mark" wx:if="{{selected == oi && !isCorrect}}">✗</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ═══ 结果页 ═══ -->
+  <block wx:if="{{phase == 'result'}}">
+    <view class="card card-taped result-score">
+      <view class="result-score-label">估算词汇量</view>
+      <view class="result-score-num serif">{{estimate}}</view>
+      <view class="result-score-sub">用时 {{usedSeconds}} 秒 · 正确率 {{accuracy}}% · 30 题分层抽样</view>
+    </view>
+
+    <view class="card result-recommend">
+      <view class="result-recommend-head">
+        <view class="stamp">推荐</view>
+        <view class="result-recommend-title">建议从「{{recommendName}}」词书开始背</view>
+      </view>
+      <view class="result-recommend-sub">按你的实测边界推荐起点，先补最该补的词</view>
+      <view class="btn-primary result-go-btn" bindtap="goRecommendedBook">切换词书去背单词</view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">各层掌握度</view>
+      <view class="band-row" wx:for="{{bandRates}}" wx:key="label">
+        <view class="band-label">{{item.label}}</view>
+        <view class="band-bar-wrap">
+          <view
+            class="band-bar"
+            style="width: {{item.rate}}%; background: {{item.rate >= 80 ? '#3E8E5E' : (item.rate >= 50 ? '#C98F2C' : '#B84A3E')}};"
+          ></view>
+        </view>
+        <view class="band-rate serif">{{item.rate}}%</view>
+      </view>
+      <view class="band-tip">掌握度 = 该层抽样答对率（按难度平滑），跌破 80% 即进入你的词汇边界区</view>
+    </view>
+
+    <view class="card" wx:if="{{wrongWords.length}}">
+      <view class="section-title">测试中不太熟的词</view>
+      <view class="wrong-row" wx:for="{{wrongWords}}" wx:key="word">
+        <view class="wrong-word serif">{{item.word}}</view>
+        <view class="wrong-meaning">{{item.meaning}}</view>
+      </view>
+      <view class="btn-secondary wrong-add-btn" wx:if="{{!wrongAdded}}" bindtap="addWrongToBook">把 {{wrongWords.length}} 个词加入生词本</view>
+      <view class="wrong-done" wx:else>已全部加入生词本 ✓</view>
+    </view>
+
+    <view class="result-actions">
+      <view class="btn-primary" bindtap="retest">再测一次</view>
+      <view class="btn-secondary" bindtap="goRecommendedBook">去背单词</view>
+    </view>
+    <view class="result-share-hint">点击右上角「…」分享给好友，比拼词汇量</view>
+  </block>
+</view>

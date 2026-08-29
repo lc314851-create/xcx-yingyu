@@ -2,7 +2,6 @@
 import { WordItem } from '../../data/types';
 import {
   getCurrentBookId,
-  setCurrentBookId,
   getAllProgress,
   recordWordProgress,
   recordStudy,
@@ -12,33 +11,26 @@ import {
   hasSelectedBook,
   getStudyMode,
   setStudyMode,
+  getBatchSize,
+  setBatchSize,
   getPracticeMode,
   setPracticeMode,
   getAccent,
   setAccent,
-  addToWrongBook,
-  isReminderSubscribed,
-  requestReminderSubscribe
+  addToWrongBook
 } from '../../utils/store';
 import type { PracticeMode, Accent } from '../../utils/store';
-import { getBookById, clearWordCache } from '../../utils/wordService';
+import { getBookById } from '../../utils/wordService';
 import { wordBooks as localBooks } from '../../data/index';
-import { playAudio } from '../../utils/audio';
+import { playAudio, preloadAudio } from '../../utils/audio';
+import { reportWord, isWordReported, ReportType } from '../../utils/wordReport';
 
-// 每轮学习单词数量
-const BATCH_SIZE = 10;
+// 复习模式一次性入口标志（首页“待复习”点击时写入，words 页 onShow 消费）
+const REVIEW_MODE_KEY = 'bc_review_mode';
 
-// 词书元数据（本地兜底）
-const FALLBACK_BOOKS = [
-  { id: 'junior', name: '初中词汇' },
-  { id: 'senior', name: '高中词汇' },
-  { id: 'cet4', name: '四级词汇' },
-  { id: 'cet6', name: '六级词汇' },
-  { id: 'postgrad', name: '考研词汇' },
-  { id: 'ielts', name: '雅思词汇' },
-  { id: 'toefl', name: '托福词汇' },
-  { id: 'gre', name: 'GRE词汇' }
-];
+// 记忆体检高危词一轮式入口标志（memory 页「立即复习这些词」写入，words 页 onShow 消费）
+// 值：{ bookId: string, words: string[] }，与本词书匹配才生效
+const MEMORY_WORDS_KEY = 'bc_memory_words';
 
 // 四选一选项接口
 interface ChoiceOption {
@@ -71,12 +63,12 @@ Page({
     loading: true,
     // 学习模式（高频词/完整）
     studyMode: 'all' as 'highFreq' | 'all',
+    // 每轮学习单词数（顶部按钮可调）
+    batchSize: 10,
     // 高频词数量
     highFreqCount: 0,
-    // 词书选择弹窗
-    showBookPicker: false,
-    pickerBooks: FALLBACK_BOOKS,
     currentBookId: 'junior',
+    // reminderSubscribed: false, // 学习提醒已下线（2026-08-31）
     // ─── 阶段一新增 ───
     // 练习模式：卡片翻面 / 四选一 / 拼写
     practiceMode: 'card' as PracticeMode,
@@ -99,14 +91,45 @@ Page({
     // 翻面动画状态
     isFlipped: false,
     // 上一题对错（用于结果页判断是否记录）
-    _wordBookWords: [] as WordItem[]
+    _wordBookWords: [] as WordItem[],
+    // ─── 纠错上报 ───
+    showReport: false,
+    reportType: '' as ReportType | '',
+    reportDesc: '',
+    reportedMap: {} as Record<string, boolean> // 已上报词（word → true）
   },
 
-  onLoad() {
-    this.initBatch();
-  },
+  onLoad() {},
 
   onShow() {
+    // 从分享海报页返回：保留当前一轮结果，不重新加载新的一轮
+    if (this._skipInitOnShow) {
+      this._skipInitOnShow = false;
+      if (this._restoreResultOnShow) {
+        this.setData({ showResult: true });
+      }
+      this._restoreResultOnShow = false;
+      return;
+    }
+    // 消费首页“待复习”入口标志：本轮仅复习到期待复习词（一次性）
+    if (wx.getStorageSync(REVIEW_MODE_KEY) === 1) {
+      wx.removeStorageSync(REVIEW_MODE_KEY);
+      this._reviewMode = true;
+    } else {
+      this._reviewMode = false;
+    }
+    // 消费记忆体检入口标志：本轮只复习体检清单里的高危词（一次性，跨词书丢弃）
+    const memFlag = wx.getStorageSync(MEMORY_WORDS_KEY) as { bookId: string; words: string[] } | '';
+    wx.removeStorageSync(MEMORY_WORDS_KEY);
+    if (
+      memFlag && typeof memFlag === 'object' &&
+      memFlag.bookId === getCurrentBookId() &&
+      Array.isArray(memFlag.words) && memFlag.words.length > 0
+    ) {
+      this._memoryWords = memFlag.words;
+    } else {
+      this._memoryWords = null;
+    }
     // 首次使用：跳转词书选择页
     if (!hasSelectedBook()) {
       wx.navigateTo({ url: '/pages/booklist/booklist' });
@@ -116,6 +139,7 @@ Page({
       currentBookId: getCurrentBookId(),
       practiceMode: getPracticeMode(),
       accent: getAccent()
+      // reminderSubscribed: isReminderSubscribed() // 学习提醒已下线（2026-08-31）
     });
     this.initBatch();
   },
@@ -129,7 +153,8 @@ Page({
     const studyMode = getStudyMode();
     const practiceMode = getPracticeMode();
     const accent = getAccent();
-    this.setData({ loading: true, studyMode, practiceMode, accent });
+    const batchSize = getBatchSize();
+    this.setData({ loading: true, studyMode, practiceMode, accent, batchSize });
 
     let book;
     try {
@@ -180,8 +205,23 @@ Page({
       }
     }
 
-    // 合并队列：优先复习，再学新词
-    const queue = [...dueWords, ...newWords].slice(0, BATCH_SIZE);
+    // 考频排序：新词按 ECDICT 词频降序（常见词先学），优先学会考试里出现最多的词
+    newWords.sort((a, b) => (b.frequency || 0) - (a.frequency || 0));
+
+    // 合并队列：默认优先复习，再学新词；复习模式下仅复习到期待复习词
+    let queue;
+    if (this._reviewMode) {
+      if (dueWords.length === 0) {
+        // 没有到期待复习词：切回常规学习，避免空轮
+        this._reviewMode = false;
+        wx.showToast({ title: '已全部复习完，切回常规学习', icon: 'none' });
+        queue = [...dueWords, ...newWords].slice(0, batchSize);
+      } else {
+        queue = dueWords.slice(0, batchSize);
+      }
+    } else {
+      queue = [...dueWords, ...newWords].slice(0, batchSize);
+    }
 
     // 如果队列为空（没有待复习也没有新词），取已掌握的词复习
     let finalQueue = queue;
@@ -190,13 +230,51 @@ Page({
         const p = allProgress[w.word];
         return p && p.status === 'mastered';
       });
-      finalQueue = masteredWords.slice(0, BATCH_SIZE);
+      finalQueue = masteredWords.slice(0, batchSize);
+    }
+
+    // ─── 记忆体检高危词轮次：覆盖队列为体检清单（保持体检里的危险顺序，最危险在前） ───
+    // 用全量词表匹配（不走 studyMode 高频过滤，否则清单词可能全军覆没而静默回退成常规轮次）
+    let memActive = false;
+    if (this._memoryWords && (this._memoryWords as string[]).length > 0) {
+      const memLen = (this._memoryWords as string[]).length;
+      const memSet = new Set<string>();
+      for (const w of this._memoryWords as string[]) memSet.add(w.toLowerCase());
+      const matched = book.words.filter(w => memSet.has(w.word.toLowerCase()));
+      if (matched.length > 0) {
+        finalQueue = (this._memoryWords as string[])
+          .map((w: string) => matched.find((m: WordItem) => m.word.toLowerCase() === w.toLowerCase()))
+          .filter((x: WordItem | undefined): x is WordItem => !!x);
+        memActive = true;
+        if (finalQueue.length < memLen) {
+          // 清单里有词不在当前词表（如词库更新过）：如实提示，缺失的不补别的词
+          wx.showToast({ title: `清单中 ${memLen - finalQueue.length} 个词不在词书，已跳过`, icon: 'none' });
+        }
+      } else {
+        // 全部匹配不上（极少见）：不静默回退，明确告知
+        wx.showToast({ title: '高危词不在当前词书，已回退常规学习', icon: 'none' });
+      }
+      this._memoryWords = null; // 一次性，用后即弃
+    }
+
+    // 记录本轮哪些是首次学习的新词（复习/巩固不计入“累计单词”）
+    this._newWordSet = new Set<string>();
+    for (const w of finalQueue) {
+      if (newWords.indexOf(w) > -1) this._newWordSet.add(w.word.toLowerCase());
+    }
+
+    // 已上报词标记（卡片背面显示「已上报」）
+    const reportedMap: Record<string, boolean> = {};
+    for (const w of finalQueue) {
+      if (isWordReported(w.word)) reportedMap[w.word] = true;
     }
 
     const progressStats = getBookProgressStats(bookId);
 
     let statusLabel = '新词';
-    if (dueWords.length > 0 && queue.length > 0) {
+    if (memActive) {
+      statusLabel = '高危词';
+    } else if (dueWords.length > 0 && queue.length > 0) {
       statusLabel = '复习';
     } else if (finalQueue.length > 0 && queue.length === 0) {
       statusLabel = '巩固';
@@ -217,12 +295,13 @@ Page({
       dueCount: progressStats.dueCount,
       masteredCount: progressStats.masteredCount,
       statusLabel,
-      hasMore: finalQueue.length >= BATCH_SIZE,
+      hasMore: finalQueue.length >= batchSize,
       loading: false,
       showResult: false,
       spellInput: '',
       spellFeedback: 'none',
-      choiceSelected: -1
+      choiceSelected: -1,
+      reportedMap
     }, () => {
       // 如果是四选一模式，生成第一题的选项
       if (finalQueue.length > 0 && practiceMode === 'choice') {
@@ -232,39 +311,18 @@ Page({
       if (finalQueue.length > 0 && practiceMode === 'card') {
         playAudio(finalQueue[0].word, accent);
       }
+      // 预加载第二个词，翻页时秒出声
+      if (finalQueue.length > 1) {
+        preloadAudio(finalQueue[1].word, accent);
+      }
     });
   },
 
-  // 弹出词书选择弹窗
-  showBookPicker() {
-    this.setData({
-      showBookPicker: true,
-      pickerBooks: FALLBACK_BOOKS,
-      currentBookId: getCurrentBookId()
-    });
-  },
 
-  // 关闭词书选择弹窗
-  closeBookPicker() {
-    this.setData({ showBookPicker: false });
-  },
 
-  // 选择词书
-  onSelectBook(e: any) {
-    const id = e.currentTarget.dataset.id as string;
-    const name = e.currentTarget.dataset.name as string;
-    setCurrentBookId(id);
-    clearWordCache();
-    this.setData({ showBookPicker: false, currentBookId: id, bookName: name });
-    this.initBatch();
-    wx.showToast({ title: `已切换到${name}`, icon: 'success' });
-  },
-
-  // 切换词书（跳转到词书选择页）
+  // 切换词书：进入词书选择页（推荐卡 + 考试/教材分组列表）
   changeBook() {
-    wx.navigateTo({
-      url: '/pages/booklist/booklist'
-    });
+    wx.navigateTo({ url: '/pages/booklist/booklist' });
   },
 
   // ─── 卡片翻面模式 ───
@@ -277,16 +335,58 @@ Page({
     });
   },
 
+  // ─── 纠错上报 ───
+  openReport() {
+    const w = this.data.queue[this.data.currentIndex];
+    if (!w) return;
+    this.setData({ showReport: true, reportType: '', reportDesc: '' });
+  },
+
+  closeReport() {
+    this.setData({ showReport: false });
+  },
+
+  onReportType(e: any) {
+    this.setData({ reportType: e.currentTarget.dataset.type as ReportType });
+  },
+
+  onReportDesc(e: any) {
+    this.setData({ reportDesc: e.detail.value });
+  },
+
+  submitReport() {
+    const w = this.data.queue[this.data.currentIndex];
+    if (!w) return;
+    if (!this.data.reportType) {
+      wx.showToast({ title: '请先选择问题类型', icon: 'none' });
+      return;
+    }
+    const bookId = getCurrentBookId();
+    reportWord(w.word, bookId, this.data.reportType as ReportType, this.data.reportDesc).then((r) => {
+      if (r.already) {
+        wx.showToast({ title: '这个问题已有人报过啦', icon: 'none' });
+      } else if (r.ok) {
+        const reportedMap = { ...this.data.reportedMap, [w.word]: true };
+        this.setData({ showReport: false, reportedMap });
+        wx.showToast({ title: '已受理，感谢共建！', icon: 'success' });
+      } else {
+        wx.showToast({ title: '提交失败，请检查网络', icon: 'none' });
+      }
+    });
+  },
+
   flipCard() {
     const flipped = !this.data.isFlipped;
     this.setData({
       isFlipped: flipped,
       showMeaning: flipped
     });
-    // 翻到背面时自动播放发音
+    // 翻到背面时自动播放发音，并预加载下一个词
     if (flipped) {
       const word = this.data.queue[this.data.currentIndex];
+      const next = this.data.queue[this.data.currentIndex + 1];
       if (word) playAudio(word.word, this.data.accent);
+      if (next) preloadAudio(next.word, this.data.accent);
     }
   },
 
@@ -367,7 +467,7 @@ Page({
     // 记录进度
     const bookId = getCurrentBookId();
     recordWordProgress(bookId, word.word, isCorrect);
-    recordStudy(1);
+    recordStudy(1, this._isNewWord(word.word));
     if (!isCorrect) {
       addToWrongBook(word.word, word.meaning, bookId);
     }
@@ -408,7 +508,7 @@ Page({
     // 记录进度
     const bookId = getCurrentBookId();
     recordWordProgress(bookId, word.word, isCorrect);
-    recordStudy(1);
+    recordStudy(1, this._isNewWord(word.word));
     if (!isCorrect) {
       addToWrongBook(word.word, word.meaning, bookId);
     }
@@ -449,6 +549,26 @@ Page({
     wx.showToast({ title: labels[mode] || '', icon: 'none' });
   },
 
+  // 当前词是否为首次学习的新词（仅新词计入“累计单词”）
+  _isNewWord(word: string): boolean {
+    return !!this._newWordSet && this._newWordSet.has(word.toLowerCase());
+  },
+
+  // 设置每轮学习单词数（顶部按钮）
+  onChangeBatchSize() {
+    const options = [5, 10, 15, 20];
+    wx.showActionSheet({
+      itemList: options.map(n => n + ' 个/轮'),
+      success: (res: any) => {
+        const n = options[res.tapIndex];
+        if (!n || n === this.data.batchSize) return;
+        setBatchSize(n);
+        wx.showToast({ title: '每轮 ' + n + ' 个单词', icon: 'none' });
+        this.initBatch();
+      }
+    });
+  },
+
   // 切换学习模式（高频词/完整）
   toggleStudyMode() {
     const newMode = this.data.studyMode === 'highFreq' ? 'all' : 'highFreq';
@@ -466,7 +586,7 @@ Page({
     const word = this.data.queue[this.data.currentIndex];
     const bookId = getCurrentBookId();
     recordWordProgress(bookId, word.word, true);
-    recordStudy(1);
+    recordStudy(1, this._isNewWord(word.word));
 
     this.setData({
       knownCount: this.data.knownCount + 1
@@ -479,7 +599,7 @@ Page({
     const word = this.data.queue[this.data.currentIndex];
     const bookId = getCurrentBookId();
     recordWordProgress(bookId, word.word, false);
-    recordStudy(1);
+    recordStudy(1, this._isNewWord(word.word));
     addToWrongBook(word.word, word.meaning, bookId);
 
     this.setData({
@@ -510,6 +630,9 @@ Page({
       if (this.data.practiceMode === 'card') {
         playAudio(this.data.queue[next].word, this.data.accent);
       }
+      // 预加载下下个词
+      const afterNext = this.data.queue[next + 1];
+      if (afterNext) preloadAudio(afterNext.word, this.data.accent);
     });
   },
 
@@ -530,19 +653,20 @@ Page({
       showResult: true,
       resultRate: rate,
       resultPraise: praise
+      // reminderSubscribed: isReminderSubscribed() // 学习提醒已下线（2026-08-31）
     });
-
-    // 学完引导订阅学习提醒（仅第一次）
-    if (!isReminderSubscribed()) {
-      setTimeout(() => {
-        requestReminderSubscribe().then((accepted) => {
-          if (accepted) {
-            wx.showToast({ title: '已开启学习提醒', icon: 'success' });
-          }
-        });
-      }, 1500);
-    }
   },
+
+  // 结果页：开启学习提醒（已下线 2026-08-31：一次性订阅需重复授权，体验繁琐）
+  // onSubscribeReminder() {
+  //   if (isReminderSubscribed()) return;
+  //   requestReminderSubscribe().then((accepted) => {
+  //     this.setData({ reminderSubscribed: accepted });
+  //     if (accepted) {
+  //       wx.showToast({ title: '已开启学习提醒', icon: 'success' });
+  //     }
+  //   });
+  // },
 
   // 结果页：再来一轮
   onResultRestart() {
@@ -558,6 +682,9 @@ Page({
 
   // 结果页：分享打卡海报
   onSharePoster() {
+    // 记录“从海报页返回时不重开新一轮”，并记住返回后是否要恢复结果页
+    this._skipInitOnShow = true;
+    this._restoreResultOnShow = this.data.showResult;
     this.setData({ showResult: false });
     wx.navigateTo({
       url: `/pages/poster/poster?rate=${this.data.resultRate}`
@@ -567,5 +694,20 @@ Page({
   // 同步学习统计到云端（经 syncUser 云函数：服务端合并取较大值，防历史被冲小）
   syncToCloud() {
     syncStatsToCloud(getStats());
-  }
+  },
+
+  // 转发给好友
+  onShareAppMessage() {
+    return {
+      title: '我在用词根记忆法背单词，一起来！',
+      path: '/pages/words/words'
+    };
+  },
+
+  // 分享到朋友圈（单页模式）
+  onShareTimeline() {
+    return {
+      title: '我在用词根记忆法背单词，一起来！'
+    };
+  },
 });

@@ -13,7 +13,7 @@
       <view class="user-info" bindtap="onHeaderTap">
         <view class="nickname">{{nickname}}</view>
         <view class="sub-text" wx:if="{{hasProfile}}">坚持学习，遇见更好的自己</view>
-        <view class="sub-text login-link" wx:else>登录并完善头像昵称，登上学习排行榜</view>
+        <view class="sub-text login-link" wx:else>登录后学习数据云端同步，换手机不丢</view>
       </view>
     </view>
   </view>
@@ -47,6 +47,15 @@
     {{stats.checkedIn ? '已打卡' : '每日打卡'}}
   </view>
 
+  <!-- 今日复习计划入口 -->
+  <view class="plan-entry" bindtap="goPlan">
+    <view class="plan-entry-left">
+      <view class="plan-entry-title">今日复习计划</view>
+      <view class="plan-entry-sub">{{planSummary}}</view>
+    </view>
+    <view class="plan-entry-arrow">›</view>
+  </view>
+
   <!-- 学习日历热力图 -->
   <view class="heatmap-section">
     <view class="section-header">
@@ -69,8 +78,8 @@
     </view>
   </view>
 
-  <!-- 成就徽章 -->
-  <view class="badge-section">
+  <!-- 成就徽章（showAchievements 开关控制，默认关闭） -->
+  <view class="badge-section" wx:if="{{showAchievements}}">
     <view class="section-header">
       <view class="section-title">我的成就</view>
       <view class="badge-count">{{badgesUnlocked}}/{{badges.length}}</view>
@@ -82,6 +91,10 @@
         </view>
         <view class="badge-name">{{badge.name}}</view>
         <view class="badge-desc">{{badge.desc}}</view>
+        <view class="badge-progress-bar">
+          <view class="badge-progress-fill {{badge.unlocked ? 'full' : ''}}" style="width: {{(badge.cur || 0) >= (badge.goal || 0) ? 100 : (((badge.cur || 0) / (badge.goal || 1)) * 100)}}%"></view>
+        </view>
+        <view class="badge-progress-text">{{badge.unlocked ? '已解锁' : (badge.cur || 0) + '/' + (badge.goal || 0)}}</view>
       </view>
     </view>
   </view>
@@ -90,7 +103,7 @@
   <view class="profile-mask" wx:if="{{showProfileEdit}}" bindtap="closeProfileEdit"></view>
   <view class="profile-panel card-taped" wx:if="{{showProfileEdit}}">
     <view class="profile-panel-title">登录 · 完善资料</view>
-    <view class="profile-panel-sub">设置头像和昵称后，就能在学习排行榜上展示</view>
+    <view class="profile-panel-sub">登录后学习数据云端同步，换手机不丢</view>
 
     <view class="profile-avatar-row">
       <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
@@ -117,9 +130,9 @@
     <view class="profile-cancel" bindtap="closeProfileEdit">暂不登录</view>
   </view>
 
-  <!-- 功能入口 - 练习 -->
+  <!-- 功能入口 -->
   <view class="other-section">
-    <view class="section-title section-title-sm">练习工具</view>
+    <view class="section-title section-title-sm">更多</view>
     <view class="other-group">
       <view class="other-item" bindtap="goSearch">
         <view class="other-icon-wrap other-icon-wrap-blue">
@@ -128,73 +141,6 @@
         <view class="other-item-text">
           <view class="other-item-name">搜单词</view>
           <view class="other-item-desc">查询释义和词根</view>
-        </view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="other-item" bindtap="goChallenge">
-        <view class="other-icon-wrap other-icon-wrap-amber">
-          <view class="other-icon-challenge"></view>
-        </view>
-        <view class="other-item-text">
-          <view class="other-item-name">挑战模式</view>
-          <view class="other-item-desc">闯关赢取徽章</view>
-        </view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="other-item" bindtap="goStory">
-        <view class="other-icon-wrap other-icon-wrap-cyan">
-          <view class="other-icon-book"></view>
-        </view>
-        <view class="other-item-text">
-          <view class="other-item-name">双语阅读</view>
-          <view class="other-item-desc">短文故事逐句朗读</view>
-        </view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="other-item" bindtap="goFillBlank">
-        <view class="other-icon-wrap other-icon-wrap-green">
-          <view class="other-icon-fillblank"></view>
-        </view>
-        <view class="other-item-text">
-          <view class="other-item-name">名言填空</view>
-          <view class="other-item-desc">在语境中记单词</view>
-        </view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="other-item" bindtap="goSpelling">
-        <view class="other-icon-wrap other-icon-wrap-purple">
-          <view class="other-icon-spelling"></view>
-        </view>
-        <view class="other-item-text">
-          <view class="other-item-name">拼词练习</view>
-          <view class="other-item-desc">字母拼图练拼写</view>
-        </view>
-        <text class="arrow">›</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 功能入口 - 数据 -->
-  <view class="other-section">
-    <view class="section-title section-title-sm">学习数据</view>
-    <view class="other-group">
-      <view class="other-item" bindtap="goLeaderboard">
-        <view class="other-icon-wrap other-icon-wrap-blue">
-          <view class="other-icon-leaderboard"></view>
-        </view>
-        <view class="other-item-text">
-          <view class="other-item-name">学习排行榜</view>
-          <view class="other-item-desc">看看你在哪</view>
-        </view>
-        <text class="arrow">›</text>
-      </view>
-      <view class="other-item" bindtap="goWrongBook">
-        <view class="other-icon-wrap other-icon-wrap-red">
-          <view class="other-icon-wrongbook"></view>
-        </view>
-        <view class="other-item-text">
-          <view class="other-item-name">生词本</view>
-          <view class="other-item-desc">复习错过的单词</view>
         </view>
         <text class="arrow">›</text>
       </view>
@@ -215,16 +161,30 @@
   <view class="other-section">
     <view class="section-title section-title-sm">设置</view>
     <view class="other-group">
+      <!-- 学习提醒已下线（2026-08-31：一次性订阅需重复授权，体验繁琐；代码保留）
       <view class="other-item" bindtap="onToggleReminder">
         <view class="other-icon-wrap other-icon-wrap-orange">
           <view class="other-icon-reminder"></view>
         </view>
         <view class="other-item-text">
           <view class="other-item-name">学习提醒</view>
-          <view class="other-item-desc">每天提醒你背单词</view>
+          <view class="other-item-desc">次日早上提醒 · 一次授权一条</view>
         </view>
         <text class="reminder-status {{reminderOn ? 'reminder-on' : 'reminder-off'}}">{{reminderOn ? '已开启' : '未开启'}}</text>
       </view>
+      -->
+      <!-- 每周学习周报已下线（2026-08-31，订阅消息模板体验不佳，代码保留待模板可用后恢复）
+      <view class="other-item" bindtap="onToggleWeekly">
+        <view class="other-icon-wrap other-icon-wrap-green">
+          <view class="other-icon-weekly">周</view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">每周学习周报</view>
+          <view class="other-item-desc">每周日总结本周学习成果</view>
+        </view>
+        <text class="reminder-status {{weeklyOn ? 'reminder-on' : 'reminder-off'}}">{{weeklyOn ? '已订阅' : '未订阅'}}</text>
+      </view>
+      -->
       <view class="other-item" bindtap="goPrivacy">
         <view class="other-icon-wrap other-icon-wrap-gray">
           <view class="other-icon-privacy"></view>
@@ -238,5 +198,6 @@
     </view>
   </view>
 
-  <view class="footer-text">拾词手账 · 免费学习工具</view>
+  <view class="footer-builder" wx:if="{{builderCount > 0}}">词库共建人 · 已提交 {{builderCount}} 次纠错反馈</view>
+  <view class="footer-text">英语补词达人 · 免费学习工具</view>
 </view>

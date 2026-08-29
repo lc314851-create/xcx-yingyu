@@ -1,54 +1,199 @@
 <!-- pages/booklist/booklist.wxml -->
 <view class="container">
-  <view class="page-header">
-    <view class="page-title">{{isFirstTime ? '欢迎使用' : '选择词书'}}</view>
-    <view class="page-sub">{{isFirstTime ? '请选择适合你的词书，开始背单词' : '选择适合你的词书，开始背单词'}}</view>
-  </view>
+  <!-- ═══ 首次使用：两步问答引导 ═══ -->
+  <block wx:if="{{view === 'wizard'}}">
+    <view class="page-header">
+      <view class="page-title">欢迎使用</view>
+      <view class="page-sub">回答两个问题，帮你找到合适的词书</view>
+    </view>
 
-  <view class="book-list">
-    <block wx:for="{{books}}" wx:key="id" wx:for-item="book">
-      <view
-        class="book-card {{book.isCurrent ? 'current' : ''}}"
-        data-id="{{book.id}}"
-        bindtap="selectBook"
-      >
-        <!-- 难度色条 -->
-        <view class="book-bar" style="background: {{book.themeColor}};"></view>
+    <!-- 步骤指示 -->
+    <view class="wizard-steps">
+      <view class="wstep {{wizardStep >= 1 ? 'on' : ''}}">
+        <view class="wstep-dot">1</view>
+        <view class="wstep-label">你的身份</view>
+      </view>
+      <view class="wstep-line {{wizardStep >= 2 ? 'on' : ''}}"></view>
+      <view class="wstep {{wizardStep >= 2 ? 'on' : ''}}">
+        <view class="wstep-dot">2</view>
+        <view class="wstep-label">词书类型</view>
+      </view>
+      <view class="wstep-line {{wizardStep >= 3 ? 'on' : ''}}"></view>
+      <view class="wstep {{wizardStep >= 3 ? 'on' : ''}}">
+        <view class="wstep-dot">3</view>
+        <view class="wstep-label">开始学习</view>
+      </view>
+    </view>
 
-        <view class="book-top">
-          <view class="book-name">{{book.name}}</view>
-          <view class="book-level-tag" style="color: {{book.themeColor}}; background: {{book.themeBg}};">{{book.tag}}</view>
+    <!-- 第一步：身份 -->
+    <block wx:if="{{wizardStep === 1}}">
+      <view class="q-title">你现在是？</view>
+      <view class="q-sub">选一个离你最近的，之后随时可以换</view>
+      <view class="stage-list">
+        <view
+          class="stage-card"
+          wx:for="{{stages}}"
+          wx:key="key"
+          data-key="{{item.key}}"
+          bindtap="tapStage"
+        >
+          <view class="stage-label">{{item.label}}</view>
+          <view class="stage-desc">{{item.desc}}</view>
+          <view class="stage-arrow">›</view>
         </view>
-        <view class="book-desc">{{book.desc}}</view>
-
-        <!-- 进度条 -->
-        <view class="progress-section">
-          <view class="progress-bar-bg">
-            <view class="progress-bar-fill" style="width: {{book.progress}}%; background: {{book.themeColor}};"></view>
-          </view>
-          <view class="progress-text">{{book.learned}} / {{book.totalWords}} · {{book.progress}}%</view>
-        </view>
-
-        <view class="book-stats">
-          <view class="stat">
-            <text class="stat-val">{{book.totalWords}}</text>
-            <text class="stat-lbl">总词数</text>
-          </view>
-          <view class="stat">
-            <text class="stat-val">{{book.learned}}</text>
-            <text class="stat-lbl">已掌握</text>
-          </view>
-          <view class="stat">
-            <text class="stat-val">{{book.learning}}</text>
-            <text class="stat-lbl">学习中</text>
-          </view>
-          <view class="stat" wx:if="{{book.due > 0}}">
-            <text class="stat-val due">{{book.due}}</text>
-            <text class="stat-lbl">待复习</text>
-          </view>
-        </view>
-        <view class="book-badge" wx:if="{{book.isCurrent}}">当前使用</view>
       </view>
     </block>
-  </view>
+
+    <!-- 第二步：词书类型 -->
+    <block wx:elif="{{wizardStep === 2}}">
+      <view class="q-title">你想怎么背？</view>
+      <view class="q-sub">根据你的身份，我们整理了这些选择</view>
+      <view class="back-link" bindtap="backToStage1">‹ 重新选择身份</view>
+      <view class="opt-list">
+        <view
+          class="opt-card"
+          wx:for="{{stageOptions}}"
+          wx:key="key"
+          data-book="{{item.bookId}}"
+          bindtap="tapOption"
+        >
+          <view class="opt-main">
+            <view class="opt-name">{{item.label}}</view>
+            <view class="opt-hint" wx:if="{{item.hint}}">{{item.hint}}</view>
+          </view>
+          <view class="opt-arrow">›</view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 第三步：推荐确认 -->
+    <block wx:else>
+      <view class="q-title">为你推荐</view>
+      <view class="q-sub">基于你的选择，先背这本吧</view>
+      <view class="rec-card" style="background: {{recommend.bg}};">
+        <view class="rec-tag" style="color: {{recommend.color}};">推荐</view>
+        <view class="rec-name">{{recommend.name}}</view>
+        <view class="rec-meta" wx:if="{{recommend.recMeta}}">{{recommend.recMeta}}</view>
+        <view class="rec-bar" style="background: {{recommend.color}};"></view>
+      </view>
+      <button class="btn-primary" bindtap="confirmRecommend">开始学习</button>
+      <view class="rec-all" bindtap="goAllBooks">换一个 · 查看全部词书</view>
+    </block>
+  </block>
+
+  <!-- ═══ 主界面：推荐卡 + 双 Tab ═══ -->
+  <block wx:else>
+    <!-- 顶部：当前词书推荐卡 -->
+    <view class="hero-card" bindtap="goStudy">
+      <view class="hero-main">
+        <view class="hero-label">当前词书</view>
+        <view class="hero-name">{{current.name}}</view>
+        <view class="hero-meta">已掌握 {{current.mastered}}{{current.total ? ' / ' + current.total + ' 词' : ''}}</view>
+        <view class="hero-progress" wx:if="{{current.total > 0}}">
+          <view class="hero-progress-fill" style="width: {{current.progress}}%"></view>
+        </view>
+      </view>
+      <view class="hero-side">
+        <view class="hero-due" wx:if="{{current.due > 0}}">{{current.due}} 待复习</view>
+        <view class="hero-cta">继续学习 ›</view>
+      </view>
+    </view>
+
+    <view class="vocab-test" bindtap="goVocabTest">不确定选哪本？先测词汇量 ›</view>
+
+    <!-- 双 Tab -->
+    <view class="tab-bar">
+      <view
+        class="tab-item {{mainTab === 'exam' ? 'active' : ''}}"
+        data-key="exam"
+        bindtap="switchMainTab"
+      >考试词书</view>
+      <view
+        class="tab-item {{mainTab === 'textbook' ? 'active' : ''}}"
+        data-key="textbook"
+        bindtap="switchMainTab"
+      >教材同步</view>
+    </view>
+
+    <!-- 考试词书：分组网格 -->
+    <block wx:if="{{mainTab === 'exam'}}">
+      <view
+        wx:for="{{groups}}"
+        wx:key="key"
+        wx:for-item="g"
+        class="group"
+      >
+        <view class="group-head">
+          <view class="group-title">{{g.title}}</view>
+          <view class="group-sub">{{g.subtitle}}</view>
+        </view>
+        <view class="book-grid">
+          <view
+            class="grid-card {{item.isCurrent ? 'current' : ''}}"
+            wx:for="{{g.books}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="selectBook"
+          >
+            <view class="grid-top">
+              <view class="grid-name">{{item.name}}</view>
+              <view class="grid-tag" style="color: {{item.color}}; background: {{item.bg}};">{{item.tag}}</view>
+            </view>
+            <view class="grid-meta">{{item.total}} 词</view>
+            <view class="grid-progress" wx:if="{{item.learned > 0}}">
+              <view class="grid-progress-bg">
+                <view class="grid-progress-fill" style="width: {{item.progress}}%; background: {{item.color}};"></view>
+              </view>
+              <view class="grid-progress-text">已掌握 {{item.learned}}</view>
+            </view>
+            <view class="grid-current" wx:if="{{item.isCurrent}}">当前</view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 教材同步：学段分段器 + 分册列表 -->
+    <block wx:else>
+      <view class="tb-tabs">
+        <view
+          class="tb-tab {{tbActive === item.key ? 'active' : ''}}"
+          wx:for="{{tbTabs}}"
+          wx:key="key"
+          data-key="{{item.key}}"
+          bindtap="switchTbTab"
+        >{{item.title}}</view>
+      </view>
+      <view class="tb-subtitle">{{tbSubtitle}}</view>
+
+      <view
+        class="tb-row {{item.isCurrent ? 'current' : ''}}"
+        wx:for="{{tbRows}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="selectBook"
+      >
+        <view class="tb-main">
+          <view class="tb-name-row">
+            <text class="tb-name">{{item.name}}</text>
+            <text class="tb-current-badge" wx:if="{{item.isCurrent}}">当前</text>
+          </view>
+          <view class="tb-desc">{{item.desc}}</view>
+          <view class="tb-count">{{item.wordCount}} 词</view>
+        </view>
+        <view class="tb-progress" wx:if="{{item.learned > 0}}">
+          <view class="tb-progress-bar">
+            <view class="tb-progress-inner" style="width: {{item.progressPct}}%"></view>
+          </view>
+          <view class="tb-progress-text">已学 {{item.learned}} · 掌握 {{item.mastered}}</view>
+        </view>
+        <view class="tb-progress" wx:else>
+          <view class="tb-progress-text dim">未开始，点按开始背</view>
+        </view>
+      </view>
+
+      <view class="footnote">
+        小学新版教材词表整理中，先提供经典版过渡；九年级新版词表同待更新
+      </view>
+    </block>
+  </block>
 </view>
