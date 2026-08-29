@@ -25,6 +25,9 @@ App({
       traceUser: true
     });
 
+    // 版本更新检测：新版包下载完后弹窗询问，用户确认才应用（官方推荐模式，不强制）
+    this.checkUpdate();
+
     // 自动登录获取 openid
     this.login();
 
@@ -43,6 +46,30 @@ App({
     const bookId = getCurrentBookId();
     syncProgressToCloud(bookId).catch(() => {});
     syncWrongBookToCloud().catch(() => {}); // 生词本去抖队列立即落云，防杀进程丢失
+  },
+
+  // 版本更新检测：有新版本时提示用户重启应用（可取消，不强制）
+  checkUpdate() {
+    if (!wx.getUpdateManager) return; // 基础库过低则跳过
+    const um = wx.getUpdateManager();
+    um.onUpdateReady(() => {
+      wx.showModal({
+        title: '更新提示',
+        content: '新版本已经准备好，是否重启应用？',
+        confirmText: '立即重启',
+        cancelText: '稍后再说',
+        success: (res) => {
+          if (res.confirm) um.applyUpdate();
+        }
+      });
+    });
+    um.onUpdateFailed(() => {
+      wx.showModal({
+        title: '更新提示',
+        content: '新版本下载失败，请检查网络后重进小程序',
+        showCancel: false
+      });
+    });
   },
 
   // 云开发登录
