@@ -6,7 +6,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '英语补词达人 · 隐私政策',
-      path: '/pages/privacy/privacy'
+      path: '/pages/index/index'
     };
   },
 });

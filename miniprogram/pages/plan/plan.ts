@@ -80,7 +80,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '我的今日复习计划 · 按遗忘曲线科学背词',
-      path: '/pages/plan/plan'
+      path: '/pages/index/index'
     };
   },
 

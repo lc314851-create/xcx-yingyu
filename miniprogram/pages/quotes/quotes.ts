@@ -300,7 +300,7 @@ Page({
     const en = this.data.list && this.data.list.length > 0 ? this.data.list[0].en : '每日金句';
     return {
       title: `“${en}” —— 英语补词达人每日金句`,
-      path: '/pages/quotes/quotes'
+      path: '/pages/index/index'
     };
   },
 

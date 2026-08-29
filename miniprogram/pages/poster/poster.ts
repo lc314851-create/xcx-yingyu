@@ -250,7 +250,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '英语补词达人 · 生词海报',
-      path: '/pages/poster/poster'
+      path: '/pages/index/index'
     };
   },
 

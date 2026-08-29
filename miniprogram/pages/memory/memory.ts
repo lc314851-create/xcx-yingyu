@@ -208,7 +208,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '记忆体检 · 算准复习日不忘词',
-      path: '/pages/memory/memory'
+      path: '/pages/index/index'
     };
   },
 

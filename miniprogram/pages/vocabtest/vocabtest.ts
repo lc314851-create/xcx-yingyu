@@ -237,7 +237,7 @@ Page({
   onShareAppMessage() {
     return {
       title: `我的词汇量约 ${this.data.estimate} 词，来测测你的！`,
-      path: '/pages/vocabtest/vocabtest'
+      path: '/pages/index/index'
     };
   },
 

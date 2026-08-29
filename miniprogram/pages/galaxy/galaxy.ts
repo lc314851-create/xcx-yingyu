@@ -171,7 +171,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '词根星系 · 一次记住一串词',
-      path: '/pages/galaxy/galaxy'
+      path: '/pages/index/index'
     };
   },
 

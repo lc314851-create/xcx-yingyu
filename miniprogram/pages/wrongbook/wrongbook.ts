@@ -70,7 +70,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '错题本 · 答错过的不再错',
-      path: '/pages/wrongbook/wrongbook'
+      path: '/pages/index/index'
     };
   },
 

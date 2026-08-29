@@ -328,7 +328,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '英语补词达人 · 每天一句，补回落下的词',
-      path: '/pages/mine/mine'
+      path: '/pages/index/index'
     };
   },
 

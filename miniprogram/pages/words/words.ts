@@ -700,7 +700,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '我在用词根记忆法背单词，一起来！',
-      path: '/pages/words/words'
+      path: '/pages/index/index'
     };
   },
 

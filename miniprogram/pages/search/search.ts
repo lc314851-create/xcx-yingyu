@@ -104,7 +104,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '查一个词，补一个词',
-      path: '/pages/search/search'
+      path: '/pages/index/index'
     };
   },
 

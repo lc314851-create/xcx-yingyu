@@ -408,7 +408,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '选一本词书，开始补回落下的单词',
-      path: '/pages/booklist/booklist'
+      path: '/pages/index/index'
     };
   },
 

@@ -68,8 +68,10 @@
       <view class="plan-sub">按你的记忆曲线排期，今天背完遗忘率最低</view>
     </view>
     <view class="plan-main plan-main-ok" wx:else>
-      <view class="plan-big plan-big-ok">今天的复习都完成啦</view>
-      <view class="plan-sub">间隔记忆讲究到点再背，趁现在多学几个新词吧</view>
+      <view class="plan-big plan-big-ok" wx:if="{{totalWords > 0}}">今天的复习都完成啦</view>
+      <view class="plan-big plan-big-ok" wx:else>复习计划等你开张</view>
+      <view class="plan-sub" wx:if="{{totalWords > 0}}">间隔记忆讲究到点再背，趁现在多学几个新词吧</view>
+      <view class="plan-sub" wx:else>先去学几个新词，明天这里会给你排好复习日程</view>
     </view>
     <view class="plan-forecast">
       <view class="plan-f-item" wx:for="{{planForecast}}" wx:key="label">
