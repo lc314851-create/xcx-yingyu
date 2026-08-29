@@ -246,7 +246,7 @@ Page({
   // 保存金句海报到相册
   onSavePoster() {
     if (!this.data.posterPath) {
-      wx.showToast({ title: '海报还在生成中...', icon: 'none' });
+      wx.showToast({ title: '海报正在生成，马上就好', icon: 'none' });
       return;
     }
     if (this.data.saving) return;
@@ -279,7 +279,7 @@ Page({
   // 分享金句海报图片（原生分享菜单：好友 / 朋友圈）
   onSharePoster() {
     if (!this.data.posterPath) {
-      wx.showToast({ title: '海报还在生成中...', icon: 'none' });
+      wx.showToast({ title: '海报正在生成，马上就好', icon: 'none' });
       return;
     }
     if (wx.showShareImageMenu) {

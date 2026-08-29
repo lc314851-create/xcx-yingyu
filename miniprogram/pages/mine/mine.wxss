@@ -244,8 +244,8 @@
 }
 
 .heatmap-cell.level-0 { background: var(--border-light); }
-.heatmap-cell.level-1 { background: #C8DEF5; }
-.heatmap-cell.level-2 { background: #79AEE8; }
+.heatmap-cell.level-1 { background: #C9DCCE; }
+.heatmap-cell.level-2 { background: #7FA98F; }
 .heatmap-cell.level-3 { background: #2F5746; }
 .heatmap-cell.level-4 { background: #24473A; }
 

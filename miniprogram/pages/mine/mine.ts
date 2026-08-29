@@ -72,8 +72,8 @@ Page({
   loadPlanSummary() {
     const plan = getReviewPlan(getCurrentBookId());
     const summary = plan.dueToday > 0
-      ? `今天有 ${plan.dueToday} 个词到期待复习`
-      : '今天没有到期词，安排新词吧';
+      ? `今天有 ${plan.dueToday} 个词等着复习`
+      : '今天的复习都完成啦，安排几个新词吧';
     this.setData({ planSummary: summary });
   },
 
@@ -230,7 +230,7 @@ Page({
           avatarUrl: profile.avatarUrl,
           hasProfile: true
         });
-        wx.showToast({ title: '已登录成功', icon: 'success' });
+        wx.showToast({ title: '登录成功', icon: 'success' });
       } else {
         wx.showToast({ title: '保存失败，请重试', icon: 'none' });
       }

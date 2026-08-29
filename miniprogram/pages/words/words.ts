@@ -170,7 +170,7 @@ Page({
         book = localBook;
       } else {
         this.setData({ loading: false, queue: [] });
-        wx.showToast({ title: '词库加载中，请稍后', icon: 'none' });
+        wx.showToast({ title: '词库加载中，马上就好', icon: 'none' });
         return;
       }
     }
@@ -183,7 +183,7 @@ Page({
 
     if (wordList.length === 0) {
       this.setData({ loading: false, queue: [], highFreqCount });
-      wx.showToast({ title: '该词书暂无高频词', icon: 'none' });
+      wx.showToast({ title: '这本词书没有标注高频词', icon: 'none' });
       return;
     }
 
@@ -252,7 +252,7 @@ Page({
         }
       } else {
         // 全部匹配不上（极少见）：不静默回退，明确告知
-        wx.showToast({ title: '高危词不在当前词书，已回退常规学习', icon: 'none' });
+        wx.showToast({ title: '这几个词不在当前词书里，已切回常规学习', icon: 'none' });
       }
       this._memoryWords = null; // 一次性，用后即弃
     }

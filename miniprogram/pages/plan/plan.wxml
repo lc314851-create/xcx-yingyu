@@ -23,7 +23,7 @@
     <view class="hero-tip" wx:if="{{plan.dueToday > 0}}">
       这些词是按记忆曲线算出来的——今天不复习，明天忘掉的概率最大
     </view>
-    <view class="hero-tip" wx:else>今天没有到期词。间隔记忆的精髓是「到点再背」，去学点新词吧</view>
+    <view class="hero-tip" wx:else>今天的复习都完成啦。间隔记忆讲究到点再背，趁现在多学几个新词吧</view>
   </view>
 
   <!-- 记忆盒子分布 -->
@@ -59,7 +59,7 @@
 
   <!-- 未来7天预测 -->
   <view class="section">
-    <view class="section-title">未来7天预计到期</view>
+    <view class="section-title">未来 7 天将复习</view>
     <view class="forecast-row">
       <view class="forecast-col" wx:for="{{plan.forecast}}" wx:key="label" wx:for-item="f">
         <view class="forecast-count">{{f.count > 0 ? f.count : ''}}</view>

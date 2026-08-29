@@ -171,7 +171,7 @@ Page({
   goReview() {
     const due = this.data.dueCount;
     if (!due || due <= 0) {
-      wx.showToast({ title: '暂无待复习词汇', icon: 'none' });
+      wx.showToast({ title: '这会儿没有要复习的词，去学新词吧', icon: 'none' });
       return;
     }
     wx.setStorageSync('bc_review_mode', 1);

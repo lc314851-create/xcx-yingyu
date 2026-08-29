@@ -60,7 +60,7 @@
   <view class="heatmap-section">
     <view class="section-header">
       <view class="section-title">学习日历</view>
-      <view class="heatmap-sub">坚持了 {{heatmapTotalDays}} 天</view>
+      <view class="heatmap-sub">近 30 天学了 {{heatmapTotalDays}} 天</view>
     </view>
     <view class="heatmap-grid">
       <view class="heatmap-cell level-{{item.level}}" wx:for="{{heatmap}}" wx:key="date">

@@ -376,7 +376,7 @@ Page({
       const book = await getBookById(id);
       wx.hideLoading();
       if (!book || !book.words || book.words.length === 0) {
-        wx.showToast({ title: '词书暂未上传，请稍后再试', icon: 'none' });
+        wx.showToast({ title: '这本词书还在准备中，先换一本吧', icon: 'none' });
         return;
       }
       setCurrentBookId(id);
@@ -395,7 +395,7 @@ Page({
       }, 500);
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: '词书暂未上传，请稍后再试', icon: 'none' });
+      wx.showToast({ title: '这本词书还在准备中，先换一本吧', icon: 'none' });
     }
   },
 

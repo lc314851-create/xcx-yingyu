@@ -63,13 +63,13 @@
     <view class="plan-main" wx:if="{{planDueToday > 0}}">
       <view class="plan-big">
         <text class="plan-num serif">{{planDueToday}}</text>
-        <text class="plan-big-text">个词到期待复习</text>
+        <text class="plan-big-text">个词待复习</text>
       </view>
       <view class="plan-sub">按你的记忆曲线排期，今天背完遗忘率最低</view>
     </view>
     <view class="plan-main plan-main-ok" wx:else>
-      <view class="plan-big plan-big-ok">今天没有到期词</view>
-      <view class="plan-sub">间隔记忆的精髓是「到点再背」，去学点新词吧</view>
+      <view class="plan-big plan-big-ok">今天的复习都完成啦</view>
+      <view class="plan-sub">间隔记忆讲究到点再背，趁现在多学几个新词吧</view>
     </view>
     <view class="plan-forecast">
       <view class="plan-f-item" wx:for="{{planForecast}}" wx:key="label">

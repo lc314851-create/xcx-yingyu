@@ -64,7 +64,7 @@ Page({
 
   startReview() {
     if (!this.data.plan || this.data.plan.dueToday <= 0) {
-      wx.showToast({ title: '今天没有到期词，去学点新词吧', icon: 'none' });
+      wx.showToast({ title: '今天的复习都完成啦，去学点新词吧', icon: 'none' });
       return;
     }
     wx.setStorageSync(REVIEW_MODE_KEY, 1);

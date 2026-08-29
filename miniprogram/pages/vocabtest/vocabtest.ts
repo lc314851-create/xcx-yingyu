@@ -126,7 +126,7 @@ Page({
   startTest() {
     const questions = this.buildQuestions();
     if (questions.length < 10) {
-      wx.showToast({ title: '词库数据不足，请稍后再试', icon: 'none' });
+      wx.showToast({ title: '词库数据还不够，先去学几个词再来测吧', icon: 'none' });
       return;
     }
     this._answers = [];
