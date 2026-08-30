@@ -1,6 +1,6 @@
 // pages/mine/mine.ts
 // 2026-08-31：学习提醒与每周周报均已下线（微信一次性订阅机制体验繁琐），相关代码以注释保留
-import { getStats, doCheckIn, getHeatmapData, getLocalProfile, updateUserProfile, syncStatsToCloud, restoreStatsFromCloud, getCurrentBookId, getReviewPlan } from '../../utils/store';
+import { getStats, doCheckIn, getHeatmapData, getLocalProfile, saveLocalProfile, updateUserProfile, syncStatsToCloud, restoreStatsFromCloud, getCurrentBookId, getReviewPlan } from '../../utils/store';
 import { getBuilderCount } from '../../utils/wordReport';
 
 interface Badge {
@@ -232,14 +232,28 @@ Page({
         });
         wx.showToast({ title: '登录成功', icon: 'success' });
       } else {
-        wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+        // 云端失败不阻塞用户：先落本地，后续 syncStatsToCloud 时再同步
+        this.saveProfileLocally(nickname, avatarUrl);
       }
     } catch (err) {
       console.error('保存资料失败', err);
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+      this.saveProfileLocally(nickname, this.data.editAvatar || '');
     } finally {
       this.setData({ savingProfile: false });
     }
+  },
+
+  // 云端不可用时的本地兜底：资料写本地缓存，界面立即生效
+  saveProfileLocally(nickname: string, avatarUrl: string) {
+    const profile = { nickname, avatarUrl };
+    saveLocalProfile(profile as any);
+    this.setData({
+      showProfileEdit: false,
+      nickname,
+      avatarUrl,
+      hasProfile: true
+    });
+    wx.showToast({ title: '已保存，云端稍后自动同步', icon: 'none' });
   },
 
   // 打卡
