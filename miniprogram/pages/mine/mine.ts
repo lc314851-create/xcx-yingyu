@@ -172,6 +172,29 @@ Page({
 
   // ─── 资料编辑面板 ───
   openProfileEdit() {
+    // 隐私授权前置检查：需要授权时先拉起官方弹窗，避免 chooseAvatar/nickname 静默失败
+    if (wx.getPrivacySetting) {
+      wx.getPrivacySetting({
+        success: (res: any) => {
+          if (res.needAuthorization && wx.requirePrivacyAuthorize) {
+            wx.requirePrivacyAuthorize({
+              success: () => this.showProfileEditModal(),
+              fail: () => {
+                wx.showToast({ title: '需同意隐私保护指引后才能登录哦', icon: 'none' });
+              }
+            });
+          } else {
+            this.showProfileEditModal();
+          }
+        },
+        fail: () => this.showProfileEditModal()
+      });
+    } else {
+      this.showProfileEditModal();
+    }
+  },
+
+  showProfileEditModal() {
     this.setData({
       showProfileEdit: true,
       editAvatar: this.data.avatarUrl || '',
