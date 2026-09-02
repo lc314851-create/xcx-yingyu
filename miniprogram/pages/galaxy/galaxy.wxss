@@ -128,6 +128,7 @@
   transform: translate(-50%, -50%);
   z-index: 3;
   min-width: 240rpx;
+  max-width: 56%;
   background: var(--bg-card);
   border: 2rpx solid var(--border-default);
   border-radius: 16rpx;
@@ -184,10 +185,10 @@
   display: inline-block;
 }
 
-/* 环绕词节点：纸条钉在轨道上 */
+/* 环绕词节点：纸条钉在轨道上（层级高于中心卡，保证单词不被遮挡） */
 .node {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   transform: translate(-50%, -50%);
   padding: 12rpx 20rpx;
   font-size: 26rpx;
@@ -197,7 +198,7 @@
   border: 2rpx solid var(--border-default);
   border-bottom: 4rpx solid var(--border-strong);
   border-radius: 10rpx;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm), 0 0 0 6rpx var(--bg-page);
   animation: floaty 4s ease-in-out infinite;
   transition: transform 0.15s var(--ease-out);
   white-space: nowrap;

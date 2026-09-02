@@ -119,12 +119,15 @@ Page({
       const idx = isInner ? i : i - innerCount;
       const total = isInner ? innerCount : outerCount;
       const angle = (2 * Math.PI * idx) / total - Math.PI / 2 + (isInner ? 0 : Math.PI / total);
-      const r = isInner ? 30 : 43; // 半径（% of 容器）
+      const r = isInner ? 30 : 43;
+      const gx = 50 + r * Math.cos(angle);
+      const gy = 50 + r * 0.82 * Math.sin(angle); // 纵向压缩，贴合屏幕
       nodes.push({
         word: list[i].word,
         meaning: list[i].meaning || '',
-        x: 50 + r * Math.cos(angle),
-        y: 50 + r * 0.82 * Math.sin(angle), // 纵向压缩，贴合屏幕
+        // 避让中心词卡：落入卡片区域的节点沿水平方向推到区域外，防止被卡片遮挡
+        x: Math.abs(gx - 50) < 30 && Math.abs(gy - 50) < 20 ? 50 + (gx >= 50 ? 1 : -1) * 32 : gx,
+        y: gy, // 纵向压缩，贴合屏幕
         ring: isInner ? 0 : 1
       });
     }
