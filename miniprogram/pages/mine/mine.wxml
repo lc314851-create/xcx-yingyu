@@ -154,6 +154,21 @@
         </view>
         <text class="arrow">›</text>
       </view>
+      <view class="other-item" bindtap="onExportToday">
+        <view class="other-icon-wrap other-icon-wrap-blue">
+          <view class="other-icon-search"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">导出今日单词</view>
+          <view class="other-item-desc">文本、图片、Excel</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 隐藏 canvas（导出图片用） -->
+    <view class="export-canvas-hidden">
+      <canvas type="2d" id="exportCanvas" class="export-canvas"></canvas>
     </view>
   </view>
 

@@ -73,6 +73,9 @@ Page({
   },
 
   goWordList() {
+    // 与首页「学新词」一致：写入新轮标志，让 words 页强制重建队列，
+    // 否则会被其「设置未变跳过重建」守卫拦住，仍显示上一轮的复习词
+    wx.setStorageSync('bc_new_round', 1);
     wx.switchTab({ url: '/pages/words/words' });
   },
 

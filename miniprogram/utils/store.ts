@@ -244,9 +244,16 @@ export interface SyncUserResult {
 // 调 syncUser 云函数（服务端合并统计+资料、自动去重）
 function callSyncUser(event: any): Promise<SyncUserResult | null> {
   if (!wx.cloud) return Promise.resolve(null);
-  return wx.cloud
-    .callFunction({ name: 'syncUser', data: event })
-    .then((res: any) => (res && res.result) || null)
+  // 加超时：云函数挂起时不能永久 pending，否则进度恢复/同步永远不完成
+  return new Promise<any>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('syncUser timeout')), 10000);
+    wx.cloud
+      .callFunction({ name: 'syncUser', data: event })
+      .then(
+        (res: any) => { clearTimeout(t); resolve(res); },
+        (e: any) => { clearTimeout(t); reject(e); }
+      );
+  }).then((res: any) => (res && res.result) || null)
     .catch((err: any) => {
       console.error('syncUser 失败', err);
       return null;
@@ -338,6 +345,9 @@ export function getCurrentBookId(): string {
 export function setCurrentBookId(id: string): void {
   wx.setStorageSync(BOOK_KEY, id);
   wx.setStorageSync(BOOK_CHOSEN_KEY, true);
+  // 切书即拉取该词书的云端进度并合并到本地：
+  // 清缓存后当前词书会重置，启动时只恢复了默认词书，这里保证换到哪本就恢复哪本
+  restoreProgressFromCloud(id).catch(() => {});
 }
 
 // ─── 学习模式（高频词 / 完整） ─────────────────────────────────
@@ -351,12 +361,49 @@ export function setBatchSize(n: number): void {
 
 const STUDY_MODE_KEY = 'bc_study_mode';
 
-export function getStudyMode(): 'highFreq' | 'all' {
-  return wx.getStorageSync(STUDY_MODE_KEY) || 'all';
+export type StudyMode = 'all' | 'highFreq' | 'func' | 'content';
+
+export function getStudyMode(): StudyMode {
+  const v = wx.getStorageSync(STUDY_MODE_KEY);
+  return (v === 'highFreq' || v === 'func' || v === 'content') ? v : 'all';
 }
 
-export function setStudyMode(mode: 'highFreq' | 'all'): void {
+export function setStudyMode(mode: StudyMode): void {
   wx.setStorageSync(STUDY_MODE_KEY, mode);
+}
+
+// ─── 今日学习单词聚合（用于导出中英对照表）─────────────────
+export interface TodayWord {
+  word: string;   // 单词
+  bookId: string; // 所属词书
+  known: boolean; // 今日最后一次是否认识
+}
+
+/**
+ * 扫描所有词书的本地进度，聚合今天（自然日）学过的单词。
+ * 每个词取 lastSeen 最新的一条记录判断对错。
+ */
+export function getTodayLearnedWords(): TodayWord[] {
+  const now = new Date();
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const out: TodayWord[] = [];
+  try {
+    const info = wx.getStorageInfoSync();
+    for (const key of info.keys) {
+      if (!key.startsWith('bc_progress_')) continue;
+      const bookId = key.slice('bc_progress_'.length);
+      const all: Record<string, any> = wx.getStorageSync(key) || {};
+      for (const w of Object.values(all)) {
+        if (w && w.lastSeen && w.lastSeen >= dayStart) {
+          out.push({ word: w.word, bookId, known: (w.knownCount || 0) >= (w.unknownCount || 0) });
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[导出] 今日学习词聚合失败', e);
+  }
+  out.sort((a, b) => a.word.localeCompare(b.word));
+  return out;
 }
 
 // ─── 练习模式（卡片翻面 / 四选一 / 拼写） ──────────────────────
@@ -370,6 +417,20 @@ export function getPracticeMode(): PracticeMode {
 
 export function setPracticeMode(mode: PracticeMode): void {
   wx.setStorageSync(PRACTICE_MODE_KEY, mode);
+}
+
+// ─── 出题顺序（顺序 / 随机） ──────────────────────
+const ORDER_MODE_KEY = 'bc_order_mode';
+
+export type OrderMode = 'random' | 'sequential';
+
+export function getOrderMode(): OrderMode {
+  const v = wx.getStorageSync(ORDER_MODE_KEY);
+  return v === 'sequential' ? 'sequential' : 'random'; // 默认随机，避免按首字母顺序产生厌倦
+}
+
+export function setOrderMode(mode: OrderMode): void {
+  wx.setStorageSync(ORDER_MODE_KEY, mode);
 }
 
 // ─── 发音偏好（英音 / 美音） ───────────────────────────────────
@@ -621,10 +682,12 @@ export function syncProgressToCloud(bookId: string): Promise<void> {
 
 // 从云端拉取某词书进度并合并到本地（静默，失败不打扰）
 let restoreProgressPending: Promise<void> | null = null;
+let restoreProgressBookId = ''; // 当前在拉的词书，避免切书时新请求被旧请求的锁挡掉
 export function restoreProgressFromCloud(bookId: string): Promise<void> {
-  if (restoreProgressPending) return restoreProgressPending;
+  if (restoreProgressPending && restoreProgressBookId === bookId) return restoreProgressPending;
   if (!wx.cloud) return Promise.resolve();
 
+  restoreProgressBookId = bookId;
   restoreProgressPending = callSyncUser({
     today: todayStr(),
     progressRequestBookId: bookId

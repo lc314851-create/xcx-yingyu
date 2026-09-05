@@ -1,4 +1,8 @@
 <!-- pages/wrongbook/wrongbook.wxml -->
+<!-- 隐藏 canvas（导出图片用） -->
+<view class="export-canvas-hidden">
+  <canvas type="2d" id="exportCanvas" class="export-canvas"></canvas>
+</view>
 <view class="container">
   <!-- 头部 -->
   <view class="header">
@@ -6,7 +10,10 @@
       <view class="header-title">生词本</view>
       <view class="header-count" wx:if="{{!isEmpty}}">共 {{words.length}} 个生词</view>
     </view>
-    <view class="clear-btn" wx:if="{{!isEmpty}}" bindtap="onClearAll">清空</view>
+    <view class="header-actions">
+      <view class="export-btn" wx:if="{{!isEmpty}}" bindtap="onExport">导出</view>
+      <view class="clear-btn" wx:if="{{!isEmpty}}" bindtap="onClearAll">清空</view>
+    </view>
   </view>
 
   <!-- 空状态 -->

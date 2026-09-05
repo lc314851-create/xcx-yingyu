@@ -1,8 +1,8 @@
 <!-- pages/quotes/quotes.wxml -->
 <view class="container">
   <view class="page-head">
-    <view class="page-head-title serif">金句集</view>
-    <view class="page-head-sub">已收录 {{total}} 句 · 每天也别忘了首页那一句</view>
+    <!-- <view class="page-head-title serif">金句集</view>
+    <view class="page-head-sub">已收录 {{total}} 句 · 每天也别忘了首页那一句</view> -->
   </view>
 
   <view class="quote-arch" wx:for="{{list}}" wx:key="en">

@@ -6,6 +6,9 @@ import { getAccent } from './store';
 import { synthesizeSentence } from './wechatTts';
 
 let audioCtx: any = null;
+// 播放请求序号：只有最新一次请求的下载完成才允许出声，
+// 防止网络下载乱序导致旧词音频抳播（随机出词多走网络下载后尤为明显）
+let playSeq = 0;
 
 // 会话内内存缓存：word_accent -> tempFilePath
 const audioCache: Record<string, string> = {};
@@ -19,6 +22,7 @@ export function playAudio(word: string, accent?: 'uk' | 'us', isRetry = false) {
   const cacheKey = word + '_' + acc;
 
   console.log('[audio] playAudio:', word, acc);
+  const mySeq = ++playSeq;
 
   // 销毁旧实例，防止多个声音重叠
   destroyCurrent();
@@ -38,9 +42,9 @@ export function playAudio(word: string, accent?: 'uk' | 'us', isRetry = false) {
     success: (res: any) => {
       if (res.statusCode !== 200 || !res.tempFilePath) return;
       audioCache[cacheKey] = res.tempFilePath;
-      // 下载期间用户可能已切换到别的词触发了新播放（destroyCurrent 已被调用），
-      // 此时 audioCtx 为空才算仍然是当前请求，避免旧词音频延迟抢播
-      if (audioCtx) return;
+      // 下载期间用户可能已切换到别的词触发了新播放：只有仍是最新一次请求才出声，
+      // 否则丢弃（下载完成顺序与请求顺序无关，仅靠 audioCtx 为空判断会被旧词抳播）
+      if (mySeq !== playSeq) return;
       playLocal(res.tempFilePath, isRetry ? undefined : { word, accent: acc, cacheKey });
     },
     fail: (err: any) => {

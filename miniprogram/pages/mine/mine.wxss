@@ -791,3 +791,18 @@
   color: #D4BC72;
   font-weight: 300;
 }
+
+/* ─── 隐藏导出画布 ─── */
+.export-canvas-hidden {
+  position: fixed;
+  left: -9999rpx;
+  top: -9999rpx;
+  width: 340px;
+  height: 600px;
+  pointer-events: none;
+}
+
+.export-canvas {
+  width: 340px;
+  height: 600px;
+}

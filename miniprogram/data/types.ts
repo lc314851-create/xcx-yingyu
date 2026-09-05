@@ -16,6 +16,7 @@ export interface WordItem {
   relatedWords?: string;  // 形近词（逗号分隔）
   frequency?: number;     // 词频
   star?: number;          // 词频星级 0~5
+  posTag?: 'func' | 'content'; // 词性分类：func=虚词（介/连/代/冠/助等）content=实词
 }
 
 export interface WordBook {
@@ -26,5 +27,5 @@ export interface WordBook {
   words: WordItem[];
 }
 
-// 学习模式
-export type StudyMode = 'highFreq' | 'all';
+// 学习模式：全部 / 高频词 / 虚词 / 实词
+export type StudyMode = 'all' | 'highFreq' | 'func' | 'content';

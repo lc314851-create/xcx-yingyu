@@ -162,6 +162,8 @@ Page({
       wx.navigateTo({ url: '/pages/booklist/booklist' });
       return;
     }
+    // 主动点“学新词”：通知 words 页开新的一轮（跳过其“数据未变跳过重建”守卫）
+    wx.setStorageSync('bc_new_round', 1);
     wx.switchTab({
       url: '/pages/words/words'
     });
@@ -169,7 +171,9 @@ Page({
 
   // 直达“待复习”：只复习到期待复习词
   goReview() {
-    const due = this.data.dueCount;
+    // 与"今日复习计划"卡片同一数据源（SM-2 到期），避免两套口径打架：
+    // 卡片显示 3 个待复习，点进来却说没有词
+    const due = this.data.planDueToday || this.data.dueCount;
     if (!due || due <= 0) {
       wx.showToast({ title: '这会儿没有要复习的词，去学新词吧', icon: 'none' });
       return;

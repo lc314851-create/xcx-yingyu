@@ -2,6 +2,7 @@
 // 2026-08-31：学习提醒与每周周报均已下线（微信一次性订阅机制体验繁琐），相关代码以注释保留
 import { getStats, doCheckIn, getHeatmapData, getLocalProfile, saveLocalProfile, updateUserProfile, syncStatsToCloud, restoreStatsFromCloud, getCurrentBookId, getReviewPlan } from '../../utils/store';
 import { getBuilderCount } from '../../utils/wordReport';
+import { collectTodayRows, showExportSheet, TodayRow } from '../../utils/todayExport';
 
 interface Badge {
   name: string;
@@ -312,6 +313,30 @@ Page({
       url: '/pages/search/search'
     });
   },
+  // ─── 导出今日单词表 ───
+  onExportToday() {
+    wx.showLoading({ title: '整理单词中...' });
+    collectTodayRows().then((rows: TodayRow[]) => {
+      wx.hideLoading();
+      showExportSheet(rows, () => this._getExportCanvas());
+    }).catch(() => {
+      wx.hideLoading();
+      wx.showToast({ title: '整理失败，请重试', icon: 'none' });
+    });
+  },
+
+  _getExportCanvas(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      wx.createSelectorQuery().in(this)
+        .select('#exportCanvas')
+        .fields({ node: true })
+        .exec((res: any) => {
+          if (res && res[0] && res[0].node) resolve(res[0].node);
+          else reject(new Error('canvas 未就绪'));
+        });
+    });
+  },
+
 
   // ─── 学习提醒已下线（2026-08-31：一次性订阅需重复授权，体验繁琐；代码保留待恢复） ───
   // onToggleReminder() {

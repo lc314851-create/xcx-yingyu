@@ -6,8 +6,8 @@
 /* ═══ 词书信息条 ═══ */
 .book-bar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 18rpx;
   background: var(--bg-card);
   border-radius: 20rpx;
   padding: 22rpx 28rpx;
@@ -15,10 +15,43 @@
   box-shadow: 0 4rpx 16rpx rgba(88, 70, 42, 0.04);
 }
 
+.book-bar-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 20rpx;
+  min-width: 0;
+}
+
+.book-bar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.book-bar-switches {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
 .book-bar-left {
   display: flex;
-  flex-direction: column;
-  gap: 6rpx;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 12rpx;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.book-bar-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300rpx;
 }
 
 .book-bar-right {
@@ -34,17 +67,21 @@
 }
 
 .book-bar-stats {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: var(--text-tertiary);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .book-bar-switch {
-  font-size: 26rpx;
-  color: #2F5746;
-  padding: 10rpx 22rpx;
-  background: #E9F0EB;
-  border-radius: 20rpx;
-  font-weight: 600;
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  padding: 8rpx 18rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(143, 158, 148, 0.10);
+  border-radius: 16rpx;
+  font-weight: 500;
   transition: transform 0.15s var(--ease-out);
 }
 
@@ -55,15 +92,24 @@
 /* 练习模式切换组 */
 .mode-group {
   display: flex;
+  flex-shrink: 0;
   background: var(--border-light);
   border-radius: 20rpx;
   padding: 4rpx;
+}
+
+
+.mode-chip {
+  flex: 1;
+  text-align: center;
 }
 
 .mode-chip {
   font-size: 22rpx;
   color: var(--text-tertiary);
   padding: 10rpx 18rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
   border-radius: 18rpx;
   font-weight: 500;
   transition: all 0.2s var(--ease-out);
@@ -775,8 +821,16 @@
 
 /* ═══ 加载状态 ═══ */
 .loading-state {
+  /* 预留与“进度条+卡片+发音+按钮”相近的高度（约 960rpx），
+     避免加载完成后内容插入导致整页跳动 */
+  min-height: 960rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 40rpx;
   text-align: center;
-  padding: 160rpx 40rpx;
 }
 
 .loading-dots {
@@ -997,4 +1051,35 @@
   text-align: center;
   font-size: 22rpx;
   color: var(--text-quaternary);
+}
+
+/* ─── 学习范围筛选按钮激活态 ─── */
+.book-bar-switch.scope-on {
+  color: var(--color-primary);
+  background: rgba(74, 122, 92, 0.14);
+  font-weight: 600;
+}
+
+/* ─── 结果页导出入口 ─── */
+.result-export {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 6rpx;
+}
+
+/* ─── 隐藏导出画布 ─── */
+.export-canvas-hidden {
+  position: fixed;
+  left: -9999rpx;
+  top: -9999rpx;
+  width: 340px;
+  height: 600px;
+  pointer-events: none;
+}
+
+.export-canvas {
+  width: 340px;
+  height: 600px;
 }

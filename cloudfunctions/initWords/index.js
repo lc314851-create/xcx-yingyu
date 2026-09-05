@@ -50,8 +50,9 @@ exports.main = async (event, context) => {
   try {
     // 0. 服务端换取临时下载链接（不受客户端存储权限限制，绕过 empty download url）
     if (action === 'getBookFileUrl' && bookId) {
-      const bucket = '636c-cloudbase-d0g1vselq28a99d40-147023080';
-      const envId = cloud.DYNAMIC_CURRENT_ENV || 'cloudbase-d0g1vselq28a99d40';
+      const bucket = '636c-cloudbase-d0g1vselq28a99d40-1470230380';
+      // DYNAMIC_CURRENT_ENV 是 Symbol，不能进模板字符串，直接写死环境 ID
+      const envId = 'cloudbase-d0g1vselq28a99d40';
       const fileID = `cloud://${envId}.${bucket}/wordbooks/${bookId}.json`;
       const res = await cloud.getTempFileURL({ fileList: [fileID] });
       const f = res.fileList && res.fileList[0];

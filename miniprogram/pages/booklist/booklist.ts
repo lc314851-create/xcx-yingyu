@@ -21,7 +21,7 @@ const BOOK_META: Record<string, BookMeta> = {
   postgrad: { order: 5, color: '#F44336', bgColor: '#FFEBEE', tag: '考研', group: 'uni' },
   ielts:    { order: 6, color: '#00BCD4', bgColor: '#E0F7FA', tag: '雅思', group: 'abroad' },
   toefl:    { order: 7, color: '#795548', bgColor: '#EFEBE9', tag: '托福', group: 'abroad' },
-  gre:      { order: 8, color: '#9E9E9E', bgColor: '#FAFAFA', tag: 'GRE', group: 'abroad' }
+  gre:      { order: 8, color: '#9E9E9E', bgColor: '#FAFAFA', tag: 'GRE', group: 'abroad' },
 };
 
 // 教材同步默认主题色

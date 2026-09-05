@@ -57,7 +57,7 @@
       >
         <view class="quiz-option-letter serif">{{['A','B','C','D'][oi]}}</view>
         <view class="quiz-option-text">{{item}}</view>
-        <view class="quiz-option-mark" wx:if="{{selected == oi && isCorrect}}">✓</view>
+        <view class="quiz-option-mark" wx:if="{{selected == oi && isCorrect || (answered && !isCorrect && oi == correctIdx)}}">✓</view>
         <view class="quiz-option-mark" wx:if="{{selected == oi && !isCorrect}}">✗</view>
       </view>
     </view>

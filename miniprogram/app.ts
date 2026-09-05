@@ -6,6 +6,7 @@ import {
   syncWrongBookToCloud,
   getCurrentBookId
 } from './utils/store';
+import { getBookWords } from './utils/wordService';
 
 App({
   globalData: {
@@ -29,7 +30,11 @@ App({
     this.checkUpdate();
 
     // 自动登录获取 openid
-    this.login();
+    this.login().finally(() => {
+      // 预热当前词书：必须在拿到 openid 之后再下载，否则云存储读权限校验失败（报 empty download url）
+      // 命中本地文件缓存时无网络请求，不受影响
+      getBookWords(getCurrentBookId()).catch(() => {});
+    });
 
     // 登录失败时也尝试用缓存的 openid 恢复进度（尽力而为）
     const cachedOpenid = wx.getStorageSync('bc_openid');

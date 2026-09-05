@@ -43,109 +43,127 @@ const BOOK_META: Omit<WordBook, 'words'>[] = [
 import { wordBooks as localBooks } from '../data/index';
 
 // v2：词库字段升级（root/rootGloss/relatedWords/lemma），旧缓存不可复用
-const CACHE_PREFIX = 'bc_words_v2_';
+const CACHE_PREFIX = 'bc_words_v4_'; // v4：v3 时期云函数兕底曾把无 posTag 的旧词条写入缓存，升版强制重拉
 const CACHE_META_KEY = 'bc_words_meta_v2';
 const CACHE_EXPIRE = 7 * 24 * 60 * 60 * 1000; // 7天缓存
 
 // 云环境与存储桶（用于拼接 fileID；小程序端 downloadFile 只认 fileID，不支持 cloudPath）
 // 存储桶格式：{envId}.{bucket}，可在云开发控制台-存储-文件详情的 FileID 中查看确认
 const CLOUD_ENV_ID = 'cloudbase-d0g1vselq28a99d40';
-const CLOUD_BUCKET = '636c-cloudbase-d0g1vselq28a99d40-147023080';
+const CLOUD_BUCKET = '636c-cloudbase-d0g1vselq28a99d40-1470230380';
 const CLOUD_FILE_ID = (bookId: string) =>
   `cloud://${CLOUD_ENV_ID}.${CLOUD_BUCKET}/wordbooks/${bookId}.json`;
 
 // 本会话内已知云存储缺失的文件（避免每次切词书都重复请求失败、拖慢加载）
 const cloudFileMissing = new Set<string>();
 
+// 带超时的 Promise 包装：云下载/云函数若挂起，超时后放弃，让后续兑底方案接管
+function withTimeout<T>(p: Promise<T>, ms: number, label = 'request'): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(label + ' timeout ' + ms + 'ms')), ms);
+    p.then(
+      v => { clearTimeout(timer); resolve(v); },
+      e => { clearTimeout(timer); reject(e); }
+    );
+  });
+}
+
 // ─── 方案一：云存储 JSON 下载（首选，CDN 缓存，秒开） ──────────
 async function getBookWordsFromCloudFile(bookId: string): Promise<WordItem[] | null> {
-  try {
-    if (!wx.cloud || !wx.cloud.downloadFile) return null;
-    // 已确认存储桶里没有该文件，本会话直接走云函数兜底
-    if (cloudFileMissing.has('wordbooks/' + bookId + '.json')) return null;
+  const cloudPath = 'wordbooks/' + bookId + '.json';
+  if (!wx.cloud || !wx.cloud.downloadFile) return null;
+  // 两条下载路径都已失败的词书，本会话直接走云函数兜底
+  if (cloudFileMissing.has(cloudPath)) return null;
 
-    // 小程序端 downloadFile 仅支持 fileID（cloudPath 仅用于上传）
-    const res = await wx.cloud.downloadFile({
-      fileID: CLOUD_FILE_ID(bookId)
-    });
-
-    if (!res || !res.tempFilePath) return null;
-
-    // 读取临时文件内容
-    const fs = wx.getFileSystemManager();
-    const content = fs.readFileSync(res.tempFilePath, 'utf-8') as string;
-    const words: WordItem[] = JSON.parse(content);
-
-    if (words && words.length > 0) {
-      return words;
+  // 解析已下载的临时文件
+  const parseDl = (p: string): WordItem[] | null => {
+    try {
+      const fs = wx.getFileSystemManager();
+      const words: WordItem[] = JSON.parse(fs.readFileSync(p, 'utf-8') as string);
+      return words && words.length > 0 ? words : null;
+    } catch (e) {
+      console.log(`[词库] ${bookId} 解析下载文件失败`, e);
+      return null;
     }
-    return null;
-    // 客户端 fileID 下载失败：尝试云函数换临时链接（服务端 getTempFileURL 不受客户端存储权限限制）
-    const urlRes = await wx.cloud.callFunction({
-      name: 'initWords',
-      data: { action: 'getBookFileUrl', bookId }
-    });
+  };
+
+  // 方式 A：客户端 fileID 直下（最快）
+  // 注意：服务端云函数上传的文件，客户端直下可能报 empty download url，属已知情况，此时走方式 B
+  try {
+    const res = await withTimeout<any>(
+      wx.cloud.downloadFile({ fileID: CLOUD_FILE_ID(bookId) }),
+      8000, 'downloadFile ' + bookId
+    );
+    if (res && res.tempFilePath) {
+      const words = parseDl(res.tempFilePath);
+      if (words) return words;
+    }
+  } catch (err: any) {
+    console.log(`[词库] fileID直下 ${bookId} 失败：${(err && (err.errMsg || err.message)) || err}，改走临时链接`);
+  }
+
+  // 方式 A2：CDN 直连（存储开启公开读时可用，不依赖 fileID 与环境绑定）
+  try {
+    const directUrl = `https://${CLOUD_BUCKET}.tcb.qcloud.la/wordbooks/${bookId}.json`;
+    const dl2 = await withTimeout(new Promise<string>((resolve: any, reject: any) => {
+      wx.downloadFile({
+        url: directUrl,
+        success: (r: any) => (r.statusCode === 200 ? resolve(r.tempFilePath) : reject(new Error('status ' + r.statusCode))),
+        fail: reject
+      });
+    }), 8000, 'cdnDirect ' + bookId);
+    const cdnWords = parseDl(dl2);
+    if (cdnWords) {
+      console.log(`[词库] ${bookId} CDN直连下载完成`);
+      return cdnWords;
+    }
+  } catch (e3: any) {
+    console.log(`[词库] CDN直连 ${bookId} 失败`, (e3 && (e3.errMsg || e3.message)) || e3);
+  }
+
+  // 方式 B：云函数 getTempFileURL 换临时链接下载（服务端不受客户端存储 ACL 限制）
+  try {
+    const urlRes = await withTimeout<any>(
+      wx.cloud.callFunction({ name: 'initWords', data: { action: 'getBookFileUrl', bookId } }),
+      8000, 'getBookFileUrl ' + bookId
+    );
     const urlResult = urlRes.result as any;
     if (urlResult && urlResult.ok && urlResult.url) {
-      const dl = await new Promise<string>((resolve, reject) => {
+      const dl = await withTimeout(new Promise<string>((resolve, reject) => {
         wx.downloadFile({
           url: urlResult.url,
-          success: (r) => (r.statusCode === 200 ? resolve(r.tempFilePath) : reject(new Error('status ' + r.statusCode))),
+          success: (r: any) => (r.statusCode === 200 ? resolve(r.tempFilePath) : reject(new Error('status ' + r.statusCode))),
           fail: reject
         });
-      });
-      const fs = wx.getFileSystemManager();
-      const words: WordItem[] = JSON.parse(fs.readFileSync(dl, 'utf-8') as string);
-      if (words && words.length > 0) return words;
-    }
-    return null;
-  } catch (err: any) {
-    const msg = (err && (err.errMsg || err.message)) || '';
-    if (msg.indexOf('empty download url') > -1) {
-      // fileID 下载报缺文件：先试临时链接（可能只是客户端权限问题），都失败才记入缺失名单
-      try {
-        const urlRes2 = await wx.cloud.callFunction({
-          name: 'initWords',
-          data: { action: 'getBookFileUrl', bookId }
-        });
-        const r2 = urlRes2.result as any;
-        if (r2 && r2.ok && r2.url) {
-          const dl2 = await new Promise<string>((resolve, reject) => {
-            wx.downloadFile({
-              url: r2.url,
-              success: (r) => (r.statusCode === 200 ? resolve(r.tempFilePath) : reject(new Error('status ' + r.statusCode))),
-              fail: reject
-            });
-          });
-          const fs2 = wx.getFileSystemManager();
-          const words2: WordItem[] = JSON.parse(fs2.readFileSync(dl2, 'utf-8') as string);
-          if (words2 && words2.length > 0) return words2;
-        }
-      } catch (e2) {
-        console.log(`临时链接下载 ${bookId} 也失败`, e2);
-      }
-      cloudFileMissing.add('wordbooks/' + bookId + '.json');
-      console.info(`${bookId}.json 暂不可用（存储桶无文件或权限未生效），已走云函数`);
+      }), 10000, 'tempUrl download ' + bookId);
+      const words = parseDl(dl);
+      if (words) return words;
     } else {
-      console.log(`云存储下载 ${bookId} 失败（将使用云函数兜底）`, err);
+      console.log(`[词库] getBookFileUrl ${bookId} 未返回链接`, urlResult);
     }
-    return null;
+  } catch (e2: any) {
+    console.log(`[词库] 临时链接下载 ${bookId} 失败`, (e2 && (e2.errMsg || e2.message)) || e2);
   }
+
+  cloudFileMissing.add(cloudPath);
+  console.info(`[词库] ${bookId}.json 云存储两条路径均不可用，本次走云函数`);
+  return null;
 }
+
 
 // ─── 方案二：云函数分页拉取（兜底） ──────────────────────────────
 async function getBookWordsFromCloudFunction(bookId: string): Promise<WordItem[] | null> {
   try {
     let allWords: WordItem[] = [];
     let page = 0;
-    const pageSize = 500;
+    const pageSize = 1000; // 云函数端单页上限 1000，页数减半提速
     let hasMore = true;
 
     while (hasMore) {
-      const res = await wx.cloud.callFunction({
+      const res = await withTimeout<any>(wx.cloud.callFunction({
         name: 'initWords',
         data: { action: 'getWords', bookId, page, pageSize }
-      });
+      }), 10000, 'callFunction getWords ' + bookId);
 
       const result = res.result as any;
       if (result && result.words && result.words.length > 0) {
@@ -176,9 +194,9 @@ export async function getBookList(): Promise<{ id: string; name: string; desc: s
   try {
     if (wx.cloud && wx.cloud.downloadFile) {
       // 下载同样只能用 fileID
-      const res = await wx.cloud.downloadFile({
+      const res = await withTimeout<any>(wx.cloud.downloadFile({
         fileID: `cloud://${CLOUD_ENV_ID}.${CLOUD_BUCKET}/wordbooks/books_meta.json`
-      });
+      }), 5000, 'downloadFile meta');
       if (res && res.tempFilePath) {
         const fs = wx.getFileSystemManager();
         const content = fs.readFileSync(res.tempFilePath, 'utf-8') as string;
@@ -212,10 +230,10 @@ export async function getBookList(): Promise<{ id: string; name: string; desc: s
 
   // 从云函数拉取
   try {
-    const res = await wx.cloud.callFunction({
+    const res = await withTimeout<any>(wx.cloud.callFunction({
       name: 'initWords',
       data: { action: 'getMeta' }
-    });
+    }), 8000, 'callFunction getMeta');
 
     const cloudMeta = res.result as any;
     const books = BOOK_META.map(meta => ({
@@ -240,41 +258,65 @@ export async function getBookList(): Promise<{ id: string; name: string; desc: s
 }
 
 // 获取某词书的单词列表
-// 优先级：本地缓存 → 云存储 JSON 下载 → 云函数分页 → 本地种子
-export async function getBookWords(bookId: string): Promise<WordItem[]> {
-  const cacheKey = CACHE_PREFIX + bookId;
+// 优先级：内存 → 本地 storage → 文件缓存 → 云存储 JSON → 云函数分页 → 本地种子
 
-  // 0. 内存缓存：本次会话已解析过的词书直接返回，避免反复读盘+解析大 JSON 卡顿
+// 同一词书的并发请求去重：启动预热与页面加载共享同一个下载/解析 Promise，避免重复下载
+const inflightGets = new Map<string, Promise<WordItem[]>>();
+
+export async function getBookWords(bookId: string): Promise<WordItem[]> {
+  // 0. 内存缓存：本次会话已解析过的词书直接返回
   if (memoryWords.has(bookId)) {
     return memoryWords.get(bookId)!;
   }
+  const inflight = inflightGets.get(bookId);
+  if (inflight) return inflight;
+  const task = loadBookWords(bookId).finally(() => inflightGets.delete(bookId));
+  inflightGets.set(bookId, task);
+  return task;
+}
+
+async function loadBookWords(bookId: string): Promise<WordItem[]> {
+  const cacheKey = CACHE_PREFIX + bookId;
+  const t0 = Date.now();
 
   // 1a. 旧版 storage 缓存（小词书）
   const cached = wx.getStorageSync(cacheKey);
   if (cached && cached.timestamp && Date.now() - cached.timestamp < CACHE_EXPIRE) {
+    console.log(`[词库] ${bookId} storage缓存命中，${Date.now() - t0}ms`);
     memoryWords.set(bookId, cached.data as WordItem[]);
     return cached.data as WordItem[];
   }
+
 
   // 1b. 文件缓存（大词书；setStorageSync 单 key 上限 1MB，大词书必须用文件缓存）
   const filePath = `${wx.env.USER_DATA_PATH}/wc_${bookId}.json`;
   const fs = wx.getFileSystemManager();
   try {
     const tsMap = wx.getStorageSync(CACHE_FILE_TS_KEY) || {};
-    if (tsMap[bookId] && Date.now() - tsMap[bookId] < CACHE_EXPIRE && fs.existsSync(filePath)) {
+    // 微信 FileSystemManager 没有 existsSync，用 accessSync 探测文件是否存在
+    let fileExists = true;
+    try {
+      fs.accessSync(filePath);
+    } catch (e) {
+      fileExists = false;
+    }
+    if (tsMap[bookId] && Date.now() - tsMap[bookId] < CACHE_EXPIRE && fileExists) {
       const words: WordItem[] = JSON.parse(fs.readFileSync(filePath, 'utf-8') as string);
       if (words && words.length > 0) {
+        console.log(`[词库] ${bookId} 文件缓存命中，${Date.now() - t0}ms`);
         memoryWords.set(bookId, words);
         return words;
       }
     }
   } catch (e) {
-    // 文件缓存损坏则忽略，重新拉取
+    console.log(`[词库] ${bookId} 文件缓存读取失败，将重新拉取`, e);
   }
 
   // 2. 尝试云存储 JSON 下载（CDN 缓存，秒开）
+  console.log(`[词库] ${bookId} 缓存未命中，开始云端下载…`);
   const cloudFileWords = await getBookWordsFromCloudFile(bookId);
   if (cloudFileWords && cloudFileWords.length > 0) {
+    console.log(`[词库] ${bookId} 云端下载完成，耗时 ${Date.now() - t0}ms`);
     saveWordsCache(bookId, filePath, fs, cloudFileWords, cacheKey);
     memoryWords.set(bookId, cloudFileWords);
     return cloudFileWords;
@@ -283,7 +325,11 @@ export async function getBookWords(bookId: string): Promise<WordItem[]> {
   // 3. 云函数分页拉取（兜底）
   const cloudFnWords = await getBookWordsFromCloudFunction(bookId);
   if (cloudFnWords && cloudFnWords.length > 0) {
-    saveWordsCache(bookId, filePath, fs, cloudFnWords, cacheKey);
+    // 兕底数据若无 posTag（数据库还是旧版词条），只进内存不落缓存，
+    // 避免污染本地缓存导致云端修复后仍读旧数据
+    if (cloudFnWords[0] && 'posTag' in cloudFnWords[0]) {
+      saveWordsCache(bookId, filePath, fs, cloudFnWords, cacheKey);
+    }
     memoryWords.set(bookId, cloudFnWords);
     return cloudFnWords;
   }
@@ -326,7 +372,7 @@ function saveWordsCache(bookId: string, filePath: string, fs: any, words: WordIt
     tsMap[bookId] = Date.now();
     wx.setStorageSync(CACHE_FILE_TS_KEY, tsMap);
   } catch (e) {
-    // 缓存写失败不影响本次使用
+    console.log(`[词库] ${bookId} 缓存写入失败（下次仍需下载）`, e);
   }
   // 小词书同步写一份 legacy storage 缓存（<900KB 才写，避免超 1MB 限制抛异常）
   try {

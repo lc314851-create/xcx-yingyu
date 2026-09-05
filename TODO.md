@@ -222,3 +222,62 @@
 - [ ] **P4 增长链路**：词汇量测试上线后统计「测试 → 切换词书」转化率，决定是否升级启动首屏
 - [ ] **P5 云函数清理**：getRanking 随 leaderboard 下线（无人调用即可删除）；sendReminder 部署 + 模板 + miniprogramState='formal' 上线 checklist
 
+
+## [2026-09-05] P11 · 词性筛选（虚词/实词）+ 今日单词导出（代码已完成）
+
+### 词性标注与筛选
+- scripts/enrich_wordbooks.py：加载 ECDICT pos/collins 字段，新增 pos_tag_of()——虚词=介词/连词/代词/限定词/助动词/感叹词（权重≥50%）+ 人工补充表（be系动词/情态动词/do/the/not/it 等），词条写入 posTag: 'func' | 'content'
+- 全部 8 本主词书重跑生成（cet4 虚词 69、junior 174 等）；修复 total 权重只累加虚词导致的误判 bug
+- 新增高频核心词书 highfreq.json：跨书去重按 Collins 星级降序取 1800 词（虚词 131 / 实词 1669），books_meta.json 已追加
+- types.ts WordItem 增加 posTag；StudyMode 扩为 all/highFreq/func/content
+- store.ts getStudyMode/setStudyMode 扩宽；words.ts 过滤逻辑扩展（全部/高频/虚词/实词 + 空书提示）
+- words 页顶部新增「范围：全部」按钮（ActionSheet 四选，激活态高亮 scope-on）；旧 toggleStudyMode 兼容转发
+- booklist 注册 highfreq 卡片（新分组「高频核心」置顶，金棕色主题）
+- wordService CACHE_PREFIX 升级 v3（旧缓存词条无 posTag，必须失效重拉）
+
+### 今日单词导出（中英对照）
+- utils/todayExport.ts：collectTodayRows() 聚合今日学习词（扫全部 bc_progress_* 按 lastSeen 自然日过滤）+ 词书释义映射；buildTsv() 制表符文本（粘贴进 WPS/Excel 自动成表）；exportImage() canvas 绘制手账风中英对照表（米纸底/松绿墨/朱砂√×，最多 40 词/页）保存相册
+- store.ts 新增 getTodayLearnedWords()
+- 入口：① words 结果页「导出今日单词表 ›」② mine 页「更多」宫格「导出今日单词」；两页各挂隐藏 2d canvas
+- 烟测 npm run smoke 全部通过；tsc 改动文件零报错
+
+### ⚠️ 待人工部署（云开发控制台）
+1. 上传 wordbooks_json/*.json（含新增 highfreq.json 与 books_meta.json）到云存储 wordbooks/ 目录
+2. 微信开发者工具真机验证：虚词筛选（切到 junior 词书虚词量最多）、导出文本粘贴 Excel、导出图片保存相册
+
+### [2026-09-05] 经验沉淀 · 今日单词导出功能开发复盘
+
+#### 1. xlsx 无依赖生成方案（可直接复用）
+- todayExport.ts 内置手写 xlsx 生成器（~200 行，零第三方依赖）：
+  `utf8Bytes`(UTF-8 手工编码) + `crc32` + `makeZip`(仅存储模式的 zip 容器) + OOXML 五件套
+  ([Content_Types].xml / _rels/.rels / xl/workbook.xml / xl/_rels/workbook.xml.rels / xl/worksheets/sheet1.xml / xl/styles.xml)
+- 复用场景：生词本导出、周报导出等，只需换 rows 数据源和 sheet 构建
+- 字符串单元格用 inlineStr（`<c t="inlineStr"><is><t>`），免维护 sharedStrings
+- 注意：写入用 `fs.writeFileSync`（同步），保证 `wx.shareFileMessage` 在用户点击的同步链路里，否则报"不在用户操作中"
+
+#### 2. 踩过的坑
+- **[Content_Types].xml 严格校验**：Override 必须在 </Types> 之内。手机微信预览宽容能放过去，
+  桌面版 WPS 直接报"无法打开文件"——**不同端解析器宽容度差异大，必须在桌面 WPS 验证**
+- **样式表不能省**：缺 xl/styles.xml 时部分解析器渲染空白表（打开正常但没内容）
+- **worksheet 要带 `<dimension>`**：部分解析器依赖它定位有效区域
+- 验证格式有效性：openpyxl 太宽容测不出结构性问题，要对每个 XML 部件做严格解析
+  （本项目用 Node 跑真实 TS 函数生成 + Python zipfile/ElementTree 严格校验的组合）
+
+#### 3. canvas 导出图片经验
+- 微信 canvas 有像素上限，超限生成失败：用固定 dpr=2 + 按行数分页（每页 ~30 行），
+  而不是压缩 dpr 换单张图（会发虚）
+- 中文释义两行排版：行距 ≥20px，否则 11px 汉字上下叠字；换行前先剔除 [电]/[医] 类
+  学科标签噪声和释义里的 \n（ECDICT 释义带换行符，canvas 不认但会打乱排版）
+
+#### 4. 流程教训
+- **"做不了"≠"不值得做"**：最初判断"xlsx 要引大库做不了"是错的，穷尽方案后再下结论；
+  格式公开且结构简单（zip+XML）的场景，手写实现可能零依赖就够
+- **改数据格式必须升缓存版本号**：词条新增字段（如 posTag）时旧缓存缺字段会导致筛选失效，
+  CACHE_PREFIX v2→v3 强制失效重拉
+- **开发者工具"清全部缓存"=恢复出厂**：会清掉选书记录和学习进度，别用它验证数据更新
+  （v3 版本号会自动失效旧词书缓存，直接编译即可）；它只适合模拟全新用户
+
+#### 5. 待办提醒
+- [ ] 云存储 wordbooks/ 上传新版 JSON（posTag + highfreq.json + books_meta）
+- [ ] 真机验证：虚词筛选、三种导出、桌面 WPS 打开 xlsx
+- [ ] shareFileMessage 需真机验证（开发者工具不支持）

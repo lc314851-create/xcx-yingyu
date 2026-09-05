@@ -115,7 +115,7 @@ SUFFIXES = sorted([
 print('加载 ECDICT 数据库...')
 db = sqlite3.connect(DB_PATH)
 ecdict = {}
-for row in db.execute('SELECT word, phonetic, translation, exchange FROM stardict'):
+for row in db.execute('SELECT word, phonetic, translation, exchange, pos, collins FROM stardict'):
     w = row[0].lower()
     if w not in ecdict:
         ecdict[w] = row
@@ -129,6 +129,50 @@ real_words = {
 dict_words = set(ecdict.keys())
 print(f'  载入 {len(dict_words)} 词条，真实词 {len(real_words)}')
 
+
+# ─── 词性分类（虚词/实词）─────────────────────────
+# ECDICT pos 编码: n名词 v动词 a形容词 r副词 i介词 c连词 p代词 d限定词
+# u助动词 e感叹词 m数词 t不定式标记 o其他
+FUNC_POS = {'i', 'c', 'p', 'd', 'u', 'e', 't'}
+# 助动词/系动词在 ECDICT 常标为 v，人工补充归入虚词（功能词）
+MANUAL_FUNC = {
+    'be', 'am', 'is', 'are', 'was', 'were', 'been', 'being',
+    'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might',
+    'must', 'ought', 'do', 'does', 'did', 'done',
+    'the', 'a', 'an', 'not', 'no', 'to', 'there', 'it',
+}
+
+# 短语派生词：因“in spite of”类短语义项被 ECDICT 标为介词，
+# 但单词本身是名词/形容词，强制归为实词
+MANUAL_CONTENT = {
+    'spite', 'accordance', 'addition', 'behalf', 'conjunction',
+    'owing', 'prior', 'former', 'latter', 'worth', 'plenty', 'due',
+}
+
+def pos_tag_of(word: str) -> str:
+    """返回 'func'(虚词) / 'content'(实词)；查不到时返回 'content'"""
+    if word in MANUAL_CONTENT:
+        return 'content'
+    if word in MANUAL_FUNC:
+        return 'func'
+    row = ecdict.get(word)
+    if not row or not row[4]:
+        return 'content'
+    func_weight, total = 0.0, 0.0
+    for part in row[4].split('/'):
+        seg = part.split(':')
+        if len(seg) != 2:
+            continue
+        try:
+            wgt = float(seg[1])
+        except ValueError:
+            continue
+        total += wgt
+        if seg[0] in FUNC_POS:
+            func_weight += wgt
+    if total <= 0:
+        return 'content'
+    return 'func' if func_weight / total >= 0.5 else 'content'
 
 def lemma_of(word: str) -> str:
     """从 exchange 字段提取原型（1:xxx）"""
@@ -341,7 +385,7 @@ def find_similars(words):
 
 
 # ─── 主流程 ────────────────────────────────────────────────────
-stats = {'root': 0, 'similar': 0, 'cleaned': 0, 'junkex': 0, 'phonfix': 0}
+stats = {'root': 0, 'similar': 0, 'cleaned': 0, 'junkex': 0, 'phonfix': 0, 'func': 0}
 
 for book in BOOKS:
     path = os.path.join(JSON_DIR, f'{book}.json')
@@ -390,12 +434,62 @@ for book in BOOKS:
             w['relatedWords'] = sim_map[w['word']]
             stats['similar'] += 1
 
+        tag = pos_tag_of(word)
+        old_tag = w.get('posTag')
+        if tag != old_tag:
+            w['posTag'] = tag
+            if tag == 'func':
+                stats['func'] += 1
+
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(words, f, ensure_ascii=False, separators=(',', ':'))
     n_root = sum(1 for w in words if w.get('root'))
     n_sim = sum(1 for w in words if w.get('relatedWords'))
-    print(f'{book}: {len(words)} 词 | 词根 {n_root} | 形近 {n_sim}')
+    n_func = sum(1 for w in words if w.get('posTag') == 'func')
+    print(f'{book}: {len(words)} 词 | 词根 {n_root} | 形近 {n_sim} | 虚词 {n_func}')
 
 print('─' * 50)
-print(f'总计: 词根 {stats["root"]} | 形近 {stats["similar"]} | 释义清洗 {stats["cleaned"]} | 垃圾例句 {stats["junkex"]} | 音标修复 {stats["phonfix"]}')
-print('完成。请重新上传 wordbooks_json/*.json 到云存储后生效。')
+print(f'总计: 词根 {stats["root"]} | 形近 {stats["similar"]} | 释义清洗 {stats["cleaned"]} | 垃圾例句 {stats["junkex"]} | 音标修复 {stats["phonfix"]} | 虚词更新 {stats["func"]}')
+
+# ─── 高频核心词书（已下线：2026-09-05 应需求移除书单入口）──────────
+if False:
+    HIGHFREQ_TARGET = 1800
+    print('生成高频核心词书 highfreq.json ...')
+    seen, pool = set(), []
+    for book in BOOKS:
+        path = os.path.join(JSON_DIR, f'{book}.json')
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding='utf-8') as f:
+            for w in json.load(f):
+                lw = w['word'].lower()
+                if lw in seen:
+                    continue
+                seen.add(lw)
+                row = ecdict.get(lw)
+                collins = (row[5] if row and row[5] else 0)
+                pool.append((collins, len(pool), w))
+
+    pool.sort(key=lambda x: (-x[0], x[1]))
+    selected = [w for _, _, w in pool[:HIGHFREQ_TARGET]]
+    # 稳定排序：星数降序、同星按原书序
+    out_path = os.path.join(JSON_DIR, 'highfreq.json')
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(selected, f, ensure_ascii=False, separators=(',', ':'))
+    n_func = sum(1 for w in selected if w.get('posTag') == 'func')
+    print(f'highfreq.json: {len(selected)} 词 | 虚词 {n_func} | 实词 {len(selected) - n_func}')
+
+    # 更新 books_meta.json
+    meta_path = os.path.join(JSON_DIR, 'books_meta.json')
+    with open(meta_path, encoding='utf-8') as f:
+        meta = json.load(f)
+    entry = {'id': 'highfreq', 'name': '高频核心词', 'tag': '高频',
+             'wordCount': len(selected), 'highFreqCount': len(selected)}
+    if not any(m.get('id') == 'highfreq' for m in meta):
+        meta.append(entry)
+    else:
+        meta = [entry if m.get('id') == 'highfreq' else m for m in meta]
+    with open(meta_path, 'w', encoding='utf-8') as f:
+        json.dump(meta, f, ensure_ascii=False, separators=(',', ':'))
+    print('books_meta.json 已更新。')
+    print('完成。请重新上传 wordbooks_json/*.json 到云存储后生效。')

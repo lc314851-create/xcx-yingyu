@@ -1,6 +1,7 @@
 // pages/wrongbook/wrongbook.ts
 import { getWrongBook, removeFromWrongBook, clearWrongBook, WrongBookItem } from '../../utils/store';
 import { playAudio } from '../../utils/audio';
+import { showExportSheet, TodayRow } from '../../utils/todayExport';
 
 Page({
   data: {
@@ -20,6 +21,35 @@ Page({
     });
   },
 
+  // 导出生词本（文本 / 图片 / Excel）
+  onExport() {
+    const rows: TodayRow[] = this.data.words.map((w: WrongBookItem) => ({
+      word: w.word,
+      meaning: w.meaning || '',
+      phonetic: '',
+      known: true
+    }));
+    showExportSheet(rows, () => this._getExportCanvas(), {
+      title: '生词本 · 中英对照',
+      footText: '英语补词达人 · 生词本导出',
+      namePrefix: '生词本',
+      emptyTip: '生词本还是空的',
+      buildTsvTitle: '生词本'
+    });
+  },
+
+  _getExportCanvas(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      wx.createSelectorQuery().in(this)
+        .select('#exportCanvas')
+        .fields({ node: true })
+        .exec((res: any) => {
+          if (res && res[0] && res[0].node) resolve(res[0].node);
+          else reject(new Error('canvas 未就绪'));
+        });
+    });
+  },
+
   // 播放发音
   onPlayAudio(e: any) {
     const word = e.currentTarget.dataset.word as string;
@@ -32,7 +62,7 @@ Page({
     wx.showModal({
       title: '确认移除',
       content: `确定将「${word}」从生词本移除吗？`,
-      success: (res) => {
+      success: (res: any) => {
         if (res.confirm) {
           removeFromWrongBook(word);
           this.loadWords();
@@ -51,7 +81,7 @@ Page({
     wx.showModal({
       title: '确认清空',
       content: '确定清空所有生词吗？此操作不可撤销。',
-      success: (res) => {
+      success: (res: any) => {
         if (res.confirm) {
           clearWrongBook();
           this.loadWords();

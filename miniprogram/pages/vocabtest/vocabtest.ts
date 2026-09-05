@@ -143,6 +143,7 @@ Page({
       phonetic: q.phonetic,
       bandLabel: BANDS[q.bandIndex]?.label + '词汇' || '',
       options: q.options,
+      correctIdx: q.correctIdx,
       selected: -1,
       answered: false,
       isCorrect: false
@@ -165,7 +166,7 @@ Page({
     this._answers.push(isCorrect);
     this.setData({ selected: idx, answered: true, isCorrect });
     playAudio(q.word, this.data.accent);
-    setTimeout(() => this.nextQuestion(), 650);
+    setTimeout(() => this.nextQuestion(), isCorrect ? 700 : 1800); // 答对稍作停留，答错多留时间看清正确答案
   },
 
   nextQuestion() {

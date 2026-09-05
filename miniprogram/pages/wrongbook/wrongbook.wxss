@@ -151,3 +151,36 @@
   font-size: 24rpx;
   color: var(--text-quaternary);
 }
+
+/* ─── 导出按钮与隐藏画布 ─── */
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.export-btn {
+  padding: 8rpx 24rpx;
+  font-size: 26rpx;
+  color: var(--color-primary, #4A7A5C);
+  border: 1rpx solid var(--color-primary, #4A7A5C);
+  border-radius: 999rpx;
+  margin-right: 16rpx;
+}
+
+.clear-btn {
+  /* 原有样式保持 */
+}
+
+.export-canvas-hidden {
+  position: fixed;
+  left: -9999rpx;
+  top: -9999rpx;
+  width: 420px;
+  height: 700px;
+  pointer-events: none;
+}
+
+.export-canvas {
+  width: 420px;
+  height: 700px;
+}

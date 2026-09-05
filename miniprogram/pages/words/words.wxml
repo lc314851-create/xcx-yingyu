@@ -1,19 +1,26 @@
 <!-- pages/words/words.wxml -->
+<!-- 隐藏 canvas（导出今日单词表图片用） -->
+<view class="export-canvas-hidden">
+  <canvas type="2d" id="exportCanvas" class="export-canvas"></canvas>
+</view>
 <view class="container">
   <!-- 顶部词书信息 -->
   <view class="book-bar">
-    <view class="book-bar-left" bindtap="changeBook">
+    <view class="book-bar-top" bindtap="changeBook">
       <view class="book-bar-name">{{bookName}}</view>
       <view class="book-bar-stats">已掌握 {{masteredCount}}/{{bookTotal}}</view>
     </view>
-    <view class="book-bar-right">
-      <!-- 练习模式切换 -->
+    <view class="book-bar-controls">
       <view class="mode-group">
         <view class="mode-chip {{practiceMode === 'card' ? 'active' : ''}}" data-mode="card" bindtap="onPracticeModeChange">卡片</view>
         <view class="mode-chip {{practiceMode === 'choice' ? 'active' : ''}}" data-mode="choice" bindtap="onPracticeModeChange">选择</view>
         <view class="mode-chip {{practiceMode === 'spell' ? 'active' : ''}}" data-mode="spell" bindtap="onPracticeModeChange">拼写</view>
       </view>
-      <view class="book-bar-switch" bindtap="onChangeBatchSize">{{batchSize}} 个/轮</view>
+      <view class="book-bar-switches">
+        <view class="book-bar-switch {{studyMode !== 'all' ? 'scope-on' : ''}}" bindtap="onSelectWordClass">范围：{{wordClassLabel}}</view>
+        <view class="book-bar-switch" bindtap="onToggleOrderMode">{{orderMode === 'random' ? '随机' : '顺序'}}</view>
+        <view class="book-bar-switch" bindtap="onChangeBatchSize">{{batchSize}} 个/轮</view>
+      </view>
     </view>
   </view>
 
@@ -180,6 +187,7 @@
         </view>
       </view>
       <view class="result-praise">{{resultPraise}}</view>
+      <view class="result-export" bindtap="onExportToday">导出今日单词表 ›</view>
       <view class="result-actions">
         <view class="btn-secondary result-btn" bindtap="onResultBack">返回首页</view>
         <view class="btn-secondary result-btn share-btn" bindtap="onSharePoster">分享打卡</view>
