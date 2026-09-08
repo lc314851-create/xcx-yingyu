@@ -33,7 +33,7 @@
 
   <!-- ═════ 平铺视图：词书全表，点击发声，长按漫游 ═════ -->
   <block wx:if="{{viewMode === 'flat'}}">
-    <view class="flat-tip">点单词：发声并以它为中心漫游 · 长按：回星系</view>
+    <view class="flat-tip">点单词朗读</view>
     <view class="flat-list">
       <view
         class="flat-item {{item.word === word ? 'flat-item-center' : ''}}"
@@ -41,7 +41,6 @@
         wx:key="word"
         data-word="{{item.word}}"
         bindtap="onFlatTap"
-        bindlongpress="onFlatLongPress"
       >
         <view class="flat-item-left">
           <view class="flat-item-word">{{item.word}}</view>
@@ -50,6 +49,10 @@
         <view class="flat-item-meaning">{{item.meaning}}</view>
         <view class="flat-item-tag" wx:if="{{item.word === word}}">中心</view>
       </view>
+    </view>
+    <view class="flat-actions">
+      <view class="flat-action-btn" bindtap="onFlatBack">回星系</view>
+      <view class="flat-action-btn flat-action-random" bindtap="onFlatRandom">随机漫游</view>
     </view>
   </block>
 

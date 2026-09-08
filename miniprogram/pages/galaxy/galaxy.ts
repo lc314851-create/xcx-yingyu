@@ -144,24 +144,27 @@ Page({
     else this.setData({ viewMode: next });
   },
 
-  // 平铺视图：点单词 → 发声 + 以它为中心重建词族（留在平铺视图内漫游）
-  async onFlatTap(e: any) {
+  // 平铺视图：点单词只朗读，保持简单
+  onFlatTap(e: any) {
     const word = e.currentTarget.dataset.word as string;
-    if (!word) return;
-    playAudio(word);
-    await this.showWord(word);
+    if (word) playAudio(word);
+  },
+
+  // 平铺视图：随机漫游 → 换一个随机中心词，留在平铺视图
+  async onFlatRandom() {
+    const rand = await this.pickRandomWord();
+    if (!rand) return;
+    playAudio(rand);
+    await this.showWord(rand);
     this.onToggleViewToFlat();
   },
 
-  // 平铺视图：长按单词 → 回星系轨道视图，以该词为中心
-  async onFlatLongPress(e: any) {
-    const word = e.currentTarget.dataset.word as string;
-    if (!word) return;
-    await this.showWord(word);
+  // 平铺视图：回星系轨道视图
+  onFlatBack() {
     this.setData({ viewMode: 'orbit' });
   },
 
-  // 以当前中心词重建平铺词族（showWord 成功后调用）
+  // 以当前中心词重建平铺词族
   onToggleViewToFlat() {
     const seen = new Set<string>([this.data.word.toLowerCase()]);
     const flat: WordItem[] = [];

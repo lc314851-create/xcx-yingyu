@@ -380,3 +380,28 @@
   border-radius: 999rpx;
   padding: 4rpx 14rpx;
 }
+
+/* 平铺视图底部操作条 */
+.flat-actions {
+  display: flex;
+  gap: 24rpx;
+  justify-content: center;
+  padding: 10rpx 30rpx calc(40rpx + env(safe-area-inset-bottom));
+}
+
+.flat-action-btn {
+  flex: 1;
+  max-width: 320rpx;
+  text-align: center;
+  font-size: 28rpx;
+  padding: 20rpx 0;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: #FFFDF6;
+}
+
+.flat-action-random {
+  background: transparent;
+  color: #C0684F;
+  border: 2rpx dashed rgba(192, 104, 79, 0.55);
+}
