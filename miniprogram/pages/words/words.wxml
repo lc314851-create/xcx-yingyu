@@ -12,12 +12,12 @@
     </view>
     <view class="book-bar-controls">
       <view class="mode-group">
-        <view class="mode-chip {{practiceMode === 'card' ? 'active' : ''}}" data-mode="card" bindtap="onPracticeModeChange">卡片</view>
-        <view class="mode-chip {{practiceMode === 'choice' ? 'active' : ''}}" data-mode="choice" bindtap="onPracticeModeChange">选择</view>
-        <view class="mode-chip {{practiceMode === 'spell' ? 'active' : ''}}" data-mode="spell" bindtap="onPracticeModeChange">拼写</view>
-        <view class="mode-chip {{practiceMode === 'mix' ? 'active' : ''}}" data-mode="mix" bindtap="onPracticeModeChange">混合</view>
-        <view class="mode-chip {{practiceMode === 'list' ? 'active' : ''}}" data-mode="list" bindtap="onPracticeModeChange">列表</view>
-        <view class="mode-chip settings-chip {{showSettings ? 'active' : ''}}" bindtap="openSettings">⚙</view>
+        <picker mode="selector" range="{{modeLabels}}" value="{{modeIndex}}" bindchange="onModePick">
+          <view class="mode-chip active">{{modeLabels[modeIndex]}} ▾</view>
+        </picker>
+        <view class="book-bar-switch {{studyMode !== 'all' ? 'scope-on' : ''}}" bindtap="onSelectWordClass">{{wordClassLabel}}</view>
+        <view class="book-bar-switch" bindtap="onToggleOrderMode">{{orderMode === 'random' ? '随机' : '顺序'}}</view>
+        <view class="book-bar-switch" bindtap="onChangeBatchSize">{{batchSize}} 个/轮</view>
       </view>
     </view>
   </view>
@@ -38,37 +38,6 @@
     <view class="progress-text">{{currentIndex + 1}} / {{totalCount}}</view>
     <view class="progress-bar">
       <view class="progress-fill" style="width: {{totalCount > 0 ? (currentIndex + 1) / totalCount * 100 : 0}}%"></view>
-    </view>
-  </view>
-
-  <!-- ⚙ 设置弹层（范围 / 顺序 / 每轮个数收拢，减少首屏控件密度） -->
-  <view class="report-mask" wx:if="{{showSettings}}" bindtap="closeSettings"></view>
-  <view class="report-panel settings-panel" wx:if="{{showSettings}}">
-    <view class="report-head">
-      <view class="report-title">出题设置</view>
-    </view>
-    <view class="settings-row-label">学习范围</view>
-    <view class="settings-chip-row">
-      <view class="settings-option {{studyMode === 'all' ? 'active' : ''}}" data-mode="all" bindtap="onSettingWordClass">全部</view>
-      <view class="settings-option {{studyMode === 'highFreq' ? 'active' : ''}}" data-mode="highFreq" bindtap="onSettingWordClass">高频词</view>
-      <view class="settings-option {{studyMode === 'func' ? 'active' : ''}}" data-mode="func" bindtap="onSettingWordClass">虚词</view>
-      <view class="settings-option {{studyMode === 'content' ? 'active' : ''}}" data-mode="content" bindtap="onSettingWordClass">实词</view>
-    </view>
-    <view class="settings-row-label">出题顺序</view>
-    <view class="settings-chip-row">
-      <view class="settings-option {{orderMode === 'random' ? 'active' : ''}}" data-mode="random" bindtap="onSettingOrderMode">随机</view>
-      <view class="settings-option {{orderMode === 'sequential' ? 'active' : ''}}" data-mode="sequential" bindtap="onSettingOrderMode">顺序</view>
-    </view>
-    <view class="settings-row-label">每轮个数</view>
-    <view class="settings-chip-row">
-      <view class="settings-option {{batchSize === 5 ? 'active' : ''}}" data-n="5" bindtap="onSettingBatchSize">5 个</view>
-      <view class="settings-option {{batchSize === 10 ? 'active' : ''}}" data-n="10" bindtap="onSettingBatchSize">10 个</view>
-      <view class="settings-option {{batchSize === 15 ? 'active' : ''}}" data-n="15" bindtap="onSettingBatchSize">15 个</view>
-      <view class="settings-option {{batchSize === 20 ? 'active' : ''}}" data-n="20" bindtap="onSettingBatchSize">20 个</view>
-    </view>
-    <view class="settings-tip">想要「认识 + 拼写 + 选择」一起练？关掉弹层，点顶部「混合」模式试试</view>
-    <view class="report-actions">
-      <view class="btn-primary report-btn" bindtap="closeSettings">完成</view>
     </view>
   </view>
 

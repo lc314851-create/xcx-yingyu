@@ -115,8 +115,9 @@ Page({
     listAnswered: {} as Record<string, string>,
     // 出题顺序：随机 / 顺序
     orderMode: 'random' as 'random' | 'sequential',
-    // ─── 设置弹层 ───
-    showSettings: false,
+    // ─── 出题模式下拉框 ───
+    modeLabels: ['卡片', '选择', '拼写', '混合', '列表'] as string[],
+    modeIndex: 0,
     // ─── 纠错上报 ───
     showReport: false,
     reportType: '' as ReportType | '',
@@ -181,6 +182,7 @@ Page({
     this.setData({
       currentBookId: getCurrentBookId(),
       practiceMode: getPracticeMode(),
+      modeIndex: ['card', 'choice', 'spell', 'mix', 'list'].indexOf(getPracticeMode()),
       accent: getAccent(),
       orderMode: getOrderMode()
       // reminderSubscribed: isReminderSubscribed() // 学习提醒已下线（2026-08-31）
@@ -821,6 +823,20 @@ Page({
   },
 
   // ─── 练习模式切换（切换不换词不跳词，当前词按新方式重新出题） ───
+  // 下拉框选模式
+  onModePick(e: any) {
+    const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'list'];
+    const mode = modes[Number(e.detail.value)] as PracticeMode;
+    if (!mode || mode === this.data.practiceMode) return;
+    setPracticeMode(mode);
+    this.setData({ practiceMode: mode, modeIndex: Number(e.detail.value) });
+    if (this.data.queue.length > 0) {
+      this._applyModeForCurrent();
+    }
+    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式', list: '列表模式' };
+    wx.showToast({ title: labels[mode] || '', icon: 'none' });
+  },
+
   onPracticeModeChange(e: any) {
     const mode = e.currentTarget.dataset.mode as PracticeMode;
     if (mode === this.data.practiceMode) return;
@@ -887,41 +903,6 @@ Page({
   // 兼容旧入口
   toggleStudyMode() {
     this.onSelectWordClass();
-  },
-
-  // ─── ⚙ 设置弹层（范围/顺序/每轮个数收拢） ───
-  openSettings() {
-    this.setData({ showSettings: true });
-  },
-
-  closeSettings() {
-    this.setData({ showSettings: false });
-  },
-
-  onSettingWordClass(e: any) {
-    const mode = e.currentTarget.dataset.mode as StudyMode;
-    if (!mode || mode === this.data.studyMode) return;
-    setStudyMode(mode);
-    this.setData({ showSettings: false, wordClassLabel: this.WORD_CLASS_LABELS[mode] || '全部' });
-    wx.showToast({ title: '已切换为「' + this.WORD_CLASS_LABELS[mode] + '」', icon: 'none' });
-    this.initBatch();
-  },
-
-  onSettingOrderMode(e: any) {
-    const mode = e.currentTarget.dataset.mode as 'random' | 'sequential';
-    if (!mode || mode === this.data.orderMode) return;
-    setOrderMode(mode);
-    this.setData({ orderMode: mode, showSettings: false });
-    this.initBatch();
-  },
-
-  onSettingBatchSize(e: any) {
-    const n = parseInt(e.currentTarget.dataset.n, 10);
-    if (!n || n === this.data.batchSize) return;
-    setBatchSize(n);
-    this.setData({ batchSize: n, showSettings: false });
-    wx.showToast({ title: '每轮 ' + n + ' 个单词', icon: 'none' });
-    this.initBatch();
   },
 
   // ─── 导出今日单词表 ───
