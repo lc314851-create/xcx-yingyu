@@ -103,7 +103,7 @@
           形近易混 {{similarTotal}}
         </view>
       </view>
-      <view class="view-toggle" bindtap="onToggleView">平铺模式</view>
+      <view class="view-toggle" bindtap="onToggleView">平铺</view>
       <view class="random-btn" bindtap="onRandomTap">随机漫游</view>
     </view>
   </block>
