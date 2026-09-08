@@ -317,12 +317,6 @@
   margin: 16rpx 0;
 }
 
-.flat-loading {
-  text-align: center;
-  font-size: 24rpx;
-  color: var(--text-tertiary);
-  padding: 120rpx 0;
-}
 
 .flat-grid {
   display: flex;

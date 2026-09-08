@@ -4,7 +4,6 @@
 import { getFamily, randomFamilyWord, FamilyResult } from '../../utils/familyService';
 import { playAudio } from '../../utils/audio';
 import { getCurrentBookId } from '../../utils/store';
-import { getBookById } from '../../utils/wordService';
 import { WordItem } from '../../data/types';
 
 type RelationTab = 'family' | 'similar';
@@ -32,10 +31,9 @@ Page({
     bookLevel: '',
     hasResult: true,
     inMainBook: true, // 中心词是否在当前词书（跨册漫游时标注）
-    // 展示视图：orbit=星系轨道 / flat=词书全表平铺
+    // 展示视图：orbit=星系轨道 / flat=当前星系词族平铺
     viewMode: 'orbit' as 'orbit' | 'flat',
-    flatWords: [] as WordItem[],
-    flatLoading: false
+    flatWords: [] as WordItem[]
   },
 
   allFamily: [] as WordItem[],
@@ -139,24 +137,24 @@ Page({
     this.setData({ nodes });
   },
 
-  // ─── 平铺视图：当前词书全表，点击发声 ───
+  // ─── 平铺视图：当前星系词族（中心词 + 同根 + 形近），点击发声 ───
   onToggleView() {
     const next = this.data.viewMode === 'orbit' ? 'flat' : 'orbit';
-    this.setData({ viewMode: next });
-    if (next === 'flat') this.loadFlatWords();
-  },
-
-  async loadFlatWords() {
-    if (this.data.flatWords.length > 0) return; // 已加载过，直接复用
-    this.setData({ flatLoading: true });
-    try {
-      const book = await getBookById(getCurrentBookId());
-      this.setData({ flatWords: book ? book.words : [] });
-    } catch (e) {
-      console.error('[星系] 词书加载失败', e);
-      wx.showToast({ title: '词库加载失败，请重试', icon: 'none' });
+    if (next === 'flat') {
+      // 平铺当前星系：中心词打头，同根词族、形近词依次跟上（去重）
+      const seen = new Set<string>([this.data.word.toLowerCase()]);
+      const flat: WordItem[] = [];
+      if (this.data.word) {
+        flat.push({ word: this.data.word, meaning: this.data.meaning } as WordItem);
+      }
+      for (const w of [...this.allFamily, ...this.allSimilar]) {
+        if (seen.has(w.word.toLowerCase())) continue;
+        seen.add(w.word.toLowerCase());
+        flat.push(w);
+      }
+      this.setData({ flatWords: flat });
     }
-    this.setData({ flatLoading: false });
+    this.setData({ viewMode: next });
   },
 
   // 平铺视图：点单词发声
