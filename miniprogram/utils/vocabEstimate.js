@@ -1,39 +1,27 @@
 "use strict";
-// utils/vocabEstimate.ts
-// 词汇量估值与词书推荐（纯函数，可在 Node 中直接回归测试）
-//
-// 模型（经典分层法）：
-//   - 每层正确率 r_i 用 m-估计 (答对数+1)/(题数+2)，避免 0/100 假象
-//   - 等渗平滑：高层（更难）掌握率不高于低层，eff_i = min(r_i, eff_{i-1})
-//   - 词汇量估值 = Σ (本层累计量 - 上层累计量) × eff_i
-//   - 推荐词书 = 掌握率第一个跌破 80% 的层次（全过则最后一层）
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.estimateVocab = estimateVocab;
 function estimateVocab(bands, correctCounts, questionsPerBand) {
-    // m-估计平滑正确率
-    var rates = correctCounts.map(function (c) { return (c + 1) / (questionsPerBand + 2); });
-    // 等渗平滑（高层不高于低层）
-    var eff = [];
-    var prev = rates[0];
-    for (var _i = 0, rates_1 = rates; _i < rates_1.length; _i++) {
-        var r = rates_1[_i];
+    const rates = correctCounts.map(c => (c + 1) / (questionsPerBand + 2));
+    const eff = [];
+    let prev = rates[0];
+    for (const r of rates) {
         prev = Math.min(r, prev);
         eff.push(prev);
     }
-    // 累计词汇量估值
-    var est = 0;
-    var prevCum = 0;
-    bands.forEach(function (b, i) {
+    let est = 0;
+    let prevCum = 0;
+    bands.forEach((b, i) => {
         est += (b.cumulative - prevCum) * eff[i];
         prevCum = b.cumulative;
     });
-    // 推荐：掌握率第一个跌破 80% 的层次；全过则最后一层
-    var recommendIndex = bands.length - 1;
-    for (var i = 0; i < eff.length; i++) {
+    let recommendIndex = bands.length - 1;
+    for (let i = 0; i < eff.length; i++) {
         if (eff[i] < 0.8) {
             recommendIndex = i;
             break;
         }
     }
-    return { estimate: Math.round(est), rates: eff, recommendIndex: recommendIndex };
+    return { estimate: Math.round(est), rates: eff, recommendIndex };
 }
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidm9jYWJFc3RpbWF0ZS5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbInZvY2FiRXN0aW1hdGUudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFvQkEsc0NBOEJDO0FBOUJELFNBQWdCLGFBQWEsQ0FDM0IsS0FBc0IsRUFDdEIsYUFBdUIsRUFDdkIsZ0JBQXdCO0lBR3hCLE1BQU0sS0FBSyxHQUFHLGFBQWEsQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDLEVBQUUsQ0FBQyxDQUFDLENBQUMsR0FBRyxDQUFDLENBQUMsR0FBRyxDQUFDLGdCQUFnQixHQUFHLENBQUMsQ0FBQyxDQUFDLENBQUM7SUFFdkUsTUFBTSxHQUFHLEdBQWEsRUFBRSxDQUFDO0lBQ3pCLElBQUksSUFBSSxHQUFHLEtBQUssQ0FBQyxDQUFDLENBQUMsQ0FBQztJQUNwQixLQUFLLE1BQU0sQ0FBQyxJQUFJLEtBQUssRUFBRSxDQUFDO1FBQ3RCLElBQUksR0FBRyxJQUFJLENBQUMsR0FBRyxDQUFDLENBQUMsRUFBRSxJQUFJLENBQUMsQ0FBQztRQUN6QixHQUFHLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxDQUFDO0lBQ2pCLENBQUM7SUFFRCxJQUFJLEdBQUcsR0FBRyxDQUFDLENBQUM7SUFDWixJQUFJLE9BQU8sR0FBRyxDQUFDLENBQUM7SUFDaEIsS0FBSyxDQUFDLE9BQU8sQ0FBQyxDQUFDLENBQUMsRUFBRSxDQUFDLEVBQUUsRUFBRTtRQUNyQixHQUFHLElBQUksQ0FBQyxDQUFDLENBQUMsVUFBVSxHQUFHLE9BQU8sQ0FBQyxHQUFHLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQztRQUN6QyxPQUFPLEdBQUcsQ0FBQyxDQUFDLFVBQVUsQ0FBQztJQUN6QixDQUFDLENBQUMsQ0FBQztJQUVILElBQUksY0FBYyxHQUFHLEtBQUssQ0FBQyxNQUFNLEdBQUcsQ0FBQyxDQUFDO0lBQ3RDLEtBQUssSUFBSSxDQUFDLEdBQUcsQ0FBQyxFQUFFLENBQUMsR0FBRyxHQUFHLENBQUMsTUFBTSxFQUFFLENBQUMsRUFBRSxFQUFFLENBQUM7UUFDcEMsSUFBSSxHQUFHLENBQUMsQ0FBQyxDQUFDLEdBQUcsR0FBRyxFQUFFLENBQUM7WUFDakIsY0FBYyxHQUFHLENBQUMsQ0FBQztZQUNuQixNQUFNO1FBQ1IsQ0FBQztJQUNILENBQUM7SUFDRCxPQUFPLEVBQUUsUUFBUSxFQUFFLElBQUksQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLEVBQUUsS0FBSyxFQUFFLEdBQUcsRUFBRSxjQUFjLEVBQUUsQ0FBQztBQUNuRSxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiLy8gdXRpbHMvdm9jYWJFc3RpbWF0ZS50c1xuLy8g6K+N5rGH6YeP5Lyw5YC85LiO6K+N5Lmm5o6o6I2Q77yI57qv5Ye95pWw77yM5Y+v5ZyoIE5vZGUg5Lit55u05o6l5Zue5b2S5rWL6K+V77yJXG4vL1xuLy8g5qih5Z6L77yI57uP5YW45YiG5bGC5rOV77yJ77yaXG4vLyAgIC0g5q+P5bGC5q2j56Gu546HIHJfaSDnlKggbS3kvLDorqEgKOetlOWvueaVsCsxKS8o6aKY5pWwKzIp77yM6YG/5YWNIDAvMTAwIOWBh+ixoVxuLy8gICAtIOetiea4l+W5s+a7ke+8mumrmOWxgu+8iOabtOmavu+8ieaOjOaPoeeOh+S4jemrmOS6juS9juWxgu+8jGVmZl9pID0gbWluKHJfaSwgZWZmX3tpLTF9KVxuLy8gICAtIOivjeaxh+mHj+S8sOWAvCA9IM6jICjmnKzlsYLntK/orqHph48gLSDkuIrlsYLntK/orqHph48pIMOXIGVmZl9pXG4vLyAgIC0g5o6o6I2Q6K+N5LmmID0g5o6M5o+h546H56ys5LiA5Liq6LeM56C0IDgwJSDnmoTlsYLmrKHvvIjlhajov4fliJnmnIDlkI7kuIDlsYLvvIlcblxuZXhwb3J0IGludGVyZmFjZSBWb2NhYkJhbmRNZXRhIHtcbiAgbGFiZWw6IHN0cmluZztcbiAgY3VtdWxhdGl2ZTogbnVtYmVyOyAvLyDopobnm5bliLDmnKzlsYLnmoTnm67moIfntK/orqHor43msYfph49cbn1cblxuZXhwb3J0IGludGVyZmFjZSBWb2NhYkVzdGltYXRlUmVzdWx0IHtcbiAgZXN0aW1hdGU6IG51bWJlcjsgICAgICAgIC8vIOivjeaxh+mHj+S8sOWAvO+8iOWPluaVtO+8iVxuICByYXRlczogbnVtYmVyW107ICAgICAgICAgLy8g562J5riX5bmz5ruR5ZCO5ZCE5bGC5o6M5o+h5bqmIDB+MVxuICByZWNvbW1lbmRJbmRleDogbnVtYmVyOyAgLy8g5o6o6I2Q6K+N5Lmm5LiL5qCHXG59XG5cbmV4cG9ydCBmdW5jdGlvbiBlc3RpbWF0ZVZvY2FiKFxuICBiYW5kczogVm9jYWJCYW5kTWV0YVtdLFxuICBjb3JyZWN0Q291bnRzOiBudW1iZXJbXSxcbiAgcXVlc3Rpb25zUGVyQmFuZDogbnVtYmVyXG4pOiBWb2NhYkVzdGltYXRlUmVzdWx0IHtcbiAgLy8gbS3kvLDorqHlubPmu5HmraPnoa7njodcbiAgY29uc3QgcmF0ZXMgPSBjb3JyZWN0Q291bnRzLm1hcChjID0+IChjICsgMSkgLyAocXVlc3Rpb25zUGVyQmFuZCArIDIpKTtcbiAgLy8g562J5riX5bmz5ruR77yI6auY5bGC5LiN6auY5LqO5L2O5bGC77yJXG4gIGNvbnN0IGVmZjogbnVtYmVyW10gPSBbXTtcbiAgbGV0IHByZXYgPSByYXRlc1swXTtcbiAgZm9yIChjb25zdCByIG9mIHJhdGVzKSB7XG4gICAgcHJldiA9IE1hdGgubWluKHIsIHByZXYpO1xuICAgIGVmZi5wdXNoKHByZXYpO1xuICB9XG4gIC8vIOe0r+iuoeivjeaxh+mHj+S8sOWAvFxuICBsZXQgZXN0ID0gMDtcbiAgbGV0IHByZXZDdW0gPSAwO1xuICBiYW5kcy5mb3JFYWNoKChiLCBpKSA9PiB7XG4gICAgZXN0ICs9IChiLmN1bXVsYXRpdmUgLSBwcmV2Q3VtKSAqIGVmZltpXTtcbiAgICBwcmV2Q3VtID0gYi5jdW11bGF0aXZlO1xuICB9KTtcbiAgLy8g5o6o6I2Q77ya5o6M5o+h546H56ys5LiA5Liq6LeM56C0IDgwJSDnmoTlsYLmrKHvvJvlhajov4fliJnmnIDlkI7kuIDlsYJcbiAgbGV0IHJlY29tbWVuZEluZGV4ID0gYmFuZHMubGVuZ3RoIC0gMTtcbiAgZm9yIChsZXQgaSA9IDA7IGkgPCBlZmYubGVuZ3RoOyBpKyspIHtcbiAgICBpZiAoZWZmW2ldIDwgMC44KSB7XG4gICAgICByZWNvbW1lbmRJbmRleCA9IGk7XG4gICAgICBicmVhaztcbiAgICB9XG4gIH1cbiAgcmV0dXJuIHsgZXN0aW1hdGU6IE1hdGgucm91bmQoZXN0KSwgcmF0ZXM6IGVmZiwgcmVjb21tZW5kSW5kZXggfTtcbn0iXX0=

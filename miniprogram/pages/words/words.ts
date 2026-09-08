@@ -823,18 +823,25 @@ Page({
   },
 
   // ─── 练习模式切换（切换不换词不跳词，当前词按新方式重新出题） ───
-  // 下拉框选模式
-  onModePick(e: any) {
+  // 选模式（弹框）
+  onModeTap() {
     const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'list'];
-    const mode = modes[Number(e.detail.value)] as PracticeMode;
-    if (!mode || mode === this.data.practiceMode) return;
-    setPracticeMode(mode);
-    this.setData({ practiceMode: mode, modeIndex: Number(e.detail.value) });
-    if (this.data.queue.length > 0) {
-      this._applyModeForCurrent();
-    }
-    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式', list: '列表模式' };
-    wx.showToast({ title: labels[mode] || '', icon: 'none' });
+    const labels = this.data.modeLabels;
+    wx.showActionSheet({
+      itemList: labels,
+      success: (res: any) => {
+        const idx = res.tapIndex;
+        const mode = modes[idx] as PracticeMode;
+        if (!mode || mode === this.data.practiceMode) return;
+        setPracticeMode(mode);
+        this.setData({ practiceMode: mode, modeIndex: idx });
+        if (this.data.queue.length > 0) {
+          this._applyModeForCurrent();
+        }
+        const full: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式', list: '列表模式' };
+        wx.showToast({ title: full[mode] || '', icon: 'none' });
+      }
+    });
   },
 
   onPracticeModeChange(e: any) {

@@ -12,9 +12,7 @@
     </view>
     <view class="book-bar-controls">
       <view class="mode-group">
-        <picker mode="selector" range="{{modeLabels}}" value="{{modeIndex}}" bindchange="onModePick">
-          <view class="mode-chip active">{{modeLabels[modeIndex]}} ▾</view>
-        </picker>
+        <view class="mode-chip active" bindtap="onModeTap">{{modeLabels[modeIndex]}} ▾</view>
         <view class="book-bar-switch {{studyMode !== 'all' ? 'scope-on' : ''}}" bindtap="onSelectWordClass">{{wordClassLabel}}</view>
         <view class="book-bar-switch" bindtap="onToggleOrderMode">{{orderMode === 'random' ? '随机' : '顺序'}}</view>
         <view class="book-bar-switch" bindtap="onChangeBatchSize">{{batchSize}} 个/轮</view>
