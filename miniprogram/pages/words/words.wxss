@@ -1275,36 +1275,81 @@
   margin-top: 16rpx;
 }
 
-/* ═════════ 自定义选择弹框 ═════════ */
+/* ═════════ 自定义选择弹框（手账卡片风） ═════════ */
 .sheet-panel {
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-radius: 36rpx 36rpx 0 0;
+  padding: 36rpx 36rpx calc(36rpx + env(safe-area-inset-bottom));
+  background: var(--bg-page, #F7F3E8);
+}
+
+/* 标题行：小胶带装饰 + 标题 */
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+}
+
+.sheet-tape {
+  width: 72rpx;
+  height: 20rpx;
+  background: rgba(235, 200, 85, 0.45);
+  transform: rotate(-4deg);
+  border-radius: 4rpx;
+}
+
+.sheet-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sheet-close {
+  margin-left: auto;
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+  padding: 8rpx 12rpx;
 }
 
 .sheet-options {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 20rpx;
 }
 
 .sheet-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 28rpx 12rpx;
+  width: calc((100% - 40rpx) / 3);
+  box-sizing: border-box;
+  text-align: center;
+  padding: 24rpx 0;
   font-size: 30rpx;
   color: var(--text-secondary);
-  border-bottom: 1rpx solid var(--border-light, #F0EADC);
-}
-
-.sheet-option:last-child {
-  border-bottom: none;
+  background: var(--bg-card, #FFFDF6);
+  border: 2rpx solid var(--border-light, #EFE8D8);
+  border-radius: 20rpx;
+  transition: all 0.15s ease;
 }
 
 .sheet-option.active {
-  color: var(--color-primary);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFDF6;
   font-weight: 600;
+  box-shadow: 0 6rpx 16rpx rgba(47, 87, 70, 0.25);
 }
 
 .sheet-check {
-  font-size: 30rpx;
-  color: var(--color-primary);
+  display: none;
+}
+
+.sheet-option.active::after {
+  content: '';
+  position: absolute;
+}
+
+.sheet-option.active .sheet-check {
+  display: inline;
+  margin-left: 8rpx;
+  font-size: 26rpx;
+  color: #FFFDF6;
 }

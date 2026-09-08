@@ -42,8 +42,10 @@
   <!-- 自定义选择弹框（模式/范围/每轮个数） -->
   <view class="report-mask" wx:if="{{showSheet}}" bindtap="closeSheet"></view>
   <view class="report-panel sheet-panel" wx:if="{{showSheet}}">
-    <view class="report-head">
-      <view class="report-title">{{sheetTitle}}</view>
+    <view class="sheet-head">
+      <view class="sheet-tape"></view>
+      <view class="sheet-title">{{sheetTitle}}</view>
+      <view class="sheet-close" bindtap="closeSheet">关闭</view>
     </view>
     <view class="sheet-options">
       <view
