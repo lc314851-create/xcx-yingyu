@@ -6,7 +6,7 @@
       <view class="page-head-title serif">词根星系</view>
       <view class="page-head-sub">点击任意单词，沿着词族漫游</view>
     </view>
-    <view class="view-toggle" bindtap="onToggleView">{{viewMode === 'orbit' ? '平铺词族' : '回星系'}}</view>
+    <view class="view-toggle" wx:if="{{viewMode === 'orbit'}}" bindtap="onToggleView">平铺词族</view>
   </view>
 
   <!-- 首次加载（页面无内容）：大块加载态 -->
@@ -33,7 +33,6 @@
 
   <!-- ═════ 平铺视图：词书全表，点击发声，长按漫游 ═════ -->
   <block wx:if="{{viewMode === 'flat'}}">
-    <view class="flat-tip">点单词朗读</view>
     <view class="flat-list">
       <view
         class="flat-item {{item.word === word ? 'flat-item-center' : ''}}"
