@@ -140,35 +140,40 @@ Page({
   // ─── 平铺视图：当前星系词族（中心词 + 同根 + 形近），点击发声 ───
   onToggleView() {
     const next = this.data.viewMode === 'orbit' ? 'flat' : 'orbit';
-    if (next === 'flat') {
-      // 平铺当前星系：中心词打头，同根词族、形近词依次跟上（去重）
-      const seen = new Set<string>([this.data.word.toLowerCase()]);
-      const flat: WordItem[] = [];
-      if (this.data.word) {
-        flat.push({ word: this.data.word, meaning: this.data.meaning } as WordItem);
-      }
-      for (const w of [...this.allFamily, ...this.allSimilar]) {
-        if (seen.has(w.word.toLowerCase())) continue;
-        seen.add(w.word.toLowerCase());
-        flat.push(w);
-      }
-      this.setData({ flatWords: flat });
-    }
-    this.setData({ viewMode: next });
+    if (next === 'flat') this.onToggleViewToFlat();
+    else this.setData({ viewMode: next });
   },
 
-  // 平铺视图：点单词发声
-  onFlatTap(e: any) {
-    const word = e.currentTarget.dataset.word as string;
-    if (word) playAudio(word);
-  },
-
-  // 平铺视图：长按单词 → 以该词为中心漫游回星系
-  onFlatLongPress(e: any) {
+  // 平铺视图：点单词 → 发声 + 以它为中心重建词族（留在平铺视图内漫游）
+  async onFlatTap(e: any) {
     const word = e.currentTarget.dataset.word as string;
     if (!word) return;
+    playAudio(word);
+    await this.showWord(word);
+    this.onToggleViewToFlat();
+  },
+
+  // 平铺视图：长按单词 → 回星系轨道视图，以该词为中心
+  async onFlatLongPress(e: any) {
+    const word = e.currentTarget.dataset.word as string;
+    if (!word) return;
+    await this.showWord(word);
     this.setData({ viewMode: 'orbit' });
-    this.showWord(word);
+  },
+
+  // 以当前中心词重建平铺词族（showWord 成功后调用）
+  onToggleViewToFlat() {
+    const seen = new Set<string>([this.data.word.toLowerCase()]);
+    const flat: WordItem[] = [];
+    if (this.data.word) {
+      flat.push({ word: this.data.word, meaning: this.data.meaning } as WordItem);
+    }
+    for (const w of [...this.allFamily, ...this.allSimilar]) {
+      if (seen.has(w.word.toLowerCase())) continue;
+      seen.add(w.word.toLowerCase());
+      flat.push(w);
+    }
+    this.setData({ flatWords: flat, viewMode: 'flat' });
   },
 
   onTabChange(e: any) {

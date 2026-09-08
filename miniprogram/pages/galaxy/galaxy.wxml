@@ -33,7 +33,7 @@
 
   <!-- ═════ 平铺视图：词书全表，点击发声，长按漫游 ═════ -->
   <block wx:if="{{viewMode === 'flat'}}">
-    <view class="flat-tip">当前星系的词族 · 点单词发声 · 长按以它为中心漫游</view>
+    <view class="flat-tip">点单词：发声并以它为中心漫游 · 长按：回星系</view>
     <view class="flat-list">
       <view
         class="flat-item {{item.word === word ? 'flat-item-center' : ''}}"
