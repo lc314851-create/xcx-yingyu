@@ -256,6 +256,7 @@
 }
 
 .relation-tabs {
+  order: 1;
   display: flex;
   gap: 14rpx;
   flex: 1;
@@ -278,7 +279,14 @@
   font-weight: 600;
 }
 
+.bottom-bar .view-toggle {
+  margin-top: 0;
+  margin-right: auto;
+  order: 2;
+}
+
 .random-btn {
+  order: 3;
   padding: 14rpx 26rpx;
   font-size: 26rpx;
   color: var(--color-accent);

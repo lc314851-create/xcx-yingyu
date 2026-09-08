@@ -1,12 +1,11 @@
 <!-- pages/galaxy/galaxy.wxml -->
 <view class="page">
-  <!-- 顶部说明 + 视图切换 -->
-  <view class="page-head page-head-row">
+  <!-- 顶部说明 -->
+  <view class="page-head">
     <view class="page-head-left">
       <view class="page-head-title serif">{{viewMode === 'flat' ? '平铺模式' : '词根星系'}}</view>
       <view class="page-head-sub" wx:if="{{viewMode === 'orbit'}}">点击任意单词，沿着词族漫游</view>
     </view>
-    <view class="view-toggle" wx:if="{{viewMode === 'orbit'}}" bindtap="onToggleView">平铺词族</view>
   </view>
 
   <!-- 首次加载（页面无内容）：大块加载态 -->
@@ -104,6 +103,7 @@
           形近易混 {{similarTotal}}
         </view>
       </view>
+      <view class="view-toggle" bindtap="onToggleView">平铺模式</view>
       <view class="random-btn" bindtap="onRandomTap">随机漫游</view>
     </view>
   </block>
