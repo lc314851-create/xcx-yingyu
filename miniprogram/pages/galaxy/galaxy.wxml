@@ -4,7 +4,7 @@
   <view class="page-head page-head-row">
     <view class="page-head-left">
       <view class="page-head-title serif">词根星系</view>
-      <view class="page-head-sub">点击任意单词，沿着词族漫游</view>
+      <view class="page-head-sub" wx:if="{{viewMode === 'orbit'}}">点击任意单词，沿着词族漫游</view>
     </view>
     <view class="view-toggle" wx:if="{{viewMode === 'orbit'}}" bindtap="onToggleView">平铺词族</view>
   </view>
