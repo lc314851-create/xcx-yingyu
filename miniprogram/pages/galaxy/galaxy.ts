@@ -140,8 +140,13 @@ Page({
   // ─── 平铺视图：当前星系词族（中心词 + 同根 + 形近），点击发声 ───
   onToggleView() {
     const next = this.data.viewMode === 'orbit' ? 'flat' : 'orbit';
-    if (next === 'flat') this.onToggleViewToFlat();
-    else this.setData({ viewMode: next });
+    if (next === 'flat') {
+      this.onToggleViewToFlat();
+      this._scrollToTop();
+    } else {
+      this.setData({ viewMode: next });
+      this._scrollToTop();
+    }
   },
 
   // 平铺视图：点单词只朗读，保持简单
@@ -157,11 +162,18 @@ Page({
     playAudio(rand);
     await this.showWord(rand);
     this.onToggleViewToFlat();
+    this._scrollToTop();
   },
 
   // 平铺视图：回星系轨道视图
   onFlatBack() {
     this.setData({ viewMode: 'orbit' });
+    this._scrollToTop();
+  },
+
+  // 列表重建后回到页顶，避免旧滚动位置把内容顶进导航栏后面
+  _scrollToTop() {
+    wx.pageScrollTo({ scrollTop: 0, duration: 0 });
   },
 
   // 以当前中心词重建平铺词族
