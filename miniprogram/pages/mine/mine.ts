@@ -1,6 +1,6 @@
 // pages/mine/mine.ts
 // 2026-08-31：学习提醒与每周周报均已下线（微信一次性订阅机制体验繁琐），相关代码以注释保留
-import { getStats, doCheckIn, getHeatmapData, getLocalProfile, saveLocalProfile, updateUserProfile, syncStatsToCloud, restoreStatsFromCloud, getCurrentBookId, getReviewPlan } from '../../utils/store';
+import { getStats, doCheckIn, getHeatmapData, getLocalProfile, saveLocalProfile, updateUserProfile, syncStatsToCloud, restoreStatsFromCloud, getCurrentBookId, getReviewPlan, getTodayLearnedWords } from '../../utils/store';
 import { getBuilderCount } from '../../utils/wordReport';
 import { collectTodayRows, showExportSheet, TodayRow } from '../../utils/todayExport';
 
@@ -45,7 +45,9 @@ Page({
     // reminderOn: false,
     // weeklyOn: false // 每周学习周报已下线（2026-08-31）
     // 词库共建人（纠错上报次数）
-    builderCount: 0
+    builderCount: 0,
+    // 今日学过词数（今日复盘入口用）
+    todayWordCount: 0
   },
 
   onLoad() {
@@ -96,6 +98,7 @@ Page({
 
   onShow() {
     this.loadStats();
+    this.setData({ todayWordCount: getTodayLearnedWords().length });
     this.loadPlanSummary();
     this.setData({ builderCount: getBuilderCount() });
   },
@@ -312,6 +315,16 @@ Page({
     wx.navigateTo({
       url: '/pages/search/search'
     });
+  },
+
+  // 今日复盘：本轮只重刷今天学过的词
+  goTodayReview() {
+    if (this.data.todayWordCount === 0) {
+      wx.showToast({ title: '今天还没有学习记录', icon: 'none' });
+      return;
+    }
+    wx.setStorageSync('bc_today_review', 1);
+    wx.switchTab({ url: '/pages/words/words' });
   },
   // ─── 导出今日单词表 ───
   onExportToday() {

@@ -16,11 +16,8 @@
         <view class="mode-chip {{practiceMode === 'choice' ? 'active' : ''}}" data-mode="choice" bindtap="onPracticeModeChange">选择</view>
         <view class="mode-chip {{practiceMode === 'spell' ? 'active' : ''}}" data-mode="spell" bindtap="onPracticeModeChange">拼写</view>
         <view class="mode-chip {{practiceMode === 'mix' ? 'active' : ''}}" data-mode="mix" bindtap="onPracticeModeChange">混合</view>
-      </view>
-      <view class="book-bar-switches">
-        <view class="book-bar-switch {{studyMode !== 'all' ? 'scope-on' : ''}}" bindtap="onSelectWordClass">{{wordClassLabel}}</view>
-        <view class="book-bar-switch" bindtap="onToggleOrderMode">{{orderMode === 'random' ? '随机' : '顺序'}}</view>
-        <view class="book-bar-switch" bindtap="onChangeBatchSize">{{batchSize}} 个/轮</view>
+        <view class="mode-chip {{practiceMode === 'list' ? 'active' : ''}}" data-mode="list" bindtap="onPracticeModeChange">列表</view>
+        <view class="mode-chip settings-chip {{showSettings ? 'active' : ''}}" bindtap="openSettings">⚙</view>
       </view>
     </view>
   </view>
@@ -41,6 +38,37 @@
     <view class="progress-text">{{currentIndex + 1}} / {{totalCount}}</view>
     <view class="progress-bar">
       <view class="progress-fill" style="width: {{totalCount > 0 ? (currentIndex + 1) / totalCount * 100 : 0}}%"></view>
+    </view>
+  </view>
+
+  <!-- ⚙ 设置弹层（范围 / 顺序 / 每轮个数收拢，减少首屏控件密度） -->
+  <view class="report-mask" wx:if="{{showSettings}}" bindtap="closeSettings"></view>
+  <view class="report-panel settings-panel" wx:if="{{showSettings}}">
+    <view class="report-head">
+      <view class="report-title">出题设置</view>
+    </view>
+    <view class="settings-row-label">学习范围</view>
+    <view class="settings-chip-row">
+      <view class="settings-option {{studyMode === 'all' ? 'active' : ''}}" data-mode="all" bindtap="onSettingWordClass">全部</view>
+      <view class="settings-option {{studyMode === 'highFreq' ? 'active' : ''}}" data-mode="highFreq" bindtap="onSettingWordClass">高频词</view>
+      <view class="settings-option {{studyMode === 'func' ? 'active' : ''}}" data-mode="func" bindtap="onSettingWordClass">虚词</view>
+      <view class="settings-option {{studyMode === 'content' ? 'active' : ''}}" data-mode="content" bindtap="onSettingWordClass">实词</view>
+    </view>
+    <view class="settings-row-label">出题顺序</view>
+    <view class="settings-chip-row">
+      <view class="settings-option {{orderMode === 'random' ? 'active' : ''}}" data-mode="random" bindtap="onSettingOrderMode">随机</view>
+      <view class="settings-option {{orderMode === 'sequential' ? 'active' : ''}}" data-mode="sequential" bindtap="onSettingOrderMode">顺序</view>
+    </view>
+    <view class="settings-row-label">每轮个数</view>
+    <view class="settings-chip-row">
+      <view class="settings-option {{batchSize === 5 ? 'active' : ''}}" data-n="5" bindtap="onSettingBatchSize">5 个</view>
+      <view class="settings-option {{batchSize === 10 ? 'active' : ''}}" data-n="10" bindtap="onSettingBatchSize">10 个</view>
+      <view class="settings-option {{batchSize === 15 ? 'active' : ''}}" data-n="15" bindtap="onSettingBatchSize">15 个</view>
+      <view class="settings-option {{batchSize === 20 ? 'active' : ''}}" data-n="20" bindtap="onSettingBatchSize">20 个</view>
+    </view>
+    <view class="settings-tip">想要「认识 + 拼写 + 选择」一起练？关掉弹层，点顶部「混合」模式试试</view>
+    <view class="report-actions">
+      <view class="btn-primary report-btn" bindtap="closeSettings">完成</view>
     </view>
   </view>
 
@@ -103,6 +131,34 @@
     <!-- 不认识→已展示释义：看完再走 -->
     <view class="actions" wx:if="{{revealAfterUnknown}}">
       <view class="btn-primary mark-btn reveal-next-btn" bindtap="onRevealNext">下一个 ›</view>
+    </view>
+  </block>
+
+  <!-- ═════════ 列表平铺模式 ═════════ -->
+  <block wx:if="{{!loading && totalCount > 0 && activeMode === 'list' && !showResult}}">
+    <view class="list-tip">点单词发声，认识/不认识直接标；认识的词自动折叠</view>
+    <view class="list-wrap">
+      <view
+        class="list-item {{listAnswered[item.word] === 'known' ? 'item-known' : ''}} {{listAnswered[item.word] === 'unknown' ? 'item-unknown' : ''}}"
+        wx:for="{{queue}}"
+        wx:key="word"
+        data-idx="{{index}}"
+        bindtap="onListTap"
+      >
+        <view class="list-item-main">
+          <view class="list-item-head">
+            <view class="list-item-word">{{item.word}}</view>
+            <view class="list-item-phonetic" wx:if="{{item.phonetic}}">{{item.phonetic}}</view>
+          </view>
+          <view class="list-item-meaning">{{item.meaning}}</view>
+          <view class="list-item-root" wx:if="{{item.root}}">词根 {{item.root}}{{item.rootGloss ? ' · ' + item.rootGloss : ''}}</view>
+        </view>
+        <view class="list-item-actions" wx:if="{{!listAnswered[item.word]}}">
+          <view class="list-btn list-btn-no" data-idx="{{index}}" data-known="0" catchtap="onListAnswer">不认识</view>
+          <view class="list-btn list-btn-ok" data-idx="{{index}}" data-known="1" catchtap="onListAnswer">认识</view>
+        </view>
+        <view class="list-item-done" wx:else>{{listAnswered[item.word] === 'known' ? '✓' : '✗'}}</view>
+      </view>
     </view>
   </block>
 
@@ -205,6 +261,9 @@
       <view class="result-actions">
         <view class="btn-secondary result-btn" bindtap="onResultBack">返回首页</view>
         <view class="btn-secondary result-btn share-btn" bindtap="onSharePoster">分享打卡</view>
+      </view>
+      <view class="result-actions">
+        <view class="btn-secondary result-btn" bindtap="onResultReviewRound">复习本轮</view>
         <view class="btn-primary result-btn" bindtap="onResultRestart">再来一轮</view>
       </view>
       <!-- 学习提醒入口已下线（2026-08-31：一次性订阅需重复授权，体验繁琐）

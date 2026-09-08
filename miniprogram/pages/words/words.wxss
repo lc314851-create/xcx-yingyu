@@ -1112,3 +1112,164 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.75; }
 }
+
+/* ═════════ 列表平铺模式 ═════════ */
+.list-tip {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-tertiary, #B0A692);
+  margin-bottom: 16rpx;
+}
+
+.list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding-bottom: 40rpx;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card, #FFFDF6);
+  border: 1rpx solid var(--border-light, #EFE8D8);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  transition: opacity 0.25s ease;
+}
+
+.list-item.item-known {
+  opacity: 0.42; /* 认识的词折叠置灰，减少视觉噪音 */
+}
+
+.list-item.item-unknown {
+  border-color: #E4B7A0;
+  background: #FDF6F0;
+}
+
+.list-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.list-item-word {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text, #2B2B26);
+  font-family: Georgia, serif;
+}
+
+.list-item-phonetic {
+  font-size: 22rpx;
+  color: var(--color-text-tertiary, #B0A692);
+}
+
+.list-item-meaning {
+  font-size: 26rpx;
+  color: var(--color-text-secondary, #5A5648);
+  margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.list-item-root {
+  font-size: 22rpx;
+  color: #7C9C8B;
+  margin-top: 6rpx;
+}
+
+.list-item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-left: 16rpx;
+}
+
+.list-btn {
+  font-size: 24rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.list-btn-no {
+  background: #F6E8DF;
+  color: #B4634A;
+}
+
+.list-btn-ok {
+  background: var(--color-primary, #2F5746);
+  color: #FFFDF6;
+}
+
+.list-item-done {
+  margin-left: 12rpx;
+  font-size: 32rpx;
+  color: var(--color-primary, #2F5746);
+}
+
+.item-unknown .list-item-done {
+  color: #B4634A;
+}
+
+/* ═════════ ⚙ 设置弹层（复用 report-panel 弹层基调） ═════════ */
+.settings-panel {
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.settings-row-label {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary, #B0A692);
+  margin: 20rpx 0 12rpx;
+}
+
+.settings-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.settings-option {
+  font-size: 26rpx;
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  background: #F5F0E4;
+  color: var(--color-text-secondary, #5A5648);
+  border: 1rpx solid transparent;
+}
+
+.settings-option.active {
+  background: rgba(47, 87, 70, 0.1);
+  color: var(--color-primary, #2F5746);
+  border-color: var(--color-primary, #2F5746);
+  font-weight: 600;
+}
+
+.settings-tip {
+  margin-top: 24rpx;
+  font-size: 22rpx;
+  color: var(--color-text-tertiary, #B0A692);
+  line-height: 1.6;
+}
+
+/* 顶部 ⚙ 按钮微调 */
+.settings-chip {
+  font-size: 28rpx;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+}
+
+/* 结果页双行动作按钮间距微调 */
+.result-actions + .result-actions {
+  margin-top: 16rpx;
+}

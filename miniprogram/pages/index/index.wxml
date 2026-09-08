@@ -83,6 +83,11 @@
     <view class="btn-secondary plan-go" wx:else catchtap="goWords">去学新词</view>
   </view>
 
+  <!-- 今日复盘轻量卡：今天学过词才出现 -->
+  <view class="card today-review-card" wx:if="{{todayWordCount > 0}}" bindtap="goTodayReview">
+    <view class="today-review-text">今天已学 <text class="today-review-num serif">{{todayWordCount}}</text> 词 · 去复盘 ›</view>
+  </view>
+
   <!-- 操作区：招牌玩法（大字卡）+ 学习工具（小格） -->
   <view class="actions">
     <view class="feature-row">

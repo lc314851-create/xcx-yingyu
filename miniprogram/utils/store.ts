@@ -409,10 +409,10 @@ export function getTodayLearnedWords(): TodayWord[] {
 // ─── 练习模式（卡片翻面 / 四选一 / 拼写） ──────────────────────
 const PRACTICE_MODE_KEY = 'bc_practice_mode';
 
-export type PracticeMode = 'card' | 'choice' | 'spell' | 'mix';
+export type PracticeMode = 'card' | 'choice' | 'spell' | 'mix' | 'list';
 
-// 具体出题方式（mix 会在每个词随机映射为以下之一）
-export type ConcretePracticeMode = 'card' | 'choice' | 'spell';
+// 具体出题方式（mix 会在每个词随机映射为以下之一；list 为直接模式不走映射）
+export type ConcretePracticeMode = 'card' | 'choice' | 'spell' | 'list';
 
 export function toConcreteMode(mode: PracticeMode): ConcretePracticeMode {
   if (mode === 'mix') {

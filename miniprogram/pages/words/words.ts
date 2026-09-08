@@ -17,6 +17,7 @@ import {
   setPracticeMode,
   getOrderMode,
   setOrderMode,
+  getTodayLearnedWords,
   getAccent,
   setAccent,
   addToWrongBook
@@ -37,6 +38,9 @@ const REVIEW_MODE_KEY = 'bc_review_mode';
 const MEMORY_WORDS_KEY = 'bc_memory_words';
 // 首页“学新词”入口标志（一次性）：强制开新一轮，不走“数据未变跳过重建”守卫
 const NEW_ROUND_KEY = 'bc_new_round';
+
+// “今日复盘”入口标志（一次性）：本轮只复盘今天学过的词（我的页/首页写入）
+const TODAY_REVIEW_KEY = 'bc_today_review';
 
 // 四选一选项接口
 interface ChoiceOption {
@@ -107,8 +111,12 @@ Page({
     revealAfterUnknown: false,
     // 上一题对错（用于结果页判断是否记录）
     _wordBookWords: [] as WordItem[],
+    // 列表模式：每词作答状态（word → 'known' | 'unknown'），认识的词折叠置灰
+    listAnswered: {} as Record<string, string>,
     // 出题顺序：随机 / 顺序
     orderMode: 'random' as 'random' | 'sequential',
+    // ─── 设置弹层 ───
+    showSettings: false,
     // ─── 纠错上报 ───
     showReport: false,
     reportType: '' as ReportType | '',
@@ -156,6 +164,15 @@ Page({
       this._loadedKey = '';
     }
 
+    // 消费“今日复盘”入口标志：本轮只复盘今天学过的词（一次性）
+    if (wx.getStorageSync(TODAY_REVIEW_KEY) === 1) {
+      wx.removeStorageSync(TODAY_REVIEW_KEY);
+      this._todayReviewMode = true;
+      this._loadedKey = '';
+    } else {
+      this._todayReviewMode = false;
+    }
+
     // 首次使用：跳转词书选择页
     if (!hasSelectedBook()) {
       wx.navigateTo({ url: '/pages/booklist/booklist' });
@@ -173,9 +190,95 @@ Page({
 
   onUnload() {
     // 页面卸载时清理音频上下文（如果有）
+    this._clearRevealTimer();
   },
 
   async initBatch() {
+    // 今日复盘轮：队列 = 今天学过的词（跨词书），不走常规排程
+    if (this._todayReviewMode) {
+      this._todayReviewMode = false;
+      const ok = await this._initTodayBatch();
+      if (!ok) await this._initNormalBatch();
+      return;
+    }
+    return this._initNormalBatch();
+  },
+
+  // 今日复盘轮：把今天学过的词重刷一遍（不认识的排前面，默认列表模式）
+  async _initTodayBatch(): Promise<boolean> {
+    const todays = getTodayLearnedWords();
+    if (todays.length === 0) {
+      wx.showToast({ title: '今天还没有学习记录，先学几个词吧', icon: 'none' });
+      return false;
+    }
+    // 按 bookId 分组拉词书，映射回完整词条（拿释义/音标/词根）
+    const byBook = new Map<string, string[]>();
+    for (const t of todays) {
+      const arr = byBook.get(t.bookId) || [];
+      arr.push(t.word);
+      byBook.set(t.bookId, arr);
+    }
+    const queue: WordItem[] = [];
+    const allWords: WordItem[] = [];
+    const unknownSet = new Set(
+      todays.filter(t => !t.known).map(t => t.word.toLowerCase())
+    );
+    for (const [bid, words] of byBook) {
+      try {
+        const book = await getBookById(bid);
+        if (!book) continue;
+        allWords.push(...book.words);
+        const wset = new Set(words.map(w => w.toLowerCase()));
+        for (const w of book.words) {
+          if (wset.has(w.word.toLowerCase())) queue.push(w);
+        }
+      } catch (e) {
+        console.error('[今日复盘] 词书加载失败', bid, e);
+      }
+    }
+    if (queue.length === 0) return false;
+    // 不认识的排前面，答漏的优先补
+    queue.sort((a, b) =>
+      (unknownSet.has(b.word.toLowerCase()) ? 1 : 0) - (unknownSet.has(a.word.toLowerCase()) ? 1 : 0)
+    );
+
+    this._clearRevealTimer();
+    this._answeredSet = new Set<number>();
+    this._newWordSet = new Set<string>(); // 复盘不计入累计新词
+    const reportedMap: Record<string, boolean> = {};
+    for (const w of queue) {
+      if (isWordReported(w.word)) reportedMap[w.word] = true;
+    }
+    const progressStats = getBookProgressStats(getCurrentBookId());
+    this.setData({
+      bookName: '今日复盘',
+      queue,
+      _wordBookWords: allWords,
+      currentIndex: 0,
+      showMeaning: false,
+      isFlipped: false,
+      revealAfterUnknown: false,
+      knownCount: 0,
+      unknownCount: 0,
+      totalCount: queue.length,
+      dueCount: progressStats.dueCount,
+      masteredCount: progressStats.masteredCount,
+      statusLabel: '复盘',
+      hasMore: false,
+      loading: false,
+      showResult: false,
+      spellInput: '',
+      spellFeedback: 'none',
+      choiceSelected: -1,
+      listAnswered: {},
+      reportedMap
+    }, () => {
+      this._applyModeForCurrent();
+    });
+    return true;
+  },
+
+  async _initNormalBatch() {
     const bookId = getCurrentBookId();
     const studyMode = getStudyMode();
     const practiceMode = getPracticeMode();
@@ -194,6 +297,7 @@ Page({
       return;
     }
     this._loadedKey = settingsKey;
+    this._clearRevealTimer();
 
     // 页面已有内容（换书/开新轮）：不进 loading 态，保持旧卡片可见，
     // 队列就绪后一次性替换，实现"平稳换轮"无闪动；仅首次进入才显示加载动画
@@ -423,6 +527,7 @@ Page({
       spellInput: '',
       spellFeedback: 'none',
       choiceSelected: -1,
+      listAnswered: {},
       reportedMap
     }, () => {
       if (finalQueue.length > 0) {
@@ -541,15 +646,25 @@ Page({
     const mode = toConcreteMode(this.data.practiceMode);
     const keepFlip = this.data.isFlipped && this.data.practiceMode === 'card';
     const word = this.data.queue[this.data.currentIndex];
+    // 切词补一次真实翻面：先短暂回正面，下一帧再翻回释义面，
+    // 消除“换词时卡片像没翻过来”的困惑（保留切词保持释义面的设计）
+    this._clearRevealTimer(); // 切模式/切词时取消“不认识自动跳”定时器，防跳词竞态
+    const flipBase = keepFlip ? { isFlipped: false, showMeaning: false } : {};
+    const flipBack = () => {
+      if (!keepFlip) return;
+      wx.nextTick(() => {
+        this.setData({ isFlipped: true, showMeaning: true });
+      });
+    };
     this.setData({
       activeMode: mode,
-      isFlipped: keepFlip,
-      showMeaning: keepFlip,
+      ...flipBase,
       revealAfterUnknown: false,
       spellInput: '',
       spellFeedback: 'none',
       choiceSelected: -1
     }, () => {
+      flipBack();
       if (!word) return;
       if (mode === 'choice') {
         this.generateChoiceOptions(word);
@@ -716,7 +831,7 @@ Page({
       this._applyModeForCurrent();
     }
 
-    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式' };
+    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式', list: '列表模式' };
     wx.showToast({ title: labels[mode] || '', icon: 'none' });
   },
 
@@ -774,6 +889,41 @@ Page({
     this.onSelectWordClass();
   },
 
+  // ─── ⚙ 设置弹层（范围/顺序/每轮个数收拢） ───
+  openSettings() {
+    this.setData({ showSettings: true });
+  },
+
+  closeSettings() {
+    this.setData({ showSettings: false });
+  },
+
+  onSettingWordClass(e: any) {
+    const mode = e.currentTarget.dataset.mode as StudyMode;
+    if (!mode || mode === this.data.studyMode) return;
+    setStudyMode(mode);
+    this.setData({ showSettings: false, wordClassLabel: this.WORD_CLASS_LABELS[mode] || '全部' });
+    wx.showToast({ title: '已切换为「' + this.WORD_CLASS_LABELS[mode] + '」', icon: 'none' });
+    this.initBatch();
+  },
+
+  onSettingOrderMode(e: any) {
+    const mode = e.currentTarget.dataset.mode as 'random' | 'sequential';
+    if (!mode || mode === this.data.orderMode) return;
+    setOrderMode(mode);
+    this.setData({ orderMode: mode, showSettings: false });
+    this.initBatch();
+  },
+
+  onSettingBatchSize(e: any) {
+    const n = parseInt(e.currentTarget.dataset.n, 10);
+    if (!n || n === this.data.batchSize) return;
+    setBatchSize(n);
+    this.setData({ batchSize: n, showSettings: false });
+    wx.showToast({ title: '每轮 ' + n + ' 个单词', icon: 'none' });
+    this.initBatch();
+  },
+
   // ─── 导出今日单词表 ───
   _todayRows: null as TodayRow[] | null,
 
@@ -828,17 +978,68 @@ Page({
 
     this.setData({
       unknownCount: this.data.unknownCount + 1,
-      // 不认识：先翻面展示释义（当场看到正确答案），用户点「下一个」再切词
+      // 不认识：先翻面展示释义（当场看到正确答案），2.5 秒后自动进入下一个词
+      // （也保留「下一个」按钮，用户可提前点走）
       revealAfterUnknown: true,
       isFlipped: true,
       showMeaning: true
     });
     // 自动播放发音，加深记忆
     playAudio(word.word, this.data.accent);
+    // 自动跳下一个：展示释义后停 2.5 秒；期间点「下一个」会取消定时器
+    this._clearRevealTimer();
+    this._revealTimer = setTimeout(() => {
+      this._revealTimer = null;
+      if (this.data.revealAfterUnknown) this.onRevealNext();
+    }, 2500);
+  },
+
+  _revealTimer: null as any,
+
+  _clearRevealTimer() {
+    if (this._revealTimer) {
+      clearTimeout(this._revealTimer);
+      this._revealTimer = null;
+    }
+  },
+
+  // ─── 列表平铺模式 ───
+  // 点单词行：发声
+  onListTap(e: any) {
+    const idx = e.currentTarget.dataset.idx as number;
+    const w = this.data.queue[idx];
+    if (w) playAudio(w.word, this.data.accent);
+  },
+
+  // 列表模式：认识/不认识（复用卡片模式的进度记录链路）
+  onListAnswer(e: any) {
+    const idx = e.currentTarget.dataset.idx as number;
+    const known = e.currentTarget.dataset.known === '1';
+    if (this.data.queue[idx] == null) return;
+    const word = this.data.queue[idx];
+    if (this.data.listAnswered[word.word]) return; // 已作答
+    if (this._answeredSet.has(idx)) return; // 防重复计数
+    this._answeredSet.add(idx);
+
+    const bookId = getCurrentBookId();
+    recordWordProgress(bookId, word.word, known);
+    recordStudy(1, this._isNewWord(word.word));
+    if (!known) addToWrongBook(word.word, word.meaning, bookId);
+
+    const listAnswered = { ...this.data.listAnswered, [word.word]: known ? 'known' : 'unknown' };
+    const knownCount = this.data.knownCount + (known ? 1 : 0);
+    const unknownCount = this.data.unknownCount + (known ? 0 : 1);
+    this.setData({ listAnswered, knownCount, unknownCount });
+
+    // 全部答完 → 结算本轮
+    if (knownCount + unknownCount >= this.data.totalCount) {
+      setTimeout(() => this.finishRound(), 400);
+    }
   },
 
   // 「不认识」揭示答案后，点「下一个」继续
   onRevealNext() {
+    this._clearRevealTimer();
     this.setData({ revealAfterUnknown: false, isFlipped: false, showMeaning: false });
     this.nextWord();
   },
@@ -877,6 +1078,9 @@ Page({
     else if (rate >= 70) praise = '不错哦，继续保持！';
     else if (rate >= 50) praise = '还需多复习几遍';
 
+    // 记住本轮队列，供「复习本轮」原样重刷（不换词）
+    this._lastRoundQueue = this.data.queue.slice();
+
     // 同步学习数据到云端
     this.syncToCloud();
 
@@ -904,6 +1108,46 @@ Page({
   onResultRestart() {
     this.setData({ showResult: false });
     this.initBatch();
+  },
+
+  // 结果页：复习本轮（用刚考完的原队列重刷一遍，不计入累计新词）
+  _lastRoundQueue: [] as WordItem[],
+
+  onResultReviewRound() {
+    const last = this._lastRoundQueue;
+    if (!last || last.length === 0) {
+      wx.showToast({ title: '本轮队列已不在，试试再来一轮', icon: 'none' });
+      return;
+    }
+    this._clearRevealTimer();
+    this._loadedKey = ''; // 绕过“数据未变跳过重建”守卫
+    this._answeredSet = new Set<number>();
+    // 复习轮不计入累计新词：清空新词集合（_isNewWord 返回 false）
+    this._newWordSet = new Set<string>();
+    const reportedMap: Record<string, boolean> = {};
+    for (const w of last) {
+      if (isWordReported(w.word)) reportedMap[w.word] = true;
+    }
+    this.setData({
+      showResult: false,
+      queue: last,
+      _wordBookWords: this.data._wordBookWords,
+      currentIndex: 0,
+      showMeaning: false,
+      isFlipped: false,
+      revealAfterUnknown: false,
+      knownCount: 0,
+      unknownCount: 0,
+      totalCount: last.length,
+      statusLabel: '复习',
+      listAnswered: {},
+      spellInput: '',
+      spellFeedback: 'none',
+      choiceSelected: -1,
+      reportedMap
+    }, () => {
+      this._applyModeForCurrent();
+    });
   },
 
   // 结果页：返回

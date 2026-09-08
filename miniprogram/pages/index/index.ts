@@ -1,5 +1,5 @@
 // pages/index/index.ts
-import { getStats, getCurrentBookId, hasSelectedBook, getBookProgressStats, getReviewPlan, restoreStatsFromCloud } from '../../utils/store';
+import { getStats, getCurrentBookId, hasSelectedBook, getBookProgressStats, getReviewPlan, restoreStatsFromCloud, getTodayLearnedWords } from '../../utils/store';
 import { getBookById } from '../../utils/wordService';
 
 // 本地种子词库（兑底）
@@ -24,6 +24,8 @@ Page({
     currentBookId: 'junior',
     // 今日复习计划卡片
     showPlanCard: false,
+    // 今日学过词数（今日复盘轻量卡）
+    todayWordCount: 0,
     planDueToday: 0,
     planForecast: [] as { label: string; count: number }[],
     // 今日金句
@@ -40,7 +42,11 @@ Page({
   onShow() {
     // 首次使用不再强制跳选书页：先让用户浏览首页，点具体功能时再引导选书
     this.updateGreeting();
-    this.setData({ currentBookId: getCurrentBookId(), showPlanCard: hasSelectedBook() });
+    this.setData({
+      currentBookId: getCurrentBookId(),
+      showPlanCard: hasSelectedBook(),
+      todayWordCount: getTodayLearnedWords().length
+    });
     this.loadStats();
     this.loadQuote();
 
@@ -144,6 +150,12 @@ Page({
     } else {
       this.goWords();
     }
+  },
+
+  // 今日复盘：本轮只重刷今天学过的词
+  goTodayReview() {
+    wx.setStorageSync('bc_today_review', 1);
+    wx.switchTab({ url: '/pages/words/words' });
   },
 
   // 查看完整复习计划页

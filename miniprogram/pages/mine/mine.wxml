@@ -134,6 +134,16 @@
   <view class="other-section">
     <view class="section-title section-title-sm">更多</view>
     <view class="other-group">
+      <view class="other-item" bindtap="goTodayReview">
+        <view class="other-icon-wrap other-icon-wrap-cyan">
+          <view class="other-icon-poster"></view>
+        </view>
+        <view class="other-item-text">
+          <view class="other-item-name">今日复盘</view>
+          <view class="other-item-desc">今天学了 {{todayWordCount}} 词{{todayWordCount > 0 ? ' · 去重刷' : ''}}</view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
       <view class="other-item" bindtap="goSearch">
         <view class="other-icon-wrap other-icon-wrap-blue">
           <view class="other-icon-search"></view>
