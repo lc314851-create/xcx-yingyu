@@ -118,6 +118,11 @@ Page({
     // ─── 出题模式下拉框 ───
     modeLabels: ['卡片', '选择', '拼写', '混合', '列表'] as string[],
     modeIndex: 0,
+    // ─── 自定义选择弹框 ───
+    showSheet: false,
+    sheetTitle: '',
+    sheetOptions: [] as Array<{ label: string; active: boolean }>,
+    sheetType: '' as string,
     // ─── 纠错上报 ───
     showReport: false,
     reportType: '' as ReportType | '',
@@ -823,25 +828,54 @@ Page({
   },
 
   // ─── 练习模式切换（切换不换词不跳词，当前词按新方式重新出题） ───
-  // 选模式（弹框）
+  // ─── 自定义选择弹框（模式/范围/每轮个数统一用） ───
+  _openSheet(type: string, title: string, options: Array<{ label: string; active: boolean }>) {
+    this.setData({ showSheet: true, sheetType: type, sheetTitle: title, sheetOptions: options });
+  },
+
+  closeSheet() {
+    this.setData({ showSheet: false });
+  },
+
+  onSheetSelect(e: any) {
+    const idx = e.currentTarget.dataset.index as number;
+    const type = e.currentTarget.dataset.type as string;
+    this.setData({ showSheet: false });
+
+    if (type === 'mode') {
+      const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'list'];
+      const mode = modes[idx] as PracticeMode;
+      if (!mode || mode === this.data.practiceMode) return;
+      setPracticeMode(mode);
+      this.setData({ practiceMode: mode, modeIndex: idx });
+      if (this.data.queue.length > 0) {
+        this._applyModeForCurrent();
+      }
+    } else if (type === 'scope') {
+      const modes: StudyMode[] = ['all', 'highFreq', 'func', 'content'];
+      const newMode = modes[idx];
+      if (!newMode || newMode === this.data.studyMode) return;
+      setStudyMode(newMode);
+      this.setData({ wordClassLabel: this.WORD_CLASS_LABELS[newMode] || '全部' });
+      this.initBatch();
+    } else if (type === 'batch') {
+      const options = [5, 10, 15, 20];
+      const n = options[idx];
+      if (!n || n === this.data.batchSize) return;
+      setBatchSize(n);
+      this.setData({ batchSize: n });
+      wx.showToast({ title: '每轮 ' + n + ' 个单词', icon: 'none' });
+      this.initBatch();
+    }
+  },
+
   onModeTap() {
     const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'list'];
-    const labels = this.data.modeLabels;
-    wx.showActionSheet({
-      itemList: labels,
-      success: (res: any) => {
-        const idx = res.tapIndex;
-        const mode = modes[idx] as PracticeMode;
-        if (!mode || mode === this.data.practiceMode) return;
-        setPracticeMode(mode);
-        this.setData({ practiceMode: mode, modeIndex: idx });
-        if (this.data.queue.length > 0) {
-          this._applyModeForCurrent();
-        }
-        const full: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式', list: '列表模式' };
-        wx.showToast({ title: full[mode] || '', icon: 'none' });
-      }
-    });
+    this._openSheet(
+      'mode',
+      '出题模式',
+      modes.map((m, i) => ({ label: this.data.modeLabels[i], active: m === this.data.practiceMode }))
+    );
   },
 
   onPracticeModeChange(e: any) {
@@ -877,16 +911,11 @@ Page({
   // 设置每轮学习单词数（顶部按钮）
   onChangeBatchSize() {
     const options = [5, 10, 15, 20];
-    wx.showActionSheet({
-      itemList: options.map(n => n + ' 个/轮'),
-      success: (res: any) => {
-        const n = options[res.tapIndex];
-        if (!n || n === this.data.batchSize) return;
-        setBatchSize(n);
-        wx.showToast({ title: '每轮 ' + n + ' 个单词', icon: 'none' });
-        this.initBatch();
-      }
-    });
+    this._openSheet(
+      'batch',
+      '每轮个数',
+      options.map(n => ({ label: n + ' 个/轮', active: n === this.data.batchSize }))
+    );
   },
 
   // 切换学习范围（全部/高频/虚词/实词）
@@ -894,17 +923,11 @@ Page({
 
   onSelectWordClass() {
     const modes: StudyMode[] = ['all', 'highFreq', 'func', 'content'];
-    const labels = modes.map(m => this.WORD_CLASS_LABELS[m]);
-    wx.showActionSheet({
-      itemList: labels,
-      success: (res: any) => {
-        const newMode = modes[res.tapIndex];
-        if (!newMode || newMode === this.data.studyMode) return;
-        setStudyMode(newMode);
-        wx.showToast({ title: '已切换为「' + this.WORD_CLASS_LABELS[newMode] + '」', icon: 'none' });
-        this.initBatch();
-      }
-    });
+    this._openSheet(
+      'scope',
+      '学习范围',
+      modes.map(m => ({ label: this.WORD_CLASS_LABELS[m], active: m === this.data.studyMode }))
+    );
   },
 
   // 兼容旧入口

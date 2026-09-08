@@ -1274,3 +1274,37 @@
 .result-actions + .result-actions {
   margin-top: 16rpx;
 }
+
+/* ═════════ 自定义选择弹框 ═════════ */
+.sheet-panel {
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.sheet-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 12rpx;
+  font-size: 30rpx;
+  color: var(--text-secondary);
+  border-bottom: 1rpx solid var(--border-light, #F0EADC);
+}
+
+.sheet-option:last-child {
+  border-bottom: none;
+}
+
+.sheet-option.active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.sheet-check {
+  font-size: 30rpx;
+  color: var(--color-primary);
+}

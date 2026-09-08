@@ -39,6 +39,27 @@
     </view>
   </view>
 
+  <!-- 自定义选择弹框（模式/范围/每轮个数） -->
+  <view class="report-mask" wx:if="{{showSheet}}" bindtap="closeSheet"></view>
+  <view class="report-panel sheet-panel" wx:if="{{showSheet}}">
+    <view class="report-head">
+      <view class="report-title">{{sheetTitle}}</view>
+    </view>
+    <view class="sheet-options">
+      <view
+        class="sheet-option {{item.active ? 'active' : ''}}"
+        wx:for="{{sheetOptions}}"
+        wx:key="label"
+        data-index="{{index}}"
+        data-type="{{sheetType}}"
+        bindtap="onSheetSelect"
+      >
+        <text>{{item.label}}</text>
+        <text class="sheet-check" wx:if="{{item.active}}">✓</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && totalCount === 0}}">
     <view class="empty-icon-wrap">
