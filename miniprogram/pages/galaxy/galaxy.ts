@@ -4,6 +4,7 @@
 import { getFamily, randomFamilyWord, FamilyResult } from '../../utils/familyService';
 import { playAudio } from '../../utils/audio';
 import { getCurrentBookId } from '../../utils/store';
+import { getBookById } from '../../utils/wordService';
 import { WordItem } from '../../data/types';
 
 type RelationTab = 'family' | 'similar';
@@ -30,7 +31,11 @@ Page({
     nodes: [] as OrbitNode[],
     bookLevel: '',
     hasResult: true,
-    inMainBook: true // 中心词是否在当前词书（跨册漫游时标注）
+    inMainBook: true, // 中心词是否在当前词书（跨册漫游时标注）
+    // 展示视图：orbit=星系轨道 / flat=词书全表平铺
+    viewMode: 'orbit' as 'orbit' | 'flat',
+    flatWords: [] as WordItem[],
+    flatLoading: false
   },
 
   allFamily: [] as WordItem[],
@@ -132,6 +137,40 @@ Page({
       });
     }
     this.setData({ nodes });
+  },
+
+  // ─── 平铺视图：当前词书全表，点击发声 ───
+  onToggleView() {
+    const next = this.data.viewMode === 'orbit' ? 'flat' : 'orbit';
+    this.setData({ viewMode: next });
+    if (next === 'flat') this.loadFlatWords();
+  },
+
+  async loadFlatWords() {
+    if (this.data.flatWords.length > 0) return; // 已加载过，直接复用
+    this.setData({ flatLoading: true });
+    try {
+      const book = await getBookById(getCurrentBookId());
+      this.setData({ flatWords: book ? book.words : [] });
+    } catch (e) {
+      console.error('[星系] 词书加载失败', e);
+      wx.showToast({ title: '词库加载失败，请重试', icon: 'none' });
+    }
+    this.setData({ flatLoading: false });
+  },
+
+  // 平铺视图：点单词发声
+  onFlatTap(e: any) {
+    const word = e.currentTarget.dataset.word as string;
+    if (word) playAudio(word);
+  },
+
+  // 平铺视图：长按单词 → 以该词为中心漫游回星系
+  onFlatLongPress(e: any) {
+    const word = e.currentTarget.dataset.word as string;
+    if (!word) return;
+    this.setData({ viewMode: 'orbit' });
+    this.showWord(word);
   },
 
   onTabChange(e: any) {

@@ -291,3 +291,71 @@
 .random-btn:active {
   transform: scale(0.94);
 }
+
+/* ═════════ 视图切换 + 平铺词表 ═════════ */
+.page-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.view-toggle {
+  flex-shrink: 0;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--color-primary);
+  background: rgba(47, 87, 70, 0.08);
+  border: 1rpx solid rgba(47, 87, 70, 0.35);
+  border-radius: 999rpx;
+  padding: 10rpx 24rpx;
+}
+
+.flat-tip {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin: 16rpx 0;
+}
+
+.flat-loading {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  padding: 120rpx 0;
+}
+
+.flat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 0 30rpx 40rpx;
+}
+
+.flat-cell {
+  width: calc((100% - 32rpx) / 3);
+  box-sizing: border-box;
+  background: var(--bg-card, #FFFDF6);
+  border: 1rpx solid var(--border-light, #EFE8D8);
+  border-radius: 16rpx;
+  padding: 18rpx 16rpx;
+  overflow: hidden;
+}
+
+.flat-cell-word {
+  font-family: Georgia, serif;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flat-cell-meaning {
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+  margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
