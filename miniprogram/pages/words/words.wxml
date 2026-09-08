@@ -15,9 +15,10 @@
         <view class="mode-chip {{practiceMode === 'card' ? 'active' : ''}}" data-mode="card" bindtap="onPracticeModeChange">卡片</view>
         <view class="mode-chip {{practiceMode === 'choice' ? 'active' : ''}}" data-mode="choice" bindtap="onPracticeModeChange">选择</view>
         <view class="mode-chip {{practiceMode === 'spell' ? 'active' : ''}}" data-mode="spell" bindtap="onPracticeModeChange">拼写</view>
+        <view class="mode-chip {{practiceMode === 'mix' ? 'active' : ''}}" data-mode="mix" bindtap="onPracticeModeChange">混合</view>
       </view>
       <view class="book-bar-switches">
-        <view class="book-bar-switch {{studyMode !== 'all' ? 'scope-on' : ''}}" bindtap="onSelectWordClass">范围：{{wordClassLabel}}</view>
+        <view class="book-bar-switch {{studyMode !== 'all' ? 'scope-on' : ''}}" bindtap="onSelectWordClass">{{wordClassLabel}}</view>
         <view class="book-bar-switch" bindtap="onToggleOrderMode">{{orderMode === 'random' ? '随机' : '顺序'}}</view>
         <view class="book-bar-switch" bindtap="onChangeBatchSize">{{batchSize}} 个/轮</view>
       </view>
@@ -54,8 +55,8 @@
   </view>
 
   <!-- ═════════ 卡片翻面模式 ═════════ -->
-  <block wx:if="{{!loading && totalCount > 0 && practiceMode === 'card' && !showResult}}">
-    <view class="card-scene" bindtap="flipCard">
+  <block wx:if="{{!loading && totalCount > 0 && activeMode === 'card' && !showResult}}">
+    <view class="card-scene" bindtap="flipCard" wx:if="{{queue[currentIndex]}}">
       <view class="card-3d {{isFlipped ? 'flipped' : ''}}">
         <!-- 正面：单词 -->
         <view class="card-face card-front">
@@ -95,18 +96,22 @@
     </view>
 
     <!-- 操作按钮 -->
-    <view class="actions">
+    <view class="actions" wx:if="{{!revealAfterUnknown}}">
       <view class="btn-secondary mark-btn" bindtap="markUnknown">不认识</view>
       <view class="btn-primary mark-btn" bindtap="markKnown">认识 ✓</view>
+    </view>
+    <!-- 不认识→已展示释义：看完再走 -->
+    <view class="actions" wx:if="{{revealAfterUnknown}}">
+      <view class="btn-primary mark-btn reveal-next-btn" bindtap="onRevealNext">下一个 ›</view>
     </view>
   </block>
 
   <!-- ═════════ 四选一模式 ═════════ -->
-  <block wx:if="{{!loading && totalCount > 0 && practiceMode === 'choice' && !showResult}}">
+  <block wx:if="{{!loading && totalCount > 0 && activeMode === 'choice' && !showResult}}">
     <view class="choice-question">
       <view class="choice-prompt">下列哪个是该单词的释义？</view>
-      <view class="choice-word-row">
-        <view class="choice-word">{{queue[currentIndex].word}}</view>
+      <view class="choice-word {{queue[currentIndex].word.length > 12 ? 'choice-word-xs' : (queue[currentIndex].word.length > 8 ? 'choice-word-sm' : '')}}">{{queue[currentIndex].word}}</view>
+      <view class="choice-sub-row">
         <view class="choice-phonetic" wx:if="{{queue[currentIndex].phonetic}}">{{queue[currentIndex].phonetic}}</view>
         <view class="audio-btn-sm" catchtap="onPlayAudio">发声</view>
       </view>
@@ -124,10 +129,19 @@
         <view class="choice-text">{{item.meaning}}</view>
       </view>
     </view>
+
+    <!-- 不认识：直接揭示正确答案，按答错记录 -->
+    <view class="actions button-compact" wx:if="{{choiceSelected === -1}}">
+      <view class="btn-secondary mark-btn" bindtap="onChoiceDontKnow">不认识</view>
+    </view>
+    <!-- 不认识→已揭示正确答案：看完记住再走 -->
+    <view class="actions button-compact" wx:if="{{choiceSelected === -2}}">
+      <view class="btn-primary mark-btn reveal-next-btn" bindtap="onChoiceNext">下一个 ›</view>
+    </view>
   </block>
 
   <!-- ═════════ 拼写模式 ═════════ -->
-  <block wx:if="{{!loading && totalCount > 0 && practiceMode === 'spell' && !showResult}}">
+  <block wx:if="{{!loading && totalCount > 0 && activeMode === 'spell' && !showResult}}">
     <view class="spell-card {{spellFeedback !== 'none' ? (spellFeedback === 'correct' ? 'feedback-correct' : 'feedback-wrong') : ''}}">
       <view class="spell-prompt">请拼写出这个单词</view>
       <view class="spell-meaning">{{queue[currentIndex].meaning}}</view>

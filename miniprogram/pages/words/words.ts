@@ -21,7 +21,8 @@ import {
   setAccent,
   addToWrongBook
 } from '../../utils/store';
-import type { PracticeMode, Accent, StudyMode } from '../../utils/store';
+import type { PracticeMode, ConcretePracticeMode, Accent, StudyMode } from '../../utils/store';
+import { toConcreteMode } from '../../utils/store';
 import { getBookById } from '../../utils/wordService';
 import { wordBooks as localBooks } from '../../data/index';
 import { playAudio, preloadAudio } from '../../utils/audio';
@@ -80,8 +81,10 @@ Page({
     currentBookId: 'junior',
     // reminderSubscribed: false, // 学习提醒已下线（2026-08-31）
     // ─── 阶段一新增 ───
-    // 练习模式：卡片翻面 / 四选一 / 拼写
+    // 练习模式：卡片翻面 / 四选一 / 拼写 / 混合（mix）
     practiceMode: 'card' as PracticeMode,
+    // 当前词实际渲染的出题方式（mix 模式下每个词随机，其余与 practiceMode 一致）
+    activeMode: 'card' as ConcretePracticeMode,
     // 四选一选项
     choiceOptions: [] as ChoiceOption[],
     // 四选一是否已选
@@ -100,6 +103,8 @@ Page({
     resultPraise: '',
     // 翻面动画状态
     isFlipped: false,
+    // 卡片模式「不认识」揭示答案状态（true 时展示「下一个」按钮并锁定翻面）
+    revealAfterUnknown: false,
     // 上一题对错（用于结果页判断是否记录）
     _wordBookWords: [] as WordItem[],
     // 出题顺序：随机 / 顺序
@@ -381,12 +386,16 @@ Page({
     // 新一轮开始，清空已作答标记（修复切模式后同一词重复计数的 bug）
     this._answeredSet = new Set<number>();
 
+    // 状态标签按本轮队列实际构成判定：全部为到期词才是「复习」，
+    // 混入新词（复习词优先占位+新词补齐）时标「新词」，避免 1 个复习词+9 个新词误标成复习
+    const dueWordSet = new Set(dueWords.map(w => w.word));
+    const dueInQueue = finalQueue.filter(w => dueWordSet.has(w.word)).length;
     let statusLabel = '新词';
     if (memActive) {
       statusLabel = '高危词';
-    } else if (dueWords.length > 0 && queue.length > 0) {
+    } else if (finalQueue.length > 0 && dueInQueue === finalQueue.length) {
       statusLabel = '复习';
-    } else if (finalQueue.length > 0 && queue.length === 0) {
+    } else if (dueInQueue === 0 && dueWords.length === 0 && newWords.length === 0 && finalQueue.length > 0) {
       statusLabel = '巩固';
     }
 
@@ -401,6 +410,7 @@ Page({
       currentIndex: 0,
       showMeaning: false,
       isFlipped: false,
+      revealAfterUnknown: false,
       knownCount: 0,
       unknownCount: 0,
       totalCount: finalQueue.length,
@@ -415,17 +425,12 @@ Page({
       choiceSelected: -1,
       reportedMap
     }, () => {
-      // 如果是四选一模式，生成第一题的选项
-      if (finalQueue.length > 0 && practiceMode === 'choice') {
-        this.generateChoiceOptions(finalQueue[0]);
-      }
-      // 如果是卡片模式，自动播放第一个词的发音
-      if (finalQueue.length > 0 && practiceMode === 'card') {
-        playAudio(finalQueue[0].word, accent);
-      }
-      // 预加载第二个词，翻页时秒出声
-      if (finalQueue.length > 1) {
-        preloadAudio(finalQueue[1].word, accent);
+      if (finalQueue.length > 0) {
+        this._applyModeForCurrent();
+        // 预加载第二个词，翻页时秒出声
+        if (finalQueue.length > 1) {
+          preloadAudio(finalQueue[1].word, accent);
+        }
       }
     });
   },
@@ -495,6 +500,7 @@ Page({
   },
 
   flipCard() {
+    // 「不认识」揭示答案后也允许自由翻面（可翻回正面再看单词），流程由「下一个」按钮推进
     const flipped = !this.data.isFlipped;
     this.setData({
       isFlipped: flipped,
@@ -529,13 +535,37 @@ Page({
     if (word) playAudio(word.word, newAccent);
   },
 
+  // ─── 出题方式应用（含混合模式随机映射） ───
+  // 为当前词确定实际出题方式并重置答题状态；卡片模式保留翻面延续（释义面朝上切词）
+  _applyModeForCurrent() {
+    const mode = toConcreteMode(this.data.practiceMode);
+    const keepFlip = this.data.isFlipped && this.data.practiceMode === 'card';
+    const word = this.data.queue[this.data.currentIndex];
+    this.setData({
+      activeMode: mode,
+      isFlipped: keepFlip,
+      showMeaning: keepFlip,
+      revealAfterUnknown: false,
+      spellInput: '',
+      spellFeedback: 'none',
+      choiceSelected: -1
+    }, () => {
+      if (!word) return;
+      if (mode === 'choice') {
+        this.generateChoiceOptions(word);
+      } else if (mode === 'card') {
+        playAudio(word.word, this.data.accent);
+      }
+    });
+  },
+
   // ─── 四选一模式 ───
   // 生成四选一选项（给单词选释义）
   generateChoiceOptions(currentWord: WordItem) {
     const allWords = this.data._wordBookWords;
     if (allWords.length < 4) {
-      // 词书词数不够 4 个，无法出干扰项，降级为卡片模式
-      this.setData({ practiceMode: 'card' });
+      // 词书词数不够 4 个，无法出干扰项，降级为卡片出题
+      this.setData({ activeMode: 'card' });
       return;
     }
 
@@ -598,10 +628,38 @@ Page({
       this.setData({ unknownCount: this.data.unknownCount + 1 });
     }
 
-    // 延迟 1 秒进入下一题
+    // 答对停 1 秒；答错停 2.5 秒，留时间看清正确答案
     setTimeout(() => {
       this.nextWord();
-    }, 1000);
+    }, isCorrect ? 1000 : 2500);
+  },
+
+  // 四选一：点「不认识」（不猜了，直接揭示正确答案，按答错记录）
+  onChoiceDontKnow() {
+    if (this.data.choiceSelected !== -1) return; // 已作答/已揭示
+    if (this._checkAnswered()) return; // 切模式后同一词不重复计数
+
+    // choiceSelected 置为 -2：不命中任何选项（不标红错误项），但触发正确项高亮
+    this.setData({ choiceSelected: -2, choiceCorrect: false });
+
+    const word = this.data.queue[this.data.currentIndex];
+    if (word) playAudio(word.word, this.data.accent);
+
+    const bookId = getCurrentBookId();
+    recordWordProgress(bookId, word.word, false);
+    recordStudy(1, this._isNewWord(word.word));
+    addToWrongBook(word.word, word.meaning, bookId);
+
+    this.setData({ unknownCount: this.data.unknownCount + 1 });
+
+    // 不自动跳转：展示正确答案后出「下一个」按钮，给用户时间记住这个词
+  },
+
+  // 选择模式「不认识」揭示答案后，点「下一个」继续
+  onChoiceNext() {
+    if (this.data.choiceSelected !== -2) return; // 仅限「不认识」揭示状态
+    this.setData({ choiceSelected: -1 });
+    this.nextWord();
   },
 
   // ─── 拼写模式 ───
@@ -641,33 +699,24 @@ Page({
       this.setData({ unknownCount: this.data.unknownCount + 1 });
     }
 
-    // 延迟 1.2 秒进入下一题
+    // 拼对停 1.2 秒；拼错停 3 秒，留时间记住正确拼写
     setTimeout(() => {
       this.nextWord();
-    }, 1200);
+    }, isCorrect ? 1200 : 3000);
   },
 
-  // ─── 练习模式切换 ───
+  // ─── 练习模式切换（切换不换词不跳词，当前词按新方式重新出题） ───
   onPracticeModeChange(e: any) {
     const mode = e.currentTarget.dataset.mode as PracticeMode;
     if (mode === this.data.practiceMode) return;
 
     setPracticeMode(mode);
-    this.setData({
-      practiceMode: mode,
-      isFlipped: false,
-      showMeaning: false,
-      spellInput: '',
-      spellFeedback: 'none',
-      choiceSelected: -1
-    });
-
-    // 如果切换到四选一，生成当前词的选项
-    if (mode === 'choice' && this.data.queue.length > 0) {
-      this.generateChoiceOptions(this.data.queue[this.data.currentIndex]);
+    this.setData({ practiceMode: mode });
+    if (this.data.queue.length > 0) {
+      this._applyModeForCurrent();
     }
 
-    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式' };
+    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式' };
     wx.showToast({ title: labels[mode] || '', icon: 'none' });
   },
 
@@ -769,6 +818,7 @@ Page({
 
   markUnknown() {
     if (this.data.currentIndex >= this.data.queue.length) return;
+    if (this.data.revealAfterUnknown) return; // 已揭示，等待用户点「下一个」
     if (this._checkAnswered()) return; // 切模式后同一词不重复计数
     const word = this.data.queue[this.data.currentIndex];
     const bookId = getCurrentBookId();
@@ -777,35 +827,38 @@ Page({
     addToWrongBook(word.word, word.meaning, bookId);
 
     this.setData({
-      unknownCount: this.data.unknownCount + 1
+      unknownCount: this.data.unknownCount + 1,
+      // 不认识：先翻面展示释义（当场看到正确答案），用户点「下一个」再切词
+      revealAfterUnknown: true,
+      isFlipped: true,
+      showMeaning: true
     });
+    // 自动播放发音，加深记忆
+    playAudio(word.word, this.data.accent);
+  },
+
+  // 「不认识」揭示答案后，点「下一个」继续
+  onRevealNext() {
+    this.setData({ revealAfterUnknown: false, isFlipped: false, showMeaning: false });
     this.nextWord();
   },
 
   nextWord() {
+    // 防御：队列异常（空队列/下标越界）时直接重开一轮，避免白屏卡死
+    if (!this.data.queue || this.data.queue.length === 0) {
+      this.initBatch();
+      return;
+    }
     const next = this.data.currentIndex + 1;
     if (next >= this.data.queue.length) {
       this.finishRound();
       return;
     }
-    // 翻面状态下切词：保持释义面朝上（翻转动画自然过渡到下一个词的释义面）
-    const keepFlip = this.data.isFlipped && this.data.practiceMode === 'card';
     this.setData({
-      currentIndex: next,
-      isFlipped: keepFlip,
-      showMeaning: false,
-      spellInput: '',
-      spellFeedback: 'none',
-      choiceSelected: -1
+      currentIndex: next
     }, () => {
-      // 四选一模式：生成下一题选项
-      if (this.data.practiceMode === 'choice') {
-        this.generateChoiceOptions(this.data.queue[next]);
-      }
-      // 卡片模式：自动播放发音
-      if (this.data.practiceMode === 'card') {
-        playAudio(this.data.queue[next].word, this.data.accent);
-      }
+      // 为新词确定出题方式（mix 模式下每个词随机卡片/选择/拼写），并重置答题状态
+      this._applyModeForCurrent();
       // 预加载下下个词
       const afterNext = this.data.queue[next + 1];
       if (afterNext) preloadAudio(afterNext.word, this.data.accent);

@@ -10,3 +10,10 @@ ecdict-sqlite.zip
 ecdict.csv
 ecdict.db
 ECDICT/
+
+# 本地备份/临时/IDE
+.backup-*/
+_backup_*/
+_output_tts/
+.vscode/
+.smoke-tsc.txt

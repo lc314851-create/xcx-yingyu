@@ -422,6 +422,10 @@
   margin-top: 40rpx;
 }
 
+.actions.button-compact {
+  margin-top: 20rpx;
+}
+
 .mark-btn {
   flex: 1;
   padding: 24rpx 0;
@@ -440,10 +444,10 @@
 .choice-question {
   background: linear-gradient(145deg, var(--bg-card) 0%, var(--bg-hover) 100%);
   border-radius: 24rpx;
-  padding: 50rpx 40rpx;
+  padding: 36rpx 40rpx;
   text-align: center;
   box-shadow: 0 12rpx 40rpx rgba(47, 87, 70, 0.12);
-  margin-bottom: 30rpx;
+  margin-bottom: 20rpx;
 }
 
 .choice-prompt {
@@ -452,19 +456,33 @@
   margin-bottom: 24rpx;
 }
 
-.choice-word-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16rpx;
-}
-
 .choice-word {
   font-size: 56rpx;
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: 2rpx;
   line-height: 1.2;
+  word-break: break-all;
+}
+
+/* 长词自适应缩字号，避免顶边溢出 */
+.choice-word-sm {
+  font-size: 44rpx;
+  letter-spacing: 1rpx;
+}
+
+.choice-word-xs {
+  font-size: 36rpx;
+  letter-spacing: 0;
+}
+
+/* 音标 + 发声按钮行（单词下方居中） */
+.choice-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 14rpx;
 }
 
 .choice-phonetic {
@@ -480,7 +498,7 @@
 .choice-options {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 14rpx;
 }
 
 .choice-item {
@@ -1082,4 +1100,15 @@
 .export-canvas {
   width: 340px;
   height: 600px;
+}
+
+/* 「不认识」揭示答案后的「下一个」按钮（复用 mark-btn，轻微呼吸动画引导点击） */
+.reveal-next-btn {
+  flex: 1;
+  animation: reveal-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes reveal-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
