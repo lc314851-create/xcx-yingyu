@@ -26,7 +26,7 @@
 .book-bar-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center; /* 控制条整体居中 */
   gap: 12rpx;
   min-width: 0;
 }
@@ -93,6 +93,7 @@
 .mode-group {
   display: flex;
   flex-shrink: 0;
+  justify-content: center; /* 控制条整体居中 */
   background: var(--border-light);
   border-radius: 20rpx;
   padding: 4rpx;
