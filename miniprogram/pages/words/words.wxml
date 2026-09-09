@@ -113,14 +113,10 @@
       <view class="accent-toggle" catchtap="onToggleAccent">{{accent === 'uk' ? '英音' : '美音'}}</view>
     </view>
 
-    <!-- 操作按钮 -->
-    <view class="actions" wx:if="{{!revealAfterUnknown}}">
+    <!-- 操作按钮：两个按钮行为完全对称，记录后都直接进下一张 -->
+    <view class="actions">
       <view class="btn-secondary mark-btn" bindtap="markUnknown">不认识</view>
       <view class="btn-primary mark-btn" bindtap="markKnown">认识 ✓</view>
-    </view>
-    <!-- 不认识→已展示释义：看完再走 -->
-    <view class="actions" wx:if="{{revealAfterUnknown}}">
-      <view class="btn-primary mark-btn reveal-next-btn" bindtap="onRevealNext">下一个 ›</view>
     </view>
   </block>
 

@@ -108,7 +108,6 @@ Page({
     // 翻面动画状态
     isFlipped: false,
     // 卡片模式「不认识」揭示答案状态（true 时展示「下一个」按钮并锁定翻面）
-    revealAfterUnknown: false,
     // 上一题对错（用于结果页判断是否记录）
     _wordBookWords: [] as WordItem[],
     // 快速模式：标记为不认识的词（word → true），未标记默认认识
@@ -199,7 +198,6 @@ Page({
 
   onUnload() {
     // 页面卸载时清理音频上下文（如果有）
-    this._clearRevealTimer();
   },
 
   async initBatch() {
@@ -250,8 +248,6 @@ Page({
     queue.sort((a, b) =>
       (unknownSet.has(b.word.toLowerCase()) ? 1 : 0) - (unknownSet.has(a.word.toLowerCase()) ? 1 : 0)
     );
-
-    this._clearRevealTimer();
     this._answeredSet = new Set<number>();
     this._newWordSet = new Set<string>(); // 复盘不计入累计新词
     const reportedMap: Record<string, boolean> = {};
@@ -267,7 +263,6 @@ Page({
       quickLearning: this.data.practiceMode === 'quick',
       showMeaning: false,
       isFlipped: false,
-      revealAfterUnknown: false,
       knownCount: 0,
       unknownCount: 0,
       totalCount: queue.length,
@@ -307,7 +302,6 @@ Page({
       return;
     }
     this._loadedKey = settingsKey;
-    this._clearRevealTimer();
 
     // 页面已有内容（换书/开新轮）：不进 loading 态，保持旧卡片可见，
     // 队列就绪后一次性替换，实现"平稳换轮"无闪动；仅首次进入才显示加载动画
@@ -525,7 +519,6 @@ Page({
       quickLearning: practiceMode === 'quick',
       showMeaning: false,
       isFlipped: false,
-      revealAfterUnknown: false,
       knownCount: 0,
       unknownCount: 0,
       totalCount: finalQueue.length,
@@ -652,28 +645,19 @@ Page({
   },
 
   // ─── 出题方式应用（含混合模式随机映射） ───
-  // 为当前词确定实际出题方式并重置答题状态；卡片模式保留翻面延续（释义面朝上切词）
+  // 为当前词确定实际出题方式并重置答题状态；卡片模式每张新卡都从正面（单词）开始，
+  // 切词时自然播放翻面动画，不再保留“释义面朝上切词”的旧设计（会提前泄答案）
   _applyModeForCurrent() {
     const mode = toConcreteMode(this.data.practiceMode);
-    const keepFlip = this.data.isFlipped && this.data.practiceMode === 'card';
     const word = this.data.queue[this.data.currentIndex];
-    // 切词补一次真实翻面：先短暂回正面，下一帧再翻回释义面，
-    // 消除“换词时卡片像没翻过来”的困惑（保留切词保持释义面的设计）
-    this._clearRevealTimer(); // 切模式/切词时取消“不认识自动跳”定时器，防跳词竞态
-    const flipBase = keepFlip ? { isFlipped: false, showMeaning: false } : {};
-    const flipBack = () => {
-      if (!keepFlip) return;
-      wx.nextTick(() => {
-        this.setData({ isFlipped: true, showMeaning: true });
-      });
-    };
     // 快速模式：进入学习阶段，恢复队列头指针与计数（同一批词重学重测）
     if (mode === 'quick') {
       this.setData({
         activeMode: 'quick',
         quickLearning: true,
         currentIndex: 0,
-        revealAfterUnknown: false,
+        isFlipped: false,
+        showMeaning: false,
         spellInput: '',
         spellFeedback: 'none',
         choiceSelected: -1
@@ -683,13 +667,12 @@ Page({
     this.setData({
       activeMode: mode,
       quickLearning: false, // 切到非快速模式时退出学习阶段，防止列表残留
-      ...flipBase,
-      revealAfterUnknown: false,
+      isFlipped: false,
+      showMeaning: false,
       spellInput: '',
       spellFeedback: 'none',
       choiceSelected: -1
     }, () => {
-      flipBack();
       if (!word) return;
       if (mode === 'choice') {
         this.generateChoiceOptions(word);
@@ -875,7 +858,6 @@ Page({
           currentIndex: 0,
           knownCount: 0,
           unknownCount: 0,
-          revealAfterUnknown: false,
           showMeaning: false,
           isFlipped: false,
           spellInput: '',
@@ -884,7 +866,6 @@ Page({
           quickUnknown: {}
         });
         this._answeredSet = new Set<number>();
-        this._clearRevealTimer();
         return;
       }
       this.setData({ practiceMode: mode, modeIndex: idx });
@@ -1068,9 +1049,9 @@ Page({
     this.nextWord();
   },
 
+  // 不认识：与认识完全对称——记录后直接进下一张（想看释义先点卡片翻面再评）
   markUnknown() {
     if (this.data.currentIndex >= this.data.queue.length) return;
-    if (this.data.revealAfterUnknown) return; // 已揭示，等待用户点「下一个」
     if (this._checkAnswered()) return; // 切模式后同一词不重复计数
     const word = this.data.queue[this.data.currentIndex];
     const bookId = getCurrentBookId();
@@ -1078,26 +1059,10 @@ Page({
     recordStudy(1, this._isNewWord(word.word));
     addToWrongBook(word.word, word.meaning, bookId);
 
-    // 不认识：正面（只看到单词）则翻面看释义；已经在释义面则保持不动，
-    // 由用户主动点「下一个」走
-    const needFlip = !this.data.isFlipped;
     this.setData({
-      unknownCount: this.data.unknownCount + 1,
-      revealAfterUnknown: true,
-      isFlipped: needFlip ? true : this.data.isFlipped,
-      showMeaning: needFlip ? true : this.data.showMeaning
+      unknownCount: this.data.unknownCount + 1
     });
-    // 自动播放发音，加深记忆
-    playAudio(word.word, this.data.accent);
-  },
-
-  _revealTimer: null as any,
-
-  _clearRevealTimer() {
-    if (this._revealTimer) {
-      clearTimeout(this._revealTimer);
-      this._revealTimer = null;
-    }
+    this.nextWord();
   },
 
   // ─── 快速模式 · 学习阶段 ───
@@ -1105,13 +1070,6 @@ Page({
   onListTap(e: any) {
     const word = e.currentTarget.dataset.word as string;
     if (word) playAudio(word, this.data.accent);
-  },
-
-  // 「不认识」揭示答案后，点「下一个」继续
-  onRevealNext() {
-    this._clearRevealTimer();
-    this.setData({ revealAfterUnknown: false, isFlipped: false, showMeaning: false });
-    this.nextWord();
   },
 
   nextWord() {
@@ -1189,7 +1147,6 @@ Page({
       wx.showToast({ title: '本轮队列已不在，试试再来一轮', icon: 'none' });
       return;
     }
-    this._clearRevealTimer();
     this._loadedKey = ''; // 绕过“数据未变跳过重建”守卫
     this._answeredSet = new Set<number>();
     // 复习轮不计入累计新词：清空新词集合（_isNewWord 返回 false）
@@ -1205,7 +1162,6 @@ Page({
       currentIndex: 0,
       showMeaning: false,
       isFlipped: false,
-      revealAfterUnknown: false,
       knownCount: 0,
       unknownCount: 0,
       totalCount: last.length,
