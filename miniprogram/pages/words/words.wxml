@@ -125,7 +125,7 @@
   </block>
 
   <!-- ═════════ 快速模式 · 学习阶段（纯浏览，无标记） ═════════ -->
-  <block wx:if="{{!loading && totalCount > 0 && quickLearning && !showResult}}">
+  <block wx:if="{{!loading && totalCount > 0 && quickLearning && activeMode === 'quick' && !showResult}}">
     <view class="list-tip">先快速过一遍 · 点单词听发音 · 学完选一种方式检测</view>
     <view class="list-wrap">
       <view
