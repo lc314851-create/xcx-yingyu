@@ -30,8 +30,8 @@
     <view class="loading-text">词库加载中...</view>
   </view>
 
-  <!-- 进度条 -->
-  <view class="progress-row" wx:if="{{!loading && totalCount > 0 && !showResult}}">
+  <!-- 进度条（快速学习阶段隐藏，检测阶段恢复） -->
+  <view class="progress-row" wx:if="{{!loading && totalCount > 0 && !showResult && !quickLearning}}">
     <view class="status-tag {{statusLabel === '复习' ? 'review' : (statusLabel === '巩固' ? 'solidify' : (statusLabel === '高危词' ? 'danger' : ''))}}">{{statusLabel}}</view>
     <view class="progress-text">{{currentIndex + 1}} / {{totalCount}}</view>
     <view class="progress-bar">
@@ -124,15 +124,15 @@
     </view>
   </block>
 
-  <!-- ═════════ 列表平铺模式 ═════════ -->
-  <block wx:if="{{!loading && totalCount > 0 && activeMode === 'list' && !showResult}}">
-    <view class="list-tip">点单词发声，认识/不认识直接标；认识的词自动折叠</view>
+  <!-- ═════════ 快速模式 · 学习阶段（纯浏览，无标记） ═════════ -->
+  <block wx:if="{{!loading && totalCount > 0 && quickLearning && !showResult}}">
+    <view class="list-tip">先快速过一遍 · 点单词听发音 · 学完选一种方式检测</view>
     <view class="list-wrap">
       <view
-        class="list-item {{listAnswered[item.word] === 'known' ? 'item-known' : ''}} {{listAnswered[item.word] === 'unknown' ? 'item-unknown' : ''}}"
+        class="list-item"
         wx:for="{{queue}}"
         wx:key="word"
-        data-idx="{{index}}"
+        data-word="{{item.word}}"
         bindtap="onListTap"
       >
         <view class="list-item-main">
@@ -143,13 +143,10 @@
           <view class="list-item-meaning">{{item.meaning}}</view>
           <view class="list-item-root" wx:if="{{item.root}}">词根 {{item.root}}{{item.rootGloss ? ' · ' + item.rootGloss : ''}}</view>
         </view>
-        <view class="list-item-actions" wx:if="{{!listAnswered[item.word]}}">
-          <view class="list-btn list-btn-no" data-idx="{{index}}" data-known="0" catchtap="onListAnswer">不认识</view>
-          <view class="list-btn list-btn-ok" data-idx="{{index}}" data-known="1" catchtap="onListAnswer">认识</view>
-        </view>
-        <view class="list-item-done" wx:else>{{listAnswered[item.word] === 'known' ? '✓' : '✗'}}</view>
       </view>
     </view>
+    <view class="quick-start-btn" bindtap="onStartQuickTest">开始检测 ›</view>
+    <view class="quick-start-hint">共 {{totalCount}} 词 · 检测可选卡片 / 选择 / 拼写 / 混合</view>
   </block>
 
   <!-- ═════════ 四选一模式 ═════════ -->

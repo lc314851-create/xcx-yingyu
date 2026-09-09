@@ -113,10 +113,12 @@ Page({
     _wordBookWords: [] as WordItem[],
     // 列表模式：每词作答状态（word → 'known' | 'unknown'），认识的词折叠置灰
     listAnswered: {} as Record<string, string>,
+    // 快速模式阶段开关：true=快速学习（列表浏览），false=检测阶段（四选一模式）
+    quickLearning: false,
     // 出题顺序：随机 / 顺序
     orderMode: 'random' as 'random' | 'sequential',
     // ─── 出题模式下拉框 ───
-    modeLabels: ['卡片', '选择', '拼写', '混合', '列表'] as string[],
+    modeLabels: ['卡片', '选择', '拼写', '混合', '快速'] as string[],
     modeIndex: 0,
     // ─── 自定义选择弹框 ───
     showSheet: false,
@@ -187,7 +189,7 @@ Page({
     this.setData({
       currentBookId: getCurrentBookId(),
       practiceMode: getPracticeMode(),
-      modeIndex: ['card', 'choice', 'spell', 'mix', 'list'].indexOf(getPracticeMode()),
+      modeIndex: ['card', 'choice', 'spell', 'mix', 'quick'].indexOf(getPracticeMode()),
       accent: getAccent(),
       orderMode: getOrderMode()
       // reminderSubscribed: isReminderSubscribed() // 学习提醒已下线（2026-08-31）
@@ -211,7 +213,7 @@ Page({
     return this._initNormalBatch();
   },
 
-  // 今日复盘轮：把今天学过的词重刷一遍（不认识的排前面，默认列表模式）
+  // 今日复盘轮：把今天学过的词重刷一遍（不认识的排前面）
   async _initTodayBatch(): Promise<boolean> {
     const todays = getTodayLearnedWords();
     if (todays.length === 0) {
@@ -262,6 +264,7 @@ Page({
       queue,
       _wordBookWords: allWords,
       currentIndex: 0,
+      quickLearning: this.data.practiceMode === 'quick',
       showMeaning: false,
       isFlipped: false,
       revealAfterUnknown: false,
@@ -519,6 +522,7 @@ Page({
       queue: finalQueue,
       _wordBookWords: wordList,
       currentIndex: 0,
+      quickLearning: practiceMode === 'quick',
       showMeaning: false,
       isFlipped: false,
       revealAfterUnknown: false,
@@ -663,6 +667,19 @@ Page({
         this.setData({ isFlipped: true, showMeaning: true });
       });
     };
+    // 快速模式：进入学习阶段，恢复队列头指针与计数（同一批词重学重测）
+    if (mode === 'quick') {
+      this.setData({
+        activeMode: 'quick',
+        quickLearning: true,
+        currentIndex: 0,
+        revealAfterUnknown: false,
+        spellInput: '',
+        spellFeedback: 'none',
+        choiceSelected: -1
+      });
+      return;
+    }
     this.setData({
       activeMode: mode,
       ...flipBase,
@@ -843,10 +860,31 @@ Page({
     this.setData({ showSheet: false });
 
     if (type === 'mode') {
-      const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'list'];
+      const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'quick'];
       const mode = modes[idx] as PracticeMode;
       if (!mode || mode === this.data.practiceMode) return;
       setPracticeMode(mode);
+      // 切到快速：从学习阶段开始（现有队列直接变学习列表）
+      if (mode === 'quick') {
+        this.setData({
+          practiceMode: mode,
+          modeIndex: idx,
+          quickLearning: true,
+          currentIndex: 0,
+          knownCount: 0,
+          unknownCount: 0,
+          revealAfterUnknown: false,
+          showMeaning: false,
+          isFlipped: false,
+          spellInput: '',
+          spellFeedback: 'none',
+          choiceSelected: -1,
+          listAnswered: {}
+        });
+        this._answeredSet = new Set<number>();
+        this._clearRevealTimer();
+        return;
+      }
       this.setData({ practiceMode: mode, modeIndex: idx });
       if (this.data.queue.length > 0) {
         this._applyModeForCurrent();
@@ -866,14 +904,41 @@ Page({
       this.setData({ batchSize: n });
       wx.showToast({ title: '每轮 ' + n + ' 个单词', icon: 'none' });
       this.initBatch();
+    } else if (type === 'quickTest') {
+      // 快速学习 → 检测：同一批词重过一遍，恢复答题状态
+      // 注意：检测方式只改本次会话的 practiceMode，持久层仍存 'quick'，
+      // 这样“再来一轮”/下次进入会重新从学习阶段开始
+      const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix'];
+      const mode = modes[idx] as PracticeMode;
+      if (!mode) return;
+      this._clearRevealTimer();
+      this._answeredSet = new Set<number>();
+      this.setData({
+        showSheet: false,
+        quickLearning: false,
+        practiceMode: mode,
+        modeIndex: ['card', 'choice', 'spell', 'mix'].indexOf(mode),
+        currentIndex: 0,
+        knownCount: 0,
+        unknownCount: 0,
+        revealAfterUnknown: false,
+        showMeaning: false,
+        isFlipped: false,
+        spellInput: '',
+        spellFeedback: 'none',
+        choiceSelected: -1,
+        listAnswered: {}
+      }, () => {
+        this._applyModeForCurrent();
+      });
     }
   },
 
   onModeTap() {
-    const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'list'];
+    const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix', 'quick'];
     this._openSheet(
       'mode',
-      '出题模式',
+      '学习模式',
       modes.map((m, i) => ({ label: this.data.modeLabels[i], active: m === this.data.practiceMode }))
     );
   },
@@ -888,7 +953,7 @@ Page({
       this._applyModeForCurrent();
     }
 
-    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式', list: '列表模式' };
+    const labels: Record<string, string> = { card: '卡片模式', choice: '选择模式', spell: '拼写模式', mix: '混合模式', quick: '快速学习' };
     wx.showToast({ title: labels[mode] || '', icon: 'none' });
   },
 
@@ -925,7 +990,7 @@ Page({
     const modes: StudyMode[] = ['all', 'highFreq', 'func', 'content'];
     this._openSheet(
       'scope',
-      '学习范围',
+      '词书范围',
       modes.map(m => ({ label: this.WORD_CLASS_LABELS[m], active: m === this.data.studyMode }))
     );
   },
@@ -1014,38 +1079,11 @@ Page({
     }
   },
 
-  // ─── 列表平铺模式 ───
-  // 点单词行：发声
+  // ─── 快速模式 · 学习阶段 ───
+  // 点单词行：发声（纯浏览，不记数据）
   onListTap(e: any) {
-    const idx = e.currentTarget.dataset.idx as number;
-    const w = this.data.queue[idx];
-    if (w) playAudio(w.word, this.data.accent);
-  },
-
-  // 列表模式：认识/不认识（复用卡片模式的进度记录链路）
-  onListAnswer(e: any) {
-    const idx = e.currentTarget.dataset.idx as number;
-    const known = e.currentTarget.dataset.known === '1';
-    if (this.data.queue[idx] == null) return;
-    const word = this.data.queue[idx];
-    if (this.data.listAnswered[word.word]) return; // 已作答
-    if (this._answeredSet.has(idx)) return; // 防重复计数
-    this._answeredSet.add(idx);
-
-    const bookId = getCurrentBookId();
-    recordWordProgress(bookId, word.word, known);
-    recordStudy(1, this._isNewWord(word.word));
-    if (!known) addToWrongBook(word.word, word.meaning, bookId);
-
-    const listAnswered = { ...this.data.listAnswered, [word.word]: known ? 'known' : 'unknown' };
-    const knownCount = this.data.knownCount + (known ? 1 : 0);
-    const unknownCount = this.data.unknownCount + (known ? 0 : 1);
-    this.setData({ listAnswered, knownCount, unknownCount });
-
-    // 全部答完 → 结算本轮
-    if (knownCount + unknownCount >= this.data.totalCount) {
-      setTimeout(() => this.finishRound(), 400);
-    }
+    const word = e.currentTarget.dataset.word as string;
+    if (word) playAudio(word, this.data.accent);
   },
 
   // 「不认识」揭示答案后，点「下一个」继续
@@ -1151,6 +1189,7 @@ Page({
       unknownCount: 0,
       totalCount: last.length,
       statusLabel: '复习',
+      quickLearning: this.data.practiceMode === 'quick',
       listAnswered: {},
       spellInput: '',
       spellFeedback: 'none',

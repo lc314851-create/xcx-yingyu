@@ -409,10 +409,10 @@ export function getTodayLearnedWords(): TodayWord[] {
 // ─── 练习模式（卡片翻面 / 四选一 / 拼写） ──────────────────────
 const PRACTICE_MODE_KEY = 'bc_practice_mode';
 
-export type PracticeMode = 'card' | 'choice' | 'spell' | 'mix' | 'list';
+export type PracticeMode = 'card' | 'choice' | 'spell' | 'mix' | 'quick';
 
-// 具体出题方式（mix 会在每个词随机映射为以下之一；list 为直接模式不走映射）
-export type ConcretePracticeMode = 'card' | 'choice' | 'spell' | 'list';
+// 具体出题方式（mix 会在每个词随机映射为以下之一；quick 学习阶段为直接模式不走映射）
+export type ConcretePracticeMode = 'card' | 'choice' | 'spell' | 'quick';
 
 export function toConcreteMode(mode: PracticeMode): ConcretePracticeMode {
   if (mode === 'mix') {
@@ -423,7 +423,10 @@ export function toConcreteMode(mode: PracticeMode): ConcretePracticeMode {
 }
 
 export function getPracticeMode(): PracticeMode {
-  return wx.getStorageSync(PRACTICE_MODE_KEY) || 'card';
+  // 旧版本存过 'list'，统一视为新版「快速」
+  const saved = wx.getStorageSync(PRACTICE_MODE_KEY);
+  if (saved === 'list') return 'quick';
+  return saved || 'card';
 }
 
 export function setPracticeMode(mode: PracticeMode): void {

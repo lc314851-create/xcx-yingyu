@@ -1136,7 +1136,6 @@
   border: 1rpx solid var(--border-light, #EFE8D8);
   border-radius: 20rpx;
   padding: 24rpx;
-  transition: opacity 0.25s ease;
 }
 
 .list-item.item-known {
@@ -1263,6 +1262,26 @@
   line-height: 1.6;
 }
 
+/* 快速模式 · 开始检测按钮 */
+.quick-start-btn {
+  margin: 24rpx 30rpx 0;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #FFFDF6;
+  background: var(--color-primary, #2F5746);
+  border-radius: 999rpx;
+  padding: 26rpx 0;
+  box-shadow: 0 6rpx 16rpx rgba(47, 87, 70, 0.25);
+}
+
+.quick-start-hint {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-tertiary, #B0A692);
+  margin: 16rpx 0 40rpx;
+}
+
 /* 顶部 ⚙ 按钮微调 */
 .settings-chip {
   font-size: 28rpx;
@@ -1280,7 +1299,7 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 280rpx; /* 上浮一段，离触发按钮更近 */
+  bottom: 580rpx; /* 上浮一段，离触发按钮更近 */
   border-radius: 36rpx;
   padding: 36rpx;
   background: var(--bg-page, #F7F3E8);
