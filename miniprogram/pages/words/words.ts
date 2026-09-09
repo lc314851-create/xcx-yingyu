@@ -1093,7 +1093,7 @@ Page({
     this._revealTimer = setTimeout(() => {
       this._revealTimer = null;
       if (this.data.revealAfterUnknown) this.onRevealNext();
-    }, 2500);
+    }, 4000); // 4 秒：留足看释义和读音的时间，期间点「下一个」可立即跳过
   },
 
   _revealTimer: null as any,
