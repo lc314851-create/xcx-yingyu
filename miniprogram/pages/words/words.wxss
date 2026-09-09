@@ -1277,9 +1277,14 @@
 
 /* ═════════ 自定义选择弹框（手账卡片风） ═════════ */
 .sheet-panel {
-  border-radius: 36rpx 36rpx 0 0;
-  padding: 36rpx 36rpx calc(36rpx + env(safe-area-inset-bottom));
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 140rpx; /* 上浮一段，离触发按钮更近 */
+  border-radius: 36rpx;
+  padding: 36rpx;
   background: var(--bg-page, #F7F3E8);
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.12);
 }
 
 /* 标题行：小胶带装饰 + 标题 */
