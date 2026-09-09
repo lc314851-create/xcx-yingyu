@@ -1081,8 +1081,9 @@
 
 /* ─── 结果页导出入口 ─── */
 .result-export {
-  margin-top: 16rpx;
-  font-size: 24rpx;
+  margin: 48rpx 0 36rpx; /* 上移并与下方按钮拉开距离，好点击 */
+  font-size: 26rpx;
+  padding: 12rpx 24rpx;
   color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 6rpx;
@@ -1298,6 +1299,7 @@
 
 .quick-finish-btn {
   flex: 1;
+  box-sizing: border-box;
   text-align: center;
   font-size: 32rpx;
   font-weight: 600;
@@ -1306,17 +1308,20 @@
   border: 2rpx solid rgba(47, 87, 70, 0.45);
   border-radius: 999rpx;
   padding: 24rpx 0;
+  line-height: 1.4;
 }
 
 .quick-start-btn {
-  flex: 1.6;
+  flex: 1;
   text-align: center;
   font-size: 32rpx;
   font-weight: 600;
   color: #FFFDF6;
   background: var(--color-primary, #2F5746);
+  border: 2rpx solid var(--color-primary, #2F5746);
   border-radius: 999rpx;
-  padding: 26rpx 0;
+  padding: 24rpx 0;
+  line-height: 1.4;
   box-shadow: 0 6rpx 16rpx rgba(47, 87, 70, 0.25);
 }
 
