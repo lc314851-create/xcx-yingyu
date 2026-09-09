@@ -870,6 +870,7 @@ Page({
         this.setData({
           practiceMode: mode,
           modeIndex: idx,
+          activeMode: 'quick', // 学习视图渲染要求 activeMode==='quick'，与答题视图互斥
           quickLearning: true,
           currentIndex: 0,
           knownCount: 0,
