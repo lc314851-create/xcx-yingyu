@@ -1080,20 +1080,11 @@ Page({
 
     this.setData({
       unknownCount: this.data.unknownCount + 1,
-      // 不认识：先翻面展示释义（当场看到正确答案），2.5 秒后自动进入下一个词
-      // （也保留「下一个」按钮，用户可提前点走）
-      revealAfterUnknown: true,
-      isFlipped: true,
-      showMeaning: true
+      // 不认识：不强制翻面，当前哪一面就停在哪一面，由用户主动点「下一个」走
+      revealAfterUnknown: true
     });
     // 自动播放发音，加深记忆
     playAudio(word.word, this.data.accent);
-    // 自动跳下一个：展示释义后停 2.5 秒；期间点「下一个」会取消定时器
-    this._clearRevealTimer();
-    this._revealTimer = setTimeout(() => {
-      this._revealTimer = null;
-      if (this.data.revealAfterUnknown) this.onRevealNext();
-    }, 4000); // 4 秒：留足看释义和读音的时间，期间点「下一个」可立即跳过
   },
 
   _revealTimer: null as any,
