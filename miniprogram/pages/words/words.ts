@@ -111,8 +111,8 @@ Page({
     revealAfterUnknown: false,
     // 上一题对错（用于结果页判断是否记录）
     _wordBookWords: [] as WordItem[],
-    // 列表模式：每词作答状态（word → 'known' | 'unknown'），认识的词折叠置灰
-    listAnswered: {} as Record<string, string>,
+    // 快速模式：标记为不认识的词（word → true），未标记默认认识
+    quickUnknown: {} as Record<string, boolean>,
     // 快速模式阶段开关：true=快速学习（列表浏览），false=检测阶段（四选一模式）
     quickLearning: false,
     // 出题顺序：随机 / 顺序
@@ -280,7 +280,7 @@ Page({
       spellInput: '',
       spellFeedback: 'none',
       choiceSelected: -1,
-      listAnswered: {},
+      quickUnknown: {},
       reportedMap
     }, () => {
       this._applyModeForCurrent();
@@ -538,7 +538,7 @@ Page({
       spellInput: '',
       spellFeedback: 'none',
       choiceSelected: -1,
-      listAnswered: {},
+      quickUnknown: {},
       reportedMap
     }, () => {
       if (finalQueue.length > 0) {
@@ -881,7 +881,7 @@ Page({
           spellInput: '',
           spellFeedback: 'none',
           choiceSelected: -1,
-          listAnswered: {}
+          quickUnknown: {}
         });
         this._answeredSet = new Set<number>();
         this._clearRevealTimer();
@@ -906,33 +906,6 @@ Page({
       this.setData({ batchSize: n });
       wx.showToast({ title: '每轮 ' + n + ' 个单词', icon: 'none' });
       this.initBatch();
-    } else if (type === 'quickTest') {
-      // 快速学习 → 检测：同一批词重过一遍，恢复答题状态
-      // 注意：检测方式只改本次会话的 practiceMode，持久层仍存 'quick'，
-      // 这样“再来一轮”/下次进入会重新从学习阶段开始
-      const modes: PracticeMode[] = ['card', 'choice', 'spell', 'mix'];
-      const mode = modes[idx] as PracticeMode;
-      if (!mode) return;
-      this._clearRevealTimer();
-      this._answeredSet = new Set<number>();
-      this.setData({
-        showSheet: false,
-        quickLearning: false,
-        practiceMode: mode,
-        modeIndex: ['card', 'choice', 'spell', 'mix'].indexOf(mode),
-        currentIndex: 0,
-        knownCount: 0,
-        unknownCount: 0,
-        revealAfterUnknown: false,
-        showMeaning: false,
-        isFlipped: false,
-        spellInput: '',
-        spellFeedback: 'none',
-        choiceSelected: -1,
-        listAnswered: {}
-      }, () => {
-        this._applyModeForCurrent();
-      });
     }
   },
 
@@ -943,6 +916,45 @@ Page({
       '学习模式',
       modes.map((m, i) => ({ label: this.data.modeLabels[i], active: m === this.data.practiceMode }))
     );
+  },
+
+  // ─── 快速模式 · 学习阶段 ───
+  // 点 × 标记不认识（再点一次取消，恢复默认认识）；点行其它区域发声
+  onQuickMark(e: any) {
+    const word = e.currentTarget.dataset.word as string;
+    if (!word) return;
+    playAudio(word, this.data.accent);
+    const quickUnknown = { ...this.data.quickUnknown };
+    if (quickUnknown[word]) {
+      delete quickUnknown[word];
+    } else {
+      quickUnknown[word] = true;
+    }
+    this.setData({ quickUnknown });
+  },
+
+  // 继续下一轮：未标记默认认识，批量记录后直接开下一轮
+  onNextRound() {
+    const bookId = getCurrentBookId();
+    const queue = this.data.queue;
+    const unknownSet = this.data.quickUnknown;
+    let unknownCount = 0;
+    for (const w of queue) {
+      const known = !unknownSet[w.word];
+      if (!known) {
+        unknownCount += 1;
+        addToWrongBook(w.word, w.meaning, bookId);
+      }
+      recordWordProgress(bookId, w.word, known);
+      recordStudy(1, this._isNewWord(w.word));
+    }
+    this.setData({ knownCount: queue.length - unknownCount, unknownCount });
+    this.syncToCloud();
+    wx.showToast({
+      title: unknownCount > 0 ? '已记录，不认识的词会尽快再安排' : '全部认识，太棒了！',
+      icon: 'none'
+    });
+    this.initBatch(); // 直接开下一轮（复习优先排程，不认识的词自然提前出现）
   },
 
   onPracticeModeChange(e: any) {
@@ -1192,7 +1204,7 @@ Page({
       totalCount: last.length,
       statusLabel: '复习',
       quickLearning: this.data.practiceMode === 'quick',
-      listAnswered: {},
+      quickUnknown: {},
       spellInput: '',
       spellFeedback: 'none',
       choiceSelected: -1,

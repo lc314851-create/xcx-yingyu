@@ -126,10 +126,10 @@
 
   <!-- ═════════ 快速模式 · 学习阶段（纯浏览，无标记） ═════════ -->
   <block wx:if="{{!loading && totalCount > 0 && quickLearning && activeMode === 'quick' && !showResult}}">
-    <view class="list-tip">先快速过一遍 · 点单词听发音 · 学完选一种方式检测</view>
+    <view class="list-tip">点单词听发音 · 默认都认识，点 × 标记不认识</view>
     <view class="list-wrap">
       <view
-        class="list-item"
+        class="list-item {{quickUnknown[item.word] ? 'item-unknown' : ''}}"
         wx:for="{{queue}}"
         wx:key="word"
         data-word="{{item.word}}"
@@ -143,10 +143,11 @@
           <view class="list-item-meaning">{{item.meaning}}</view>
           <view class="list-item-root" wx:if="{{item.root}}">词根 {{item.root}}{{item.rootGloss ? ' · ' + item.rootGloss : ''}}</view>
         </view>
+        <view class="list-item-x {{quickUnknown[item.word] ? 'marked' : ''}}" data-word="{{item.word}}" catchtap="onQuickMark">✗</view>
       </view>
     </view>
-    <view class="quick-start-btn" bindtap="onStartQuickTest">开始检测 ›</view>
-    <view class="quick-start-hint">共 {{totalCount}} 词 · 检测可选卡片 / 选择 / 拼写 / 混合</view>
+    <view class="quick-start-btn" bindtap="onNextRound">继续下一轮 ›</view>
+    <view class="quick-start-hint">共 {{totalCount}} 词 · 未标记的记为认识，标 × 的会尽快再安排复习</view>
   </block>
 
   <!-- ═════════ 四选一模式 ═════════ -->

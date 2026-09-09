@@ -1218,7 +1218,34 @@
   color: var(--color-primary, #2F5746);
 }
 
-.item-unknown .list-item-done {
+/* 快速模式：× 标记按钮 */
+.list-item-x {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 60rpx;
+  text-align: center;
+  font-size: 32rpx;
+  color: #C9927C;
+  background: #FBF3EC;
+  border: 1rpx solid #EAD7C8;
+  border-radius: 50%;
+}
+
+.list-item-x.marked {
+  background: #B4634A;
+  border-color: #B4634A;
+  color: #FFFDF6;
+  font-weight: 700;
+}
+
+.list-item.item-unknown {
+  border-color: #E4B7A0;
+  background: #FDF6F0;
+}
+
+.list-item.item-unknown .list-item-word {
   color: #B4634A;
 }
 
