@@ -682,6 +682,7 @@ Page({
     }
     this.setData({
       activeMode: mode,
+      quickLearning: false, // 切到非快速模式时退出学习阶段，防止列表残留
       ...flipBase,
       revealAfterUnknown: false,
       spellInput: '',
