@@ -933,8 +933,8 @@ Page({
     this.setData({ quickUnknown });
   },
 
-  // 继续下一轮：未标记默认认识，批量记录后直接开下一轮
-  onNextRound() {
+  // 批量记录本轮标记：未标记默认认识；返回不认识数
+  _recordQuickRound(): number {
     const bookId = getCurrentBookId();
     const queue = this.data.queue;
     const unknownSet = this.data.quickUnknown;
@@ -950,11 +950,23 @@ Page({
     }
     this.setData({ knownCount: queue.length - unknownCount, unknownCount });
     this.syncToCloud();
+    return unknownCount;
+  },
+
+  // 继续：批量记录后直接开下一轮（不认识的词复习排程会尽快再安排）
+  onNextRound() {
+    const unknownCount = this._recordQuickRound();
     wx.showToast({
       title: unknownCount > 0 ? '已记录，不认识的词会尽快再安排' : '全部认识，太棒了！',
       icon: 'none'
     });
-    this.initBatch(); // 直接开下一轮（复习优先排程，不认识的词自然提前出现）
+    this.initBatch();
+  },
+
+  // 完成：批量记录后进结果页（看本轮认识率，可复习本轮/再来一轮）
+  onQuickFinish() {
+    this._recordQuickRound();
+    this.finishRound();
   },
 
   onPracticeModeChange(e: any) {
