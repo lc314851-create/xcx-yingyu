@@ -1078,10 +1078,14 @@ Page({
     recordStudy(1, this._isNewWord(word.word));
     addToWrongBook(word.word, word.meaning, bookId);
 
+    // 不认识：正面（只看到单词）则翻面看释义；已经在释义面则保持不动，
+    // 由用户主动点「下一个」走
+    const needFlip = !this.data.isFlipped;
     this.setData({
       unknownCount: this.data.unknownCount + 1,
-      // 不认识：不强制翻面，当前哪一面就停在哪一面，由用户主动点「下一个」走
-      revealAfterUnknown: true
+      revealAfterUnknown: true,
+      isFlipped: needFlip ? true : this.data.isFlipped,
+      showMeaning: needFlip ? true : this.data.showMeaning
     });
     // 自动播放发音，加深记忆
     playAudio(word.word, this.data.accent);
