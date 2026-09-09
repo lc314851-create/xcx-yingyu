@@ -1280,7 +1280,7 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 140rpx; /* 上浮一段，离触发按钮更近 */
+  bottom: 280rpx; /* 上浮一段，离触发按钮更近 */
   border-radius: 36rpx;
   padding: 36rpx;
   background: var(--bg-page, #F7F3E8);
