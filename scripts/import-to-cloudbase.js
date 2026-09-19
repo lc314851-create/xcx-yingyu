@@ -24,6 +24,7 @@ const bookFiles = [
   { id: 'senior', name: '高中词汇', file: 'senior.json' },
   { id: 'cet4', name: '四级词汇', file: 'cet4.json' },
   { id: 'cet6', name: '六级词汇', file: 'cet6.json' },
+  { id: 'zsb', name: '专升本词汇', file: 'zsb.json' },
   { id: 'postgrad', name: '考研词汇', file: 'postgrad.json' },
   { id: 'ielts', name: '雅思词汇', file: 'ielts.json' },
   { id: 'toefl', name: '托福词汇', file: 'toefl.json' },

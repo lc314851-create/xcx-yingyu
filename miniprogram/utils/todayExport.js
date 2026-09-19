@@ -14,7 +14,12 @@ async function collectTodayRows() {
         return [];
     const meaningMaps = new Map();
     const rows = [];
+    // 兑底去重：同一单词只导出一行
+    const exported = new Set();
     for (const t of todays) {
+        const dedupKey = String(t.word || '').toLowerCase();
+        if (exported.has(dedupKey))
+            continue;
         let m = meaningMaps.get(t.bookId);
         if (!m) {
             m = new Map();
@@ -30,6 +35,7 @@ async function collectTodayRows() {
             meaningMaps.set(t.bookId, m);
         }
         const info = m.get(t.word.toLowerCase());
+        exported.add(dedupKey);
         rows.push({
             word: t.word,
             meaning: info ? info.meaning : '',
@@ -408,24 +414,74 @@ function exportExcelFile(rows, namePrefix = '今日单词') {
     const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
     const fs = wx.getFileSystemManager();
     try {
-        fs.writeFileSync(filePath, zipBuf, 'binary');
+        // zipBuf 是 ArrayBuffer，不传 encoding 参数（PC 端基础库会报错）
+        fs.writeFileSync(filePath, zipBuf);
     }
     catch (e) {
         wx.showToast({ title: '文件生成失败', icon: 'none' });
         return;
     }
-    wx.shareFileMessage({
-        filePath,
-        fileName,
-        success: () => {
-            wx.showToast({ title: '已发送，打开即是Excel表格', icon: 'none' });
-        },
-        fail: (err) => {
-            if (err && err.errMsg && err.errMsg.indexOf('cancel') === -1) {
-                wx.showToast({ title: '分享失败（' + (err.errMsg || '').slice(-30) + '）', icon: 'none' });
+    // PC 端（Windows/Mac）不支持 wx.shareFileMessage（报错），需改用 wx.saveFileToDisk；
+    // 手机端反过来不支持 saveFileToDisk。按平台分支调用，并加失败兑底。
+    const platform = (() => {
+        try {
+            // 优先用新 API（旧接口已废弃，控制台会告警），老基础库再回退 getSystemInfoSync
+            if (typeof wx.getDeviceInfo === 'function') {
+                return wx.getDeviceInfo().platform || '';
             }
+            return wx.getSystemInfoSync().platform || '';
         }
-    });
+        catch (e) {
+            return '';
+        }
+    })();
+    const isPc = platform === 'windows' || platform === 'mac';
+    const saveToDisk = () => {
+        wx.saveFileToDisk({
+            filePath,
+            fileName,
+            success: () => {
+                wx.showToast({ title: '已保存到本地，打开即是Excel表格', icon: 'none' });
+            },
+            fail: (err) => {
+                const msg = (err && err.errMsg) || '';
+                if (msg.indexOf('cancel') > -1)
+                    return;
+                wx.showModal({
+                    title: '导出失败',
+                    content: '当前环境不支持直接发送文件，可改用「复制文本」后粘贴到 WPS/Excel',
+                    showCancel: false,
+                    confirmText: '知道了'
+                });
+            }
+        });
+    };
+    const shareToChat = () => {
+        wx.shareFileMessage({
+            filePath,
+            fileName,
+            success: () => {
+                wx.showToast({ title: '已发送，打开即是Excel表格', icon: 'none' });
+            },
+            fail: (err) => {
+                const msg = (err && err.errMsg) || '';
+                if (msg.indexOf('cancel') > -1)
+                    return;
+                if (typeof wx.saveFileToDisk === 'function') {
+                    saveToDisk();
+                }
+                else {
+                    wx.showToast({ title: '分享失败（' + msg.slice(-30) + '）', icon: 'none' });
+                }
+            }
+        });
+    };
+    if (isPc) {
+        saveToDisk();
+    }
+    else {
+        shareToChat();
+    }
 }
 function showExportSheet(rows, getCanvas, opts) {
     if (rows.length === 0) {

@@ -31,6 +31,7 @@ const BOOK_META: Omit<WordBook, 'words'>[] = [
 
   { id: 'junior', name: '初中词汇', desc: '中考大纲词汇', level: '初中' },
   { id: 'senior', name: '高中词汇', desc: '高考大纲词汇', level: '高中' },
+  { id: 'zsb', name: '专升本词汇', desc: '专升本考试大纲词汇（高职课标）', level: '专升本' },
   { id: 'cet4', name: '四级词汇', desc: '大学英语四级词汇', level: '四级' },
   { id: 'cet6', name: '六级词汇', desc: '大学英语六级词汇', level: '六级' },
   { id: 'postgrad', name: '考研词汇', desc: '考研大纲词汇', level: '考研' },
@@ -44,7 +45,8 @@ import { wordBooks as localBooks } from '../data/index';
 
 // v2：词库字段升级（root/rootGloss/relatedWords/lemma），旧缓存不可复用
 const CACHE_PREFIX = 'bc_words_v4_'; // v4：v3 时期云函数兕底曾把无 posTag 的旧词条写入缓存，升版强制重拉
-const CACHE_META_KEY = 'bc_words_meta_v2';
+// v3: 新增专升本词书（zsb），旧缓存无此书会显示 id 和 0 词，升版强制重拉
+const CACHE_META_KEY = 'bc_words_meta_v3';
 const CACHE_EXPIRE = 7 * 24 * 60 * 60 * 1000; // 7天缓存
 
 // 云环境与存储桶（用于拼接 fileID；小程序端 downloadFile 只认 fileID，不支持 cloudPath）

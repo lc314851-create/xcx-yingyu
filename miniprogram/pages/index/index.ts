@@ -1,5 +1,5 @@
 // pages/index/index.ts
-import { getStats, getCurrentBookId, hasSelectedBook, getBookProgressStats, getReviewPlan, restoreStatsFromCloud, getTodayLearnedWords } from '../../utils/store';
+import { getStats, getCurrentBookId, hasSelectedBook, getBookProgressStats, getReviewPlan, restoreStatsFromCloud, restoreProgressFromCloud, getTodayLearnedWords } from '../../utils/store';
 import { getBookById } from '../../utils/wordService';
 
 // 本地种子词库（兑底）
@@ -53,6 +53,16 @@ Page({
     // 本地统计为空（如刚清缓存）：静默从云端恢复历史，避免首页出现 0 的假象
     if (!getStats().totalWords) {
       restoreStatsFromCloud().then(() => this.loadStats());
+    }
+
+    // 每次进入首页都从云端拉取当前词书的最新进度与统计（修复 PC 端与手机端不一致）：
+    // PC 端启动时登录链路容易超时，仅靠启动时的恢复不够；恢复完成后刷新今日已学词数
+    if (getApp().globalData.openid || wx.getStorageSync('bc_openid')) {
+      restoreProgressFromCloud(getCurrentBookId());
+      restoreStatsFromCloud().then(() => {
+        this.loadStats();
+        this.setData({ todayWordCount: getTodayLearnedWords().length });
+      });
     }
   },
 

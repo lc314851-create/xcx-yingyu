@@ -249,7 +249,9 @@ function restoreStatsFromCloud() {
             if (res.profile)
                 saveLocalProfile(res.profile);
         }
-    }).then(() => { restorePending = null; });
+    }).then(() => { restorePending = null; })
+        // 失败也清理 pending，允许下次重试
+        .catch(() => { restorePending = null; });
     return restorePending;
 }
 function updateUserProfile(nickname, avatarUrl) {
@@ -293,8 +295,13 @@ function getCurrentBookId() {
     return wx.getStorageSync(BOOK_KEY) || 'junior';
 }
 function setCurrentBookId(id) {
+    const prevBookId = getCurrentBookId();
     wx.setStorageSync(BOOK_KEY, id);
     wx.setStorageSync(BOOK_CHOSEN_KEY, true);
+    // 切换词书前，先把旧词书的进度推上云端，避免旧书进度只留在当前设备
+    if (prevBookId && prevBookId !== id) {
+        syncProgressToCloud(prevBookId).catch(() => { });
+    }
     restoreProgressFromCloud(id).catch(() => { });
 }
 const BATCH_SIZE_KEY = 'bc_batch_size';
@@ -316,6 +323,8 @@ function getTodayLearnedWords() {
     const now = new Date();
     const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const out = [];
+    // 同一单词可能存在于多本词书（如切换词书后复习旧词），按词去重，保留最近一次学习记录
+    const seen = new Map();
     try {
         const info = wx.getStorageInfoSync();
         for (const key of info.keys) {
@@ -325,10 +334,17 @@ function getTodayLearnedWords() {
             const all = wx.getStorageSync(key) || {};
             for (const w of Object.values(all)) {
                 if (w && w.lastSeen && w.lastSeen >= dayStart) {
-                    out.push({ word: w.word, bookId, known: (w.knownCount || 0) >= (w.unknownCount || 0) });
+                    const item = { word: w.word, bookId, known: (w.knownCount || 0) >= (w.unknownCount || 0) };
+                    const dedupKey = String(w.word || '').toLowerCase();
+                    const prev = seen.get(dedupKey);
+                    if (!prev || (w.lastSeen || 0) > prev.lastSeen) {
+                        seen.set(dedupKey, { item, lastSeen: w.lastSeen || 0 });
+                    }
                 }
             }
         }
+        for (const s of seen.values())
+            out.push(s.item);
     }
     catch (e) {
         console.error('[导出] 今日学习词聚合失败', e);
@@ -569,7 +585,10 @@ function restoreProgressFromCloud(bookId) {
         if (res && res.progress && Object.keys(res.progress).length) {
             saveAllProgress(bookId, mergeProgress(getAllProgress(bookId), res.progress));
         }
-    }).then(() => { restoreProgressPending = null; });
+    }).then(() => { restoreProgressPending = null; })
+        // 关键：失败也清理 pending，否则后续调用直接返回同一个被拒绝的 promise，
+        // 本地进度永远不再从云端恢复（PC 端与手机端不一致的根因之一）
+        .catch(() => { restoreProgressPending = null; });
     return restoreProgressPending;
 }
 let progressSyncTimer = null;
@@ -651,7 +670,9 @@ function restoreWrongBookFromCloud() {
             const merged = mergeWrongBook(getWrongBook(), res.wrongBook);
             wx.setStorageSync(WRONG_BOOK_KEY, merged);
         }
-    }).then(() => { restoreWrongBookPending = null; });
+    }).then(() => { restoreWrongBookPending = null; })
+        // 失败也清理 pending，允许下次重试
+        .catch(() => { restoreWrongBookPending = null; });
     return restoreWrongBookPending;
 }
 exports.WEEKLY_TEMPLATE_ID = 'HKofr7-lr1w8swoa-p7M-pyNRPMRXxbSuSSWrIjKl-I';

@@ -16,6 +16,7 @@ interface BookMeta { order: number; color: string; bgColor: string; tag: string;
 const BOOK_META: Record<string, BookMeta> = {
   junior:   { order: 1, color: '#4CAF50', bgColor: '#E8F5E9', tag: '入门', group: 'k12' },
   senior:   { order: 2, color: '#2196F3', bgColor: '#E3F2FD', tag: '进阶', group: 'k12' },
+  zsb:      { order: 2.5, color: '#3F51B5', bgColor: '#E8EAF6', tag: '专升本', group: 'uni' },
   cet4:     { order: 3, color: '#9C27B0', bgColor: '#F3E5F5', tag: '四级', group: 'uni' },
   cet6:     { order: 4, color: '#FF9800', bgColor: '#FFF3E0', tag: '六级', group: 'uni' },
   postgrad: { order: 5, color: '#F44336', bgColor: '#FFEBEE', tag: '考研', group: 'uni' },
@@ -30,7 +31,7 @@ const PEP_BG = '#E7F0EA';
 
 const EXAM_GROUPS = [
   { key: 'k12', title: 'K12 基础', subtitle: '中考 / 高考' },
-  { key: 'uni', title: '大学考试', subtitle: '四六级 / 考研' },
+  { key: 'uni', title: '大学考试', subtitle: '专升本 / 四六级 / 考研' },
   { key: 'abroad', title: '出国考试', subtitle: '雅思 / 托福 / GRE' }
 ];
 
@@ -65,6 +66,7 @@ const STAGES: StageDef[] = [
   {
     key: 'college', label: '大学', desc: '目标是什么？',
     options: [
+      { key: 'zsb', label: '专升本', bookId: 'zsb', hint: '高职课标 3000 词' },
       { key: 'cet4', label: '四级', bookId: 'cet4', hint: '大学英语四级' },
       { key: 'cet6', label: '六级', bookId: 'cet6', hint: '大学英语六级' }
     ]

@@ -43,6 +43,15 @@ Page({
         if (!(0, store_1.getStats)().totalWords) {
             (0, store_1.restoreStatsFromCloud)().then(() => this.loadStats());
         }
+        // 每次进入首页都从云端拉取当前词书的最新进度与统计（修复 PC 端与手机端不一致）：
+        // PC 端启动时登录链路容易超时，仅靠启动时的恢复不够；恢复完成后刷新今日已学词数
+        if (getApp().globalData.openid || wx.getStorageSync('bc_openid')) {
+            (0, store_1.restoreProgressFromCloud)((0, store_1.getCurrentBookId)());
+            (0, store_1.restoreStatsFromCloud)().then(() => {
+                this.loadStats();
+                this.setData({ todayWordCount: (0, store_1.getTodayLearnedWords)().length });
+            });
+        }
     },
     updateGreeting() {
         const hour = new Date().getHours();

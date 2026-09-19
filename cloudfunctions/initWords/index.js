@@ -18,6 +18,7 @@ const BOOK_META = [
   { id: 'senior', name: '高中词汇', level: '高中', tag: 'gk' },
   { id: 'cet4', name: '四级词汇', level: '四级', tag: 'cet4' },
   { id: 'cet6', name: '六级词汇', level: '六级', tag: 'cet6' },
+  { id: 'zsb', name: '专升本词汇', level: '专升本', tag: 'zsb' },
   { id: 'postgrad', name: '考研词汇', level: '考研', tag: 'ky' },
   { id: 'ielts', name: '雅思词汇', level: '雅思', tag: 'ielts' },
   { id: 'toefl', name: '托福词汇', level: '托福', tag: 'toefl' },
