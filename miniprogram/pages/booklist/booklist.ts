@@ -6,6 +6,7 @@
 //       — 教材同步：学段分段器 + 分册列表（原 pages/textbook 合并至此）
 import { wordBooks } from '../../data/index';
 import { getBookList, getBookById } from '../../utils/wordService';
+import { listUserBooks, isUserBookId, UserBookMeta } from '../../utils/userBook';
 import {
   getCurrentBookId, setCurrentBookId, getBookProgressStats, getAllProgress, hasSelectedBook
 } from '../../utils/store';
@@ -155,6 +156,9 @@ Page({
     tbSubtitle: TEXTBOOK_TABS[0].subtitle,
     tbRows: [] as TbRow[],
 
+    // 我的词书（用户自定义上传）
+    myBooks: [] as { bookId: string; name: string; total: number; isCurrent: boolean }[],
+
     loading: true
   },
 
@@ -205,7 +209,47 @@ Page({
       this.buildExamGroups();
       if (this.data.mainTab === 'textbook') this.loadTbRows();
     }
+    // 个人词书不阻塞官方词书展示，失败静默
+    this.loadMyBooks();
     this.setData({ loading: false });
+  },
+
+  // ─── 我的词书（用户自定义上传）────────────────────────────────
+  async loadMyBooks() {
+    try {
+      const books = await listUserBooks();
+      const ids = new Set((books || []).map((b: UserBookMeta) => b.bookId));
+      const currentId = getCurrentBookId();
+
+      // 自愈：当前词书指向一本已不存在的个人词书
+      // （旧版本删除时没重置指针，或在其他设备上删的）→ 重置回默认词书，
+      // 否则顶部「当前词书」卡会一直显示裸 bookId（如 u_bg8hte71）
+      let stale = false;
+      if (currentId && isUserBookId(currentId) && !ids.has(currentId)) {
+        setCurrentBookId('junior');
+        stale = true;
+      }
+      const effectiveId = stale ? 'junior' : currentId;
+
+      const rows = (books || []).map((b: UserBookMeta) => ({
+        bookId: b.bookId,
+        name: b.name,
+        total: b.total || 0,
+        isCurrent: b.bookId === effectiveId
+      }));
+      // 并入 _meta，让顶部「当前词书」卡能正确显示个人词书的名字和词数
+      rows.forEach((b) => {
+        this._meta[b.bookId] = { name: b.name, wordCount: b.total, desc: '我的专属词书' };
+      });
+      this.setData({ myBooks: rows });
+      if (stale || (effectiveId && isUserBookId(effectiveId))) this.buildCurrent();
+    } catch (e) {
+      // 未登录 / 云函数异常时不影响官方词书
+    }
+  },
+
+  goMyBooks() {
+    wx.navigateTo({ url: '/pages/mybooks/mybooks' });
   },
 
   // 当前词书推荐卡

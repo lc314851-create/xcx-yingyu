@@ -1,0 +1,9 @@
+{
+  "name": "userBook",
+  "version": "1.0.0",
+  "description": "个人词书云函数：抽词匹配、建书、列表、读取、改名、删除（含级联清理）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

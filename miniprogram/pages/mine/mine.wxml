@@ -56,6 +56,15 @@
     <view class="plan-entry-arrow">›</view>
   </view>
 
+  <!-- 我的词书入口：自定义上传 -->
+  <view class="plan-entry" bindtap="goMyBooks">
+    <view class="plan-entry-left">
+      <view class="plan-entry-title">我的专属词书</view>
+      <view class="plan-entry-sub">粘贴一段英文，自动整理成词书，仅自己可见</view>
+    </view>
+    <view class="plan-entry-arrow">›</view>
+  </view>
+
   <!-- 学习日历热力图 -->
   <view class="heatmap-section">
     <view class="section-header">

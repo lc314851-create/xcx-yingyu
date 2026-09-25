@@ -317,6 +317,13 @@ Page({
     });
   },
 
+  // 跳转我的词书（用户自定义上传）
+  goMyBooks() {
+    wx.navigateTo({
+      url: '/pages/mybooks/mybooks'
+    });
+  },
+
   // 今日复盘：本轮只重刷今天学过的词
   goTodayReview() {
     if (this.data.todayWordCount === 0) {

@@ -2,6 +2,7 @@
 // 词库云服务：优先从云存储下载 JSON 文件（CDN 缓存，秒开），云函数分页兜底
 
 import { WordItem, WordBook } from '../data/types';
+import { isUserBookId, getUserBook, toWordItems } from './userBook';
 
 // 词书元数据（固定信息，不依赖数据库）
 const BOOK_META: Omit<WordBook, 'words'>[] = [
@@ -278,6 +279,14 @@ export async function getBookWords(bookId: string): Promise<WordItem[]> {
 }
 
 async function loadBookWords(bookId: string): Promise<WordItem[]> {
+  // 0. 个人词书：数据在 userBooks 集合（云函数按 _openid 取），不走云存储/官方词库
+  if (isUserBookId(bookId)) {
+    const book = await getUserBook(bookId);
+    const words = book ? toWordItems(book.words) : [];
+    memoryWords.set(bookId, words);
+    return words;
+  }
+
   const cacheKey = CACHE_PREFIX + bookId;
   const t0 = Date.now();
 
@@ -353,6 +362,19 @@ async function loadBookWords(bookId: string): Promise<WordItem[]> {
 
 // 获取完整词书对象（含 words）
 export async function getBookById(bookId: string): Promise<WordBook | undefined> {
+  // 个人词书：元数据存在 userBooks 里，不在 BOOK_META
+  if (isUserBookId(bookId)) {
+    const ub = await getUserBook(bookId);
+    if (!ub) return undefined;
+    return {
+      id: ub.bookId,
+      name: ub.name,
+      desc: ub.desc || '我的专属词书',
+      level: '我的',
+      words: toWordItems(ub.words)
+    };
+  }
+
   const meta = BOOK_META.find(m => m.id === bookId);
   if (!meta) return undefined;
 

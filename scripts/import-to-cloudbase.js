@@ -79,6 +79,9 @@ for (const book of bookFiles) {
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   
   // 云开发数据库导入格式：每行一个 JSON 对象
+  // ⚠️ 字段必须与 wordbooks 集合的消费方一致。历史上这里漏了 posTag，
+  //    导致数据库里的记录没有该字段（虚词过滤只能靠云函数的兜底表）。
+  //    新增字段时记得同步 cloudfunctions/initWords 的 import 分支。
   const lines = data.map(w => JSON.stringify({
     bookId: book.id,
     word: w.word,
@@ -86,8 +89,11 @@ for (const book of bookFiles) {
     meaning: w.meaning || '',
     example: w.example || '',
     isHighFreq: w.isHighFreq || false,
+    posTag: w.posTag || 'content',
     // ECDICT 扩展字段
     root: w.root || '',
+    rootGloss: w.rootGloss || '',
+    lemma: w.lemma || '',
     synonyms: w.synonyms || '',
     antonyms: w.antonyms || '',
     relatedWords: w.relatedWords || '',

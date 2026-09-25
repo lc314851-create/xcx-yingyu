@@ -1,0 +1,432 @@
+/* pages/mybooks/mybooks.wxss */
+.container {
+  padding: 32rpx 24rpx 80rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.page-header {
+  padding: 8rpx 10rpx 32rpx;
+}
+
+.page-title {
+  font-size: 46rpx;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.page-sub {
+  font-size: 27rpx;
+  color: var(--text-tertiary);
+  margin-top: 10rpx;
+}
+
+.back-link {
+  font-size: 27rpx;
+  color: var(--color-primary);
+  margin-bottom: 16rpx;
+}
+
+.back-link.center {
+  text-align: center;
+  margin-top: 28rpx;
+}
+
+/* ─── 新建入口 ─────────────────────────── */
+.new-btn {
+  background: var(--bg-card);
+  border: 2rpx dashed var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 40rpx 32rpx;
+  text-align: center;
+  margin-bottom: 36rpx;
+}
+
+.new-btn:active {
+  background: var(--bg-hover);
+}
+
+.new-plus {
+  font-size: 48rpx;
+  color: var(--color-primary);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.new-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 12rpx;
+}
+
+.new-hint {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+
+/* ─── 空状态 ─────────────────────────── */
+.empty {
+  text-align: center;
+  color: var(--text-tertiary);
+  padding: 60rpx 0;
+  font-size: 27rpx;
+}
+
+.empty-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  padding: 48rpx 36rpx;
+  text-align: center;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-top: 16rpx;
+  text-align: left;
+}
+
+/* ─── 词书卡片 ─────────────────────────── */
+.book-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  padding: 28rpx 28rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.book-card:active {
+  background: var(--bg-hover);
+}
+
+.book-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-desc {
+  font-size: 25rpx;
+  color: var(--text-secondary);
+  margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-meta {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  margin-top: 12rpx;
+}
+
+.meta-strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.meta-missed {
+  color: var(--color-warning);
+}
+
+.meta-time {
+  margin-left: 8rpx;
+}
+
+.book-arrow {
+  font-size: 44rpx;
+  color: var(--text-quaternary);
+  margin-left: 12rpx;
+}
+
+.tip-line {
+  text-align: center;
+  font-size: 23rpx;
+  color: var(--text-quaternary);
+  margin-top: 24rpx;
+}
+
+/* ─── 表单 ─────────────────────────── */
+.field {
+  margin-bottom: 28rpx;
+}
+
+.field-label {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  margin-bottom: 12rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.field-count {
+  font-size: 23rpx;
+  color: var(--text-quaternary);
+}
+
+.field-input {
+  background: var(--bg-card);
+  border: 1rpx solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 22rpx 24rpx;
+  font-size: 29rpx;
+  color: var(--text-primary);
+}
+
+.field-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 340rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 22rpx 24rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.create-tip {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+  background: var(--color-primary-bg-light);
+  border-radius: var(--radius-lg);
+  padding: 20rpx 24rpx;
+  margin-bottom: 32rpx;
+}
+
+/* ─── 按钮 ─────────────────────────── */
+.primary-btn {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  font-size: 31rpx;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  padding: 6rpx 0;
+}
+
+/* 详情页主按钮：与标题区拉开距离 */
+.detail-cta {
+  margin-bottom: 30rpx;
+}
+
+.primary-btn.disabled {
+  opacity: 0.6;
+}
+
+/* ─── 结果页 ─────────────────────────── */
+.stat-row {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+}
+
+.stat-card {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 28rpx 12rpx;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 46rpx;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.1;
+}
+
+.stat-num.warn {
+  color: var(--color-warning);
+}
+
+.stat-label {
+  font-size: 23rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+
+.missed-card,
+.example-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+}
+
+.missed-title,
+.example-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16rpx;
+}
+
+.missed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.missed-chip {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  font-size: 24rpx;
+  padding: 8rpx 18rpx;
+  border-radius: var(--radius-pill);
+}
+
+.missed-note {
+  font-size: 23rpx;
+  color: var(--text-quaternary);
+  margin-top: 16rpx;
+}
+
+.example-item {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid var(--border-light);
+}
+
+/* ─── 详情视图 ─────────────────────────── */
+.current-tag {
+  display: inline-block;
+  margin-left: 12rpx;
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-pill);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-size: 22rpx;
+}
+
+.sub-actions {
+  display: flex;
+  gap: 14rpx;
+  margin-bottom: 32rpx;
+}
+
+.sub-btn {
+  flex: 1;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 18rpx 0;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.sub-btn:active {
+  background: var(--bg-hover);
+}
+
+.sub-btn.danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger-bg);
+  background: var(--color-danger-bg);
+}
+
+.wordlist-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 10rpx 16rpx;
+}
+
+.wordlist-title {
+  font-size: 29rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wordlist-tip {
+  font-size: 23rpx;
+  color: var(--text-quaternary);
+}
+
+.word-item {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 22rpx 24rpx;
+  margin-bottom: 14rpx;
+  display: flex;
+  align-items: center;
+}
+
+.word-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-line {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.w-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.w-phonetic {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.w-meaning {
+  font-size: 25rpx;
+  color: var(--text-secondary);
+  margin-top: 6rpx;
+  line-height: 1.5;
+}
+
+.w-form {
+  font-size: 22rpx;
+  color: var(--color-warning);
+  margin-top: 6rpx;
+}
+
+.word-del {
+  flex: 0 0 auto;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  background: var(--bg-muted);
+  color: var(--text-tertiary);
+  font-size: 34rpx;
+  line-height: 48rpx;
+  text-align: center;
+  margin-left: 16rpx;
+}
+
+.word-del:active {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}

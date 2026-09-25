@@ -12,7 +12,8 @@
     "pages/memory/memory",
     "pages/plan/plan",
     "pages/vocabtest/vocabtest",
-    "pages/quotes/quotes"
+    "pages/quotes/quotes",
+    "pages/mybooks/mybooks"
   ],
   "window": {
     "backgroundColor": "#F7F3EA",

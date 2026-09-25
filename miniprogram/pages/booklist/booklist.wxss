@@ -584,3 +584,75 @@ button::after {
   padding: 16rpx 8rpx 0;
   line-height: 1.6;
 }
+/* ─── 我的词书（用户自定义上传）────────── */
+.mb-block {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  padding: 26rpx 24rpx;
+  margin: 8rpx 0 32rpx;
+}
+
+.mb-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18rpx;
+}
+
+.mb-title {
+  font-size: 29rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mb-manage {
+  font-size: 24rpx;
+  color: var(--color-primary);
+}
+
+.mb-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.mb-item {
+  position: relative;
+  background: var(--color-primary-bg-light);
+  border: 1rpx solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 18rpx 22rpx;
+  min-width: 200rpx;
+}
+
+.mb-item.current {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.mb-name {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300rpx;
+}
+
+.mb-meta {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 4rpx;
+}
+
+.mb-cur {
+  position: absolute;
+  top: -12rpx;
+  right: -8rpx;
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+}

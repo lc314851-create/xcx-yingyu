@@ -1,0 +1,198 @@
+<!-- pages/mybooks/mybooks.wxml -->
+<view class="container">
+
+  <!-- ══════════ 列表视图 ══════════ -->
+  <block wx:if="{{view === 'list'}}">
+    <view class="page-header">
+      <view class="page-title">我的专属词书</view>
+      <view class="page-sub">粘贴一段英文，帮你把里面的单词整理成词书</view>
+    </view>
+
+    <view class="new-btn" bindtap="goCreate">
+      <view class="new-plus">＋</view>
+      <view class="new-text">新建词书</view>
+      <view class="new-hint">支持粘贴英文文章、句子、单词列表</view>
+    </view>
+
+    <view wx:if="{{loading}}" class="empty">加载中…</view>
+
+    <block wx:elif="{{books.length === 0}}">
+      <view class="empty-card">
+        <view class="empty-title">还没有个人词书</view>
+        <view class="empty-desc">把课文、新闻、你喜欢的英文句子粘贴进来，我们帮你把里面的单词挑出来，整理成一本可以背的词书。只有你自己看得见。</view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view
+        class="book-card"
+        wx:for="{{books}}"
+        wx:key="bookId"
+        data-id="{{item.bookId}}"
+        data-name="{{item.name}}"
+        bindtap="tapBook"
+        bindlongpress="onBookLongPress"
+      >
+        <view class="book-main">
+          <view class="book-name">{{item.name}}</view>
+          <view class="book-desc" wx:if="{{item.desc}}">{{item.desc}}</view>
+          <view class="book-meta">
+            <text class="meta-strong">{{item.total}} 词</text>
+            <text wx:if="{{item.missed > 0}}" class="meta-missed">· 未收录 {{item.missed}}</text>
+            <text wx:if="{{item.timeText}}" class="meta-time">· {{item.timeText}}</text>
+          </view>
+        </view>
+        <view class="book-arrow">›</view>
+      </view>
+      <view class="tip-line">长按词书可以改名或删除</view>
+    </block>
+  </block>
+
+  <!-- ══════════ 创建视图 ══════════ -->
+  <block wx:if="{{view === 'create'}}">
+    <view class="page-header">
+      <view class="back-link" bindtap="backToList">‹ 返回</view>
+      <view class="page-title">新建词书</view>
+      <view class="page-sub">粘贴英文内容，我们自动挑出里面的单词</view>
+    </view>
+
+    <view class="field">
+      <view class="field-label">词书名（必填）</view>
+      <input
+        class="field-input"
+        placeholder="例如：那篇经济学人"
+        value="{{name}}"
+        maxlength="20"
+        bindinput="onNameInput"
+      />
+    </view>
+
+    <view class="field">
+      <view class="field-label">备注（可不填）</view>
+      <input
+        class="field-input"
+        placeholder="例如：来源 / 日期"
+        value="{{desc}}"
+        maxlength="60"
+        bindinput="onDescInput"
+      />
+    </view>
+
+    <view class="field">
+      <view class="field-label">
+        <text>英文内容</text>
+        <text class="field-count">{{rawLen}}/20000</text>
+      </view>
+      <textarea
+        class="field-textarea"
+        placeholder="把英文课文、新闻、句子粘贴到这里…;也可以直接粘一个单词列表，每行一个。"
+        value="{{rawText}}"
+        maxlength="20000"
+        bindinput="onTextInput"
+      ></textarea>
+    </view>
+
+    <view class="create-tip">
+      我们会自动过滤 the / of / is 这类虚词，并把 running、was 还原成 run、be，
+      只留下值得背的词。
+    </view>
+
+    <button
+      class="primary-btn {{submitting ? 'disabled' : ''}}"
+      bindtap="submitCreate"
+    >{{submitting ? '正在识别…' : '生成词书'}}</button>
+  </block>
+
+  <!-- ══════════ 详情视图 ══════════ -->
+  <block wx:if="{{view === 'detail'}}">
+    <view class="page-header">
+      <view class="back-link" bindtap="backToList">‹ 返回</view>
+      <block wx:if="{{detail}}">
+        <view class="page-title">{{detail.name}}</view>
+        <view class="page-sub">
+          {{detail.total}} 词<text wx:if="{{detail.desc}}"> · {{detail.desc}}</text>
+          <text wx:if="{{detail.isCurrent}}" class="current-tag">正在学习</text>
+        </view>
+      </block>
+    </view>
+
+    <view wx:if="{{detailLoading}}" class="empty">加载中…</view>
+
+    <block wx:elif="{{detail}}">
+      <button class="primary-btn detail-cta" bindtap="goStudy">
+        {{detail.isCurrent ? '继续学习这本词书' : '开始学习这本词书'}}
+      </button>
+
+      <view class="sub-actions">
+        <view class="sub-btn" bindtap="setAsCurrent">设为当前学习</view>
+        <view class="sub-btn" bindtap="renameFromDetail">重新命名</view>
+        <view class="sub-btn danger" bindtap="removeBookFromDetail">删除整本</view>
+      </view>
+
+      <view class="wordlist-head">
+        <view class="wordlist-title">词单（{{detail.total}}）</view>
+        <view class="wordlist-tip">点右侧 × 可删掉不想背的词</view>
+      </view>
+
+      <view class="word-item" wx:for="{{detail.words}}" wx:key="word">
+        <view class="word-main">
+          <view class="word-line">
+            <text class="w-text">{{item.word}}</text>
+            <text class="w-phonetic" wx:if="{{item.phonetic}}">{{item.phonetic}}</text>
+          </view>
+          <view class="w-meaning" wx:if="{{item.meaning}}">{{item.meaning}}</view>
+          <view class="w-form" wx:if="{{item.matchedForm}}">原文中是 {{item.matchedForm}}</view>
+        </view>
+        <view class="word-del" data-word="{{item.word}}" bindtap="removeWordItem">×</view>
+      </view>
+
+      <view wx:if="{{detail.words.length === 0}}" class="empty">
+        词都删光了。可以返回后重新上传一份，或删除整本词书。
+      </view>
+    </block>
+  </block>
+
+  <!-- ══════════ 结果视图 ══════════ -->
+  <block wx:if="{{view === 'result' && result}}">
+    <view class="page-header">
+      <view class="page-title">《{{result.name}}》已生成</view>
+      <view class="page-sub">只有你自己看得见</view>
+    </view>
+
+    <view class="stat-row">
+      <view class="stat-card">
+        <view class="stat-num">{{result.total}}</view>
+        <view class="stat-label">已收录</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-num warn">{{result.funcFiltered}}</view>
+        <view class="stat-label">已过滤虚词</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-num {{result.missed > 0 ? 'warn' : ''}}">{{result.missed}}</view>
+        <view class="stat-label">未收录</view>
+      </view>
+    </view>
+
+    <block wx:if="{{result.missedSamples.length > 0}}">
+      <view class="missed-card">
+        <view class="missed-title">以下词不在词库里，没有收录</view>
+        <view class="missed-chips">
+          <view class="missed-chip" wx:for="{{result.missedSamples}}" wx:key="*this">{{item}}</view>
+        </view>
+        <view class="missed-note">多为专有名词或生僻词，属正常情况</view>
+      </view>
+    </block>
+
+    <block wx:if="{{result.examples.length > 0}}">
+      <view class="example-card">
+        <view class="example-title">例句取自你贴的原文</view>
+        <view class="example-item" wx:for="{{result.examples}}" wx:key="*this">{{item}}</view>
+      </view>
+    </block>
+
+    <button class="primary-btn" bindtap="tapOpenDetail">查看这本词书的详情</button>
+    <view class="back-link center" bindtap="tapBackList">返回我的专属词书</view>
+  </block>
+
+</view>

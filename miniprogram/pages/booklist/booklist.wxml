@@ -101,6 +101,27 @@
 
     <view class="vocab-test" bindtap="goVocabTest">不确定选哪本？先测词汇量 ›</view>
 
+    <!-- 我的词书：用户自定义上传 -->
+    <view class="mb-block" wx:if="{{myBooks.length > 0}}">
+      <view class="mb-head">
+        <view class="mb-title">我的专属词书</view>
+        <view class="mb-manage" bindtap="goMyBooks">管理 · 新建 ›</view>
+      </view>
+      <view class="mb-list">
+        <view
+          class="mb-item {{item.isCurrent ? 'current' : ''}}"
+          wx:for="{{myBooks}}"
+          wx:key="bookId"
+          data-id="{{item.bookId}}"
+          bindtap="selectBook"
+        >
+          <view class="mb-name">{{item.name}}</view>
+          <view class="mb-meta">{{item.total}} 词</view>
+          <view class="mb-cur" wx:if="{{item.isCurrent}}">在学</view>
+        </view>
+      </view>
+    </view>
+
     <!-- 双 Tab -->
     <view class="tab-bar">
       <view

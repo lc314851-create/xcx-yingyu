@@ -17,3 +17,6 @@ _backup_*/
 _output_tts/
 .vscode/
 .smoke-tsc.txt
+
+# WorkBuddy 智能体工作目录（记忆/日志，非项目代码）
+.workbuddy/
